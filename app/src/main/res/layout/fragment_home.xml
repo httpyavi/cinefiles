@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HOME. Top to bottom: header (pinned), then a scrolling area with four blocks:
+     the hero, Trending This Week, Popular Now, and the three collection tiles.
+     The loading / empty / error states share the scrolling area's space. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- ===== Header: greeting, search, avatar ===== -->
+    <LinearLayout
+        android:id="@+id/homeHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/space_16"
+        android:paddingBottom="@dimen/space_16">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/greetingText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                tools:text="Good evening" />
+
+            <TextView
+                android:id="@+id/userNameText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:text="Movie Lover" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/searchButton"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/home_search_description"
+            android:src="@drawable/ic_search"
+            app:tint="@color/text_primary" />
+
+        <!-- The circle itself is drawn by bg_avatar (40 dp); the view is 48 dp so it is easy to tap -->
+        <TextView
+            android:id="@+id/avatarButton"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="@drawable/bg_avatar"
+            android:clickable="true"
+            android:contentDescription="@string/home_profile_description"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+            tools:text="M" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- ===== Scrolling content (also shows the placeholders while loading) ===== -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/homeScroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/bottom_nav_height"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Block 1: the hero. While loading, only the empty tonal card is visible. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/heroCard"
+                    style="@style/Widget.CineFiles.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/hero_height"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    app:cardCornerRadius="@dimen/radius_xlarge">
+
+                    <FrameLayout
+                        android:id="@+id/heroFilled"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <ImageView
+                            android:id="@+id/heroImage"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:importantForAccessibility="no"
+                            android:scaleType="centerCrop" />
+
+                        <!-- soft scrim so the text below stays readable on any picture -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/hero_scrim_height"
+                            android:layout_gravity="bottom"
+                            android:background="@drawable/scrim_bottom" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_20">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/home_featured_label"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:id="@+id/heroTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_4"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                                tools:text="Blade Runner 2049" />
+
+                            <!-- The one gold button of the screen: it starts the journey -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/heroButton"
+                                style="@style/Widget.CineFiles.Button.Primary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_16"
+                                android:text="@string/home_hero_button" />
+
+                        </LinearLayout>
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Block 2: Trending This Week -->
+                <LinearLayout
+                    android:id="@+id/trendingSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/screen_margin"
+                        android:layout_marginTop="@dimen/space_32"
+                        android:layout_marginEnd="@dimen/screen_margin"
+                        android:layout_marginBottom="@dimen/space_12"
+                        android:text="@string/home_trending_title"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/poster_row_height">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/trendingList"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clipToPadding="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/space_8"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                        <include
+                            android:id="@+id/trendingLoading"
+                            layout="@layout/view_row_loading"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+
+                    </FrameLayout>
+                </LinearLayout>
+
+                <!-- Block 3: Popular Now -->
+                <LinearLayout
+                    android:id="@+id/popularSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/screen_margin"
+                        android:layout_marginTop="@dimen/space_32"
+                        android:layout_marginEnd="@dimen/screen_margin"
+                        android:layout_marginBottom="@dimen/space_12"
+                        android:text="@string/home_popular_title"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/poster_row_height">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/popularList"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clipToPadding="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/space_8"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                        <include
+                            android:id="@+id/popularLoading"
+                            layout="@layout/view_row_loading"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+
+                    </FrameLayout>
+                </LinearLayout>
+
+                <!-- Block 4: collection shortcuts -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginTop="@dimen/space_32"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_12"
+                    android:text="@string/home_collection_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_24"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/tileLiked"
+                        style="@style/Widget.CineFiles.Card.Tile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_16">
+
+                            <ImageView
+                                android:layout_width="@dimen/icon_size"
+                                android:layout_height="@dimen/icon_size"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_heart"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:id="@+id/likedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_12"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                                tools:text="0" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/home_collection_liked"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/tileWatchlist"
+                        style="@style/Widget.CineFiles.Card.Tile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:layout_weight="1">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_16">
+
+                            <ImageView
+                                android:layout_width="@dimen/icon_size"
+                                android:layout_height="@dimen/icon_size"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_bookmark"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:id="@+id/watchlistCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_12"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                                tools:text="0" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/home_collection_watchlist"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/tileWatched"
+                        style="@style/Widget.CineFiles.Card.Tile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:layout_weight="1">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_16">
+
+                            <ImageView
+                                android:layout_width="@dimen/icon_size"
+                                android:layout_height="@dimen/icon_size"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_check"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:id="@+id/watchedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_12"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                                tools:text="0" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/home_collection_watched"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- ===== EMPTY and ERROR states (hidden until needed) ===== -->
+        <include
+            android:id="@+id/stateEmpty"
+            layout="@layout/view_state_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/stateError"
+            layout="@layout/view_state_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+    </FrameLayout>
+</LinearLayout>

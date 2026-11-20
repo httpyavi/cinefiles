@@ -34,6 +34,19 @@
     <dimen name="state_icon_size">48dp</dimen>   <!-- icon in the empty state -->
     <dimen name="state_text_max_width">280dp</dimen>
 
+    <!-- Tab screens: height of the bottom tab bar (without the system navigation-bar inset).
+         A tab screen reserves this much space at its bottom (android:paddingBottom) because the bar
+         floats above the content. -->
+    <dimen name="bottom_nav_height">68dp</dimen>
+
+    <!-- Home screen -->
+    <dimen name="hero_height">260dp</dimen>
+    <dimen name="hero_scrim_height">240dp</dimen>
+    <!-- Poster rows: 112 dp wide, so on most phones three posters fit and a bit of the 4th peeks in,
+         which tells you the row scrolls. The height is 1.5 x the width (posters are 2:3). -->
+    <dimen name="poster_row_width">112dp</dimen>
+    <dimen name="poster_row_height">168dp</dimen>
+
     <!-- Loading-state placeholder shapes -->
     <dimen name="placeholder_heading_width">160dp</dimen>
     <dimen name="placeholder_line_short_width">200dp</dimen>

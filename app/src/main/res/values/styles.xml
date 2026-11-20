@@ -149,4 +149,43 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
+    <!-- Card: a tonal surface block. No border, no shadow. Change the corner with app:cardCornerRadius. -->
+    <style name="Widget.CineFiles.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="cardCornerRadius">@dimen/radius_large</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <!-- A card you can tap: it ripples and shrinks slightly while pressed -->
+    <style name="Widget.CineFiles.Card.Tile">
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Bottom tab bar: tonal surface, quiet gray tabs, gold for the active one -->
+    <style name="Widget.CineFiles.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="labelVisibilityMode">labeled</item>
+        <!-- Material's own minimum is 80 dp. Ours is lower (see bottom_nav_height in dimens.xml). -->
+        <item name="android:minHeight">@dimen/bottom_nav_height</item>
+        <!-- Pin the bar to our surface color with no shadow. (Material 1.13 otherwise picks its own
+             gray from a built-in token plus an elevation tint, which is not in our palette.) -->
+        <item name="android:background">@color/surface</item>
+        <item name="backgroundTint">@color/surface</item>
+        <item name="elevation">0dp</item>
+        <item name="itemIconTint">@color/bottom_nav_item</item>
+        <item name="itemTextColor">@color/bottom_nav_item</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.CineFiles.Caption</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.CineFiles.Caption</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.CineFiles.BottomNavigationIndicator</item>
+        <item name="itemPaddingTop">@dimen/space_8</item>
+        <item name="itemPaddingBottom">@dimen/space_8</item>
+    </style>
+
+    <!-- Material draws a pill behind the active tab. We want none: gold alone says "selected". -->
+    <style name="Widget.CineFiles.BottomNavigationIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+    </style>
+
 </resources>

@@ -13,4 +13,35 @@
     <string name="badge_liked">Liked</string>
     <string name="badge_watchlist">On your watchlist</string>
     <string name="badge_watched">Watched</string>
+
+    <string name="action_back">Back</string>
+
+    <!-- Bottom tab bar -->
+    <string name="nav_home">Home</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_collection">Collection</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Home: header -->
+    <string name="home_user_name">Movie Lover</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_search_description">Search</string>
+    <string name="home_profile_description">Profile</string>
+
+    <!-- Home: hero and sections -->
+    <string name="home_featured_label">Featured today</string>
+    <string name="home_hero_button">Let\'s watch something!</string>
+    <string name="home_trending_title">Trending This Week</string>
+    <string name="home_popular_title">Popular Now</string>
+    <string name="home_collection_title">Your collection</string>
+    <string name="home_collection_liked">Liked</string>
+    <string name="home_collection_watchlist">Watchlist</string>
+    <string name="home_collection_watched">Watched</string>
+
+    <!-- Home: empty state -->
+    <string name="home_empty_title">Nothing to show yet</string>
+    <string name="home_empty_message">Featured and popular movies will appear here.</string>
+    <string name="home_empty_action">Refresh</string>
 </resources>

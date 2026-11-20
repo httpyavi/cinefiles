@@ -1,13 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The map of all screens. Home is where the app starts.
+     The four TAB screens (home, discover, collection, profile) get their ids from res/menu/bottom_nav.xml. -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/designGalleryFragment">
+    app:startDestination="@id/homeFragment">
 
-    <!-- TEMP: the design gallery is the start screen for now. It stops being the start
-         destination when the Home screen is built, and its files are deleted in Batch 8.
-         See TEMP.md. -->
+    <!-- ===== Real screens ===== -->
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.cinefiles.ui.home.HomeFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_home" />
+
+    <!-- ===== TEMP: stand-in screens. Each one is replaced by its real screen in a later batch:
+         change android:name to the new Fragment and delete the arguments. See TEMP.md. ===== -->
+
+    <fragment
+        android:id="@+id/discoverFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/nav_discover"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/nav_discover"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_discover_message"
+            app:argType="reference" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/collectionFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/nav_collection"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/nav_collection"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_collection_message"
+            app:argType="reference" />
+    </fragment>
+
+    <!-- Profile also has a button that opens the Batch 1 design gallery, so it stays reachable -->
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/nav_profile"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_profile_message"
+            app:argType="reference" />
+        <argument
+            android:name="actionText"
+            android:defaultValue="@string/temp_open_gallery"
+            app:argType="reference" />
+        <argument
+            android:name="actionDestination"
+            android:defaultValue="@id/designGalleryFragment"
+            app:argType="reference" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/moodFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/temp_mood_title"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/temp_mood_title"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_mood_message"
+            app:argType="reference" />
+        <argument
+            android:name="showBack"
+            android:defaultValue="true"
+            app:argType="boolean" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/detailsFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/temp_details_title"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/temp_details_title"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_details_message"
+            app:argType="reference" />
+        <argument
+            android:name="showBack"
+            android:defaultValue="true"
+            app:argType="boolean" />
+        <!-- The id of the movie to show. The key must match ARG_MOVIE_ID in NavigationExtensions.kt -->
+        <argument
+            android:name="movieId"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
+    <!-- TEMP: the Batch 1 design gallery. Reachable from the Profile screen. Removed in Batch 8. -->
     <fragment
         android:id="@+id/designGalleryFragment"
         android:name="com.example.cinefiles.ui.gallery.DesignGalleryFragment"

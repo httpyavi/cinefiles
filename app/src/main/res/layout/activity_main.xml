@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The only layout of the activity: a host that shows one screen (Fragment) at a time.
-     Which screens exist, and the first one, is defined in res/navigation/nav_graph.xml -->
-<androidx.fragment.app.FragmentContainerView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The only layout of the activity.
+     - navHost shows one screen (Fragment) at a time; the screens are listed in res/navigation/nav_graph.xml
+     - bottomNav is the tab bar. It FLOATS above the screen (it does not push it up), so screens that are
+       tabs reserve space for it with android:paddingBottom="@dimen/bottom_nav_height".
+       MainActivity slides it away on screens that are not tabs (Mood, Details...). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/navHost"
-    android:name="androidx.navigation.fragment.NavHostFragment"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:defaultNavHost="true"
-    app:navGraph="@navigation/nav_graph" />
+    android:layout_height="match_parent">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/navHost"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/nav_graph" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        style="@style/Widget.CineFiles.BottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:menu="@menu/bottom_nav" />
+
+</FrameLayout>

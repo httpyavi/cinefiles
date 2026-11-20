@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LOADING placeholder for a poster row: three quiet blocks the size of posters (no shimmer, no animation).
+     The third one runs off the screen edge on purpose, like a real row does. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:contentDescription="@string/state_loading"
+    android:importantForAccessibility="yes"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_margin">
+
+    <View
+        android:layout_width="@dimen/poster_row_width"
+        android:layout_height="@dimen/poster_row_height"
+        android:layout_marginEnd="@dimen/space_12"
+        android:background="@drawable/bg_placeholder" />
+
+    <View
+        android:layout_width="@dimen/poster_row_width"
+        android:layout_height="@dimen/poster_row_height"
+        android:layout_marginEnd="@dimen/space_12"
+        android:background="@drawable/bg_placeholder" />
+
+    <View
+        android:layout_width="@dimen/poster_row_width"
+        android:layout_height="@dimen/poster_row_height"
+        android:layout_marginEnd="@dimen/space_12"
+        android:background="@drawable/bg_placeholder" />
+
+</LinearLayout>
