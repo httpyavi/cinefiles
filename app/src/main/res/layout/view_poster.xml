@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contents of PosterView: a 2:3 rounded poster picture plus a small status badge in its top-right corner.
+     Use <com.example.cinefiles.ui.components.PosterView> in layouts (it works as a RecyclerView item too). -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <!-- The surface-colored background is what you see while the real poster is still loading -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/posterImage"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/surface"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Medium" />
+
+    <ImageView
+        android:id="@+id/posterBadge"
+        android:layout_width="@dimen/badge_size"
+        android:layout_height="@dimen/badge_size"
+        android:layout_margin="@dimen/space_8"
+        android:background="@drawable/bg_badge_circle"
+        android:padding="@dimen/badge_padding"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/posterImage"
+        app:layout_constraintTop_toTopOf="@id/posterImage"
+        tools:ignore="ContentDescription"
+        tools:src="@drawable/ic_heart_filled"
+        tools:visibility="visible" />
+
+</merge>

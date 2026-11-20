@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TEMP: one color / radius swatch in the design gallery. Removed in Batch 8 (see TEMP.md). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_columnWeight="1"
+    android:orientation="vertical"
+    android:paddingEnd="@dimen/space_12"
+    android:paddingBottom="@dimen/space_12">
+
+    <View
+        android:id="@+id/swatchColor"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_48"
+        android:background="@drawable/temp_bg_swatch" />
+
+    <TextView
+        android:id="@+id/swatchName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+        android:textColor="@color/text_primary" />
+
+    <TextView
+        android:id="@+id/swatchValue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+
+</LinearLayout>

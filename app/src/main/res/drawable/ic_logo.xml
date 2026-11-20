@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CineFiles logo: a "C" (open on the right) with a play triangle inside it.
+     Drawn on a 108 dp canvas and kept inside the central 66 dp, so the same file works as the
+     splash icon and as the launcher icon foreground. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- the "C" -->
+    <path
+        android:pathData="M70.85,39.86 A22,22 0 1 0 70.85,68.14"
+        android:strokeColor="@color/gold"
+        android:strokeLineCap="round"
+        android:strokeWidth="7" />
+
+    <!-- the play triangle -->
+    <path
+        android:fillColor="@color/gold"
+        android:pathData="M49,45 L49,63 L63,54 Z"
+        android:strokeColor="@color/gold"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+
+</vector>

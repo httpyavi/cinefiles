@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== CineFiles color tokens (dark theme only) =====
+         Never type a hex color in a layout. Always point to one of these names. -->
+
+    <!-- Surfaces: depth comes from these tonal steps, not from borders or shadows -->
+    <color name="background">#111318</color>   <!-- screens -->
+    <color name="surface">#1D2129</color>      <!-- cards, sheets, bars -->
+    <color name="elevated">#262B35</color>     <!-- chips, tonal buttons, dialogs -->
+
+    <!-- Accent: gold means "primary action" or "selected" -->
+    <color name="gold">#E9B96E</color>
+    <color name="on_gold">#1A1408</color>      <!-- text/icons placed on gold -->
+
+    <!-- Text -->
+    <color name="text_primary">#F5F3EF</color>
+    <color name="text_secondary">#9297A2</color>
+
+    <!-- Swipe feedback -->
+    <color name="like_green">#4DBB8A</color>
+    <color name="pass_red">#E46D73</color>
+
+    <!-- ===== Derived tokens (made from the colors above) ===== -->
+    <color name="text_disabled">#61F5F3EF</color>   <!-- text_primary at 38% -->
+    <color name="outline">#4D9297A2</color>         <!-- text_secondary at 30%, only for rare hairlines -->
+
+    <!-- Soft scrim that sits on the bottom of an image so text stays readable.
+         All three are the background color with different transparency. -->
+    <color name="scrim_clear">#00111318</color>     <!-- 0% -->
+    <color name="scrim_mid">#99111318</color>       <!-- 60% -->
+    <color name="scrim_solid">#F2111318</color>     <!-- 95% -->
+
+    <color name="badge_background">#CC111318</color> <!-- 80% background, behind poster badges -->
+
+</resources>

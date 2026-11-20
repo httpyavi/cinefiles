@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- The one and only theme: Material 3 dark, re-colored with the CineFiles tokens.
+         We map our colors onto Material's color "roles" so that any standard Material
+         widget (dialogs, snackbars, bottom nav...) automatically matches the design. -->
+    <style name="Theme.CineFiles" parent="Theme.Material3.Dark.NoActionBar">
+
+        <!-- Gold = primary action / selected -->
+        <item name="colorPrimary">@color/gold</item>
+        <item name="colorOnPrimary">@color/on_gold</item>
+        <item name="colorPrimaryContainer">@color/elevated</item>
+        <item name="colorOnPrimaryContainer">@color/text_primary</item>
+        <item name="colorSecondary">@color/gold</item>
+        <item name="colorOnSecondary">@color/on_gold</item>
+        <!-- "Secondary container" is what tonal buttons use: a quiet elevated tone -->
+        <item name="colorSecondaryContainer">@color/elevated</item>
+        <item name="colorOnSecondaryContainer">@color/text_primary</item>
+        <item name="colorTertiary">@color/like_green</item>
+        <item name="colorOnTertiary">@color/background</item>
+        <item name="colorError">@color/pass_red</item>
+        <item name="colorOnError">@color/background</item>
+
+        <!-- Surfaces -->
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/elevated</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorSurfaceDim">@color/background</item>
+        <item name="colorSurfaceBright">@color/elevated</item>
+        <item name="colorSurfaceContainerLowest">@color/background</item>
+        <item name="colorSurfaceContainerLow">@color/surface</item>
+        <item name="colorSurfaceContainer">@color/surface</item>
+        <item name="colorSurfaceContainerHigh">@color/elevated</item>
+        <item name="colorSurfaceContainerHighest">@color/elevated</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline</item>
+
+        <!-- Snackbars: a dark elevated pill with a gold action (instead of the default light one) -->
+        <item name="colorSurfaceInverse">@color/elevated</item>
+        <item name="colorOnSurfaceInverse">@color/text_primary</item>
+        <item name="colorPrimaryInverse">@color/gold</item>
+
+        <!-- Icons are quiet gray by default; "activated" ones are gold -->
+        <item name="colorControlNormal">@color/text_secondary</item>
+        <item name="colorControlActivated">@color/gold</item>
+
+        <!-- System bars: transparent, drawn behind (edge-to-edge), with light icons -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Text sizes for Material components. The font itself comes from the text appearances
+             (see styles.xml). Do NOT add a theme-wide android:fontFamily here: it would override
+             the font of every text appearance. -->
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.CineFiles.LargeTitle</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.CineFiles.Title</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.CineFiles.Title</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.CineFiles.Headline</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.CineFiles.Button</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.CineFiles.Label</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.CineFiles.Body</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.CineFiles.Button</item>
+
+        <!-- Corner radii for Material components -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.CineFiles.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.CineFiles.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.CineFiles.Large</item>
+
+        <!-- Any MaterialButton without an explicit style becomes the primary button -->
+        <item name="materialButtonStyle">@style/Widget.CineFiles.Button.Primary</item>
+    </style>
+
+    <!-- Only used for the very first moment of app start (the splash screen).
+         MainActivity switches to Theme.CineFiles as soon as the app is ready. -->
+    <style name="Theme.CineFiles.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.CineFiles</item>
+    </style>
+
+</resources>

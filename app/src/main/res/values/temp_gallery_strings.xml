@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TEMP: all texts of the design gallery. Deleted together with the gallery in Batch 8 (see TEMP.md). -->
+<resources>
+    <string name="gallery_title">Design gallery</string>
+    <string name="gallery_intro">A temporary screen for reviewing the CineFiles design system. It is removed before release.</string>
+
+    <string name="gallery_section_colors">Colors</string>
+    <string name="gallery_section_type">Text styles</string>
+    <string name="gallery_section_buttons">Buttons</string>
+    <string name="gallery_section_chips">Chips (tap to select)</string>
+    <string name="gallery_section_round_buttons">Round action buttons</string>
+    <string name="gallery_section_icons">Icons</string>
+    <string name="gallery_section_posters">Posters and status badges (tap a poster to change its badge)</string>
+    <string name="gallery_section_scrim">Image with bottom scrim</string>
+    <string name="gallery_section_radii">Corner radii</string>
+    <string name="gallery_section_states">Loading, empty and error states</string>
+
+    <string name="gallery_text_large_title">Large Title 32</string>
+    <string name="gallery_text_title">Title 24</string>
+    <string name="gallery_text_headline">Headline 18</string>
+    <string name="gallery_text_body">Body 16: movies picked for your mood</string>
+    <string name="gallery_text_callout">Callout 14: 2h 14m · Drama · 2024</string>
+    <string name="gallery_text_caption">Caption 12: secondary information</string>
+
+    <string name="gallery_button_primary">Primary button</string>
+    <string name="gallery_button_tonal">Tonal button</string>
+    <string name="gallery_button_text">Text button</string>
+    <string name="gallery_button_disabled">Disabled button</string>
+
+    <string name="gallery_chip_drama">Drama</string>
+    <string name="gallery_chip_scifi">Sci-Fi</string>
+    <string name="gallery_chip_comedy">Comedy</string>
+    <string name="gallery_chip_thriller">Thriller</string>
+    <string name="gallery_chip_romance">Romance</string>
+    <string name="gallery_chip_animation">Animation</string>
+
+    <string name="gallery_action_pass">Pass</string>
+    <string name="gallery_action_undo">Undo</string>
+    <string name="gallery_action_info">More info</string>
+    <string name="gallery_action_like">Like</string>
+
+    <string name="gallery_poster_description">Sample poster %1$d</string>
+    <string name="gallery_scrim_title">Midnight Harbour</string>
+    <string name="gallery_scrim_subtitle">Drama · 2h 04m</string>
+
+    <string name="gallery_state_loading">Loading</string>
+    <string name="gallery_state_empty">Empty</string>
+    <string name="gallery_state_error">Error</string>
+    <string name="gallery_empty_title">Your watchlist is empty</string>
+    <string name="gallery_empty_message">Movies you save for later will show up here.</string>
+    <string name="gallery_empty_action">Find movies</string>
+
+    <string name="gallery_dp">%1$d dp</string>
+
+    <!-- Shown in a snackbar when something in the gallery is tapped -->
+    <string name="gallery_tapped">%1$s tapped</string>
+</resources>

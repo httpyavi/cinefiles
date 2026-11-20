@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- =====================================================================
+         TYPE
+         The font is named in exactly two places: the two base styles just below.
+         Today it is Android's built-in Roboto ("sans-serif").
+         To switch to Inter later: put the Inter files in res/font/ and change the
+         two android:fontFamily lines to @font/inter_regular and @font/inter_medium.
+         (On Android 7.x, also add the app:fontFamily line with the same value.)
+         ===================================================================== -->
+
+    <style name="TextAppearance.CineFiles.Regular" parent="">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Medium" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- The six sizes of the design system -->
+    <style name="TextAppearance.CineFiles.LargeTitle" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">32sp</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Title" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Headline" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Body" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Callout and Caption are secondary information, so they are gray by default -->
+    <style name="TextAppearance.CineFiles.Callout" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Caption" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <!-- Two helpers for controls: button text (16) and chip / tab label text (14) -->
+    <style name="TextAppearance.CineFiles.Button" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Label" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+
+    <!-- =====================================================================
+         SHAPES: rounded corners from the radius tokens.
+         The theme uses these for Material components; images use them through
+         app:shapeAppearanceOverlay.
+         ===================================================================== -->
+
+    <style name="ShapeAppearance.CineFiles.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_small</item>
+    </style>
+
+    <style name="ShapeAppearance.CineFiles.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_medium</item>
+    </style>
+
+    <style name="ShapeAppearance.CineFiles.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_large</item>
+    </style>
+
+
+    <!-- =====================================================================
+         COMPONENTS
+         Colors for these come from the theme: primary = gold, secondary container = elevated.
+         ===================================================================== -->
+
+    <!-- Primary button: gold pill, 52 dp tall. One per screen, for the main action. -->
+    <style name="Widget.CineFiles.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_pill</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Tonal button: quiet elevated pill, for secondary actions -->
+    <style name="Widget.CineFiles.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_pill</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Text button: just gold text, for tertiary actions -->
+    <style name="Widget.CineFiles.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_pill</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Round action button: icon only (pass, like, undo, info).
+         Give it layout_width/height = @dimen/round_button_size, an app:icon and a contentDescription.
+         Change the icon color with app:iconTint (for example @color/like_green). -->
+    <style name="Widget.CineFiles.RoundActionButton" parent="Widget.Material3.Button.IconButton.Filled.Tonal">
+        <item name="iconSize">@dimen/icon_size</item>
+        <!-- Material's icon-button style has a 4 dp left/right inset; without these two lines
+             the circle would be 8 dp narrower than it is tall -->
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <!-- (56 dp button - 24 dp icon) / 2 = 16 dp on every side, so the icon sits exactly in the middle -->
+        <item name="android:paddingLeft">@dimen/space_16</item>
+        <item name="android:paddingRight">@dimen/space_16</item>
+        <item name="android:paddingTop">@dimen/space_16</item>
+        <item name="android:paddingBottom">@dimen/space_16</item>
+        <item name="iconPadding">0dp</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Selectable chip: elevated pill; gold with dark text when selected -->
+    <style name="Widget.CineFiles.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_background</item>
+        <item name="android:textColor">@color/chip_text</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipMinHeight">@dimen/chip_height</item>
+        <item name="chipCornerRadius">@dimen/radius_pill</item>
+        <item name="chipStartPadding">@dimen/space_8</item>
+        <item name="chipEndPadding">@dimen/space_8</item>
+        <item name="textStartPadding">@dimen/space_8</item>
+        <item name="textEndPadding">@dimen/space_8</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipIconVisible">false</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+</resources>

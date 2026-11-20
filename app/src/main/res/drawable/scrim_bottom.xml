@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft scrim for the bottom of an image (poster, backdrop) so text on top stays readable.
+     Put it in a view stacked above the image, with the same corner shape as the image.
+     Fully clear at the top, solid background color at the bottom. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:centerColor="@color/scrim_mid"
+        android:endColor="@color/scrim_solid"
+        android:startColor="@color/scrim_clear"
+        android:type="linear" />
+</shape>

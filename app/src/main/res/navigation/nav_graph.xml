@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/designGalleryFragment">
+
+    <!-- TEMP: the design gallery is the start screen for now. It stops being the start
+         destination when the Home screen is built, and its files are deleted in Batch 8.
+         See TEMP.md. -->
+    <fragment
+        android:id="@+id/designGalleryFragment"
+        android:name="com.example.cinefiles.ui.gallery.DesignGalleryFragment"
+        android:label="@string/gallery_title"
+        tools:layout="@layout/fragment_design_gallery" />
+
+</navigation>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chip fill: gold when selected, a quiet elevated tone otherwise -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/gold" android:state_checked="true" />
+    <item android:color="@color/elevated" />
+</selector>

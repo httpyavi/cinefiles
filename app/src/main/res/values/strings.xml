@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">CineFiles</string>
+
+    <!-- Screen states: loading / empty / error. Screens can replace the texts from code. -->
+    <string name="state_loading">Loading</string>
+    <string name="state_empty_title">Nothing here yet</string>
+    <string name="state_empty_message">When there is something to show, you will find it here.</string>
+    <string name="state_error_title">Something went wrong</string>
+    <string name="state_error_message">We could not load this. Check your connection and try again.</string>
+    <string name="state_retry">Retry</string>
+
+    <!-- Poster status badges (read out by screen readers) -->
+    <string name="badge_liked">Liked</string>
+    <string name="badge_watchlist">On your watchlist</string>
+    <string name="badge_watched">Watched</string>
+</resources>

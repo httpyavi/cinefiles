@@ -1,0 +1,46 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# --- Added before the first push to GitHub ---
+
+# Android Studio / IntelliJ settings: every developer's IDE creates its own copy
+.idea/
+
+# Kotlin compiler session files
+.kotlin/
+
+# Secrets and signing keys: NEVER commit these (the TMDB token lives in local.properties)
+local.properties
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+.env
+.env.*
+
+# Build outputs
+build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Logs and crash dumps
+*.log
+hs_err_pid*
+
+# OS files
+Thumbs.db

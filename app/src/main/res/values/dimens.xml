@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== Spacing: a 4 dp grid. The name is the size in dp. ===== -->
+    <dimen name="space_4">4dp</dimen>
+    <dimen name="space_8">8dp</dimen>
+    <dimen name="space_12">12dp</dimen>
+    <dimen name="space_16">16dp</dimen>
+    <dimen name="space_20">20dp</dimen>
+    <dimen name="space_24">24dp</dimen>
+    <dimen name="space_32">32dp</dimen>
+    <dimen name="space_40">40dp</dimen>
+    <dimen name="space_48">48dp</dimen>
+
+    <!-- Every screen has 20 dp left/right margins -->
+    <dimen name="screen_margin">20dp</dimen>
+
+    <!-- ===== Corner radii ===== -->
+    <dimen name="radius_small">8dp</dimen>
+    <dimen name="radius_medium">12dp</dimen>   <!-- posters -->
+    <dimen name="radius_large">16dp</dimen>    <!-- cards, images -->
+    <dimen name="radius_xlarge">24dp</dimen>   <!-- sheets -->
+    <dimen name="radius_pill">100dp</dimen>    <!-- bigger than half any control height = a pill -->
+
+    <!-- ===== Sizes ===== -->
+    <dimen name="icon_size">24dp</dimen>
+    <dimen name="icon_size_small">16dp</dimen>   <!-- inside poster badges -->
+    <dimen name="touch_target">48dp</dimen>      <!-- smallest tappable area -->
+    <dimen name="button_height">52dp</dimen>
+    <dimen name="chip_height">40dp</dimen>       <!-- Material adds invisible padding up to 48 dp for touch -->
+    <dimen name="round_button_size">56dp</dimen>
+    <dimen name="badge_size">28dp</dimen>        <!-- poster status badge circle -->
+    <dimen name="badge_padding">6dp</dimen>      <!-- (badge_size - icon_size_small) / 2 -->
+    <dimen name="state_icon_size">48dp</dimen>   <!-- icon in the empty state -->
+    <dimen name="state_text_max_width">280dp</dimen>
+
+    <!-- Loading-state placeholder shapes -->
+    <dimen name="placeholder_heading_width">160dp</dimen>
+    <dimen name="placeholder_line_short_width">200dp</dimen>
+
+</resources>
