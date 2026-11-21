@@ -1,5 +1,6 @@
 package com.example.cinefiles.util
 
+import android.animation.ObjectAnimator
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,3 +29,14 @@ fun View.applySystemBarsPadding(top: Boolean = true, bottom: Boolean = true) {
     }
     ViewCompat.requestApplyInsets(this)
 }
+
+/** A quick left-right wiggle that means "no, you cannot do that" (about a third of a second). */
+fun View.shake() {
+    val distance = SHAKE_DISTANCE_DP * resources.displayMetrics.density
+    ObjectAnimator.ofFloat(this, View.TRANSLATION_X, 0f, -distance, distance, -distance, distance, 0f)
+        .setDuration(SHAKE_DURATION_MS)
+        .start()
+}
+
+private const val SHAKE_DISTANCE_DP = 8f
+private const val SHAKE_DURATION_MS = 320L

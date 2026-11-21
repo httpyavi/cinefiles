@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">CineFiles</string>
 
     <!-- Screen states: loading / empty / error. Screens can replace the texts from code. -->
@@ -44,4 +44,61 @@
     <string name="home_empty_title">Nothing to show yet</string>
     <string name="home_empty_message">Featured and popular movies will appear here.</string>
     <string name="home_empty_action">Refresh</string>
+
+    <!-- The watch flow (Mood, Preferences, Swipe) -->
+    <string name="flow_step_label">Step %1$d of %2$d</string>
+    <string name="action_close">Close</string>
+
+    <!-- Mood screen -->
+    <string name="mood_title">What are you feeling today?</string>
+    <string name="mood_hint">Choose up to three.</string>
+    <!-- "2 of 3 selected" reads the same for any number, so no plural form is needed -->
+    <string name="mood_selected_count" tools:ignore="PluralsCandidate">%1$d of %2$d selected</string>
+    <string name="mood_continue">Continue</string>
+    <string name="mood_limit_reached">You can choose up to three moods.</string>
+
+    <!-- The moods: a name and a one-line hint each (the genre ids live in logic/Moods.kt) -->
+    <string name="mood_happy">Happy / Feel-Good</string>
+    <string name="mood_happy_hint">Light and fun</string>
+    <string name="mood_excited">Excited / Adventurous</string>
+    <string name="mood_excited_hint">Big thrills</string>
+    <string name="mood_romantic">Romantic</string>
+    <string name="mood_romantic_hint">Love stories</string>
+    <string name="mood_scared">Scared / Suspenseful</string>
+    <string name="mood_scared_hint">Pulse-racing</string>
+    <string name="mood_emotional">Emotional</string>
+    <string name="mood_emotional_hint">Big feelings</string>
+    <string name="mood_relaxed">Relaxed</string>
+    <string name="mood_relaxed_hint">Easy and cozy</string>
+    <string name="mood_escape">Escape</string>
+    <string name="mood_escape_hint">Other worlds</string>
+    <string name="mood_mind_bending">Mind-bending</string>
+    <string name="mood_mind_bending_hint">Twisty plots</string>
+    <string name="mood_surprise">Surprise Me</string>
+    <string name="mood_surprise_hint">Let us pick for you</string>
+
+    <!-- Preferences screen -->
+    <string name="pref_title">Make it yours</string>
+    <string name="pref_hint">All optional. Skip anything you like.</string>
+    <string name="pref_skip">Skip</string>
+    <string name="pref_start">Start swiping</string>
+    <string name="pref_section_period">Release period</string>
+    <string name="pref_section_rating">Minimum rating</string>
+    <string name="pref_section_length">Length</string>
+    <string name="pref_section_language">Language</string>
+
+    <string name="pref_any">Any</string>
+    <string name="pref_period_before_2000">Before 2000</string>
+    <string name="pref_period_2000_2014">2000–2014</string>
+    <string name="pref_period_2015_plus">2015+</string>
+    <string name="pref_rating_6">6+</string>
+    <string name="pref_rating_7">7+</string>
+    <string name="pref_rating_8">8+</string>
+    <string name="pref_length_under_90">Under 90 min</string>
+    <string name="pref_length_under_2h">Under 2 hrs</string>
+    <string name="pref_length_over_2h">2 hrs+</string>
+    <string name="pref_language_english">English</string>
+    <string name="pref_language_filipino">Filipino</string>
+    <string name="pref_language_korean">Korean</string>
+    <string name="pref_language_japanese">Japanese</string>
 </resources>

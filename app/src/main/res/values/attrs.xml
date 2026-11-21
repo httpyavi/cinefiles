@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lets a layout say which step the StepIndicatorView shows: app:currentStep="1" -->
+    <declare-styleable name="StepIndicatorView">
+        <attr name="currentStep" format="integer" />
+    </declare-styleable>
+</resources>

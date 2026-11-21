@@ -50,9 +50,9 @@ class TempScreenFragment : Fragment() {
 
         // Details: show which movie was tapped
         val movieId = args.getInt(ARG_MOVIE_ID, 0)
-        binding.tempMovieId.isVisible = movieId != 0
+        binding.tempExtra.isVisible = movieId != 0
         if (movieId != 0) {
-            binding.tempMovieId.text = getString(R.string.temp_movie_id, movieId)
+            binding.tempExtra.text = getString(R.string.temp_movie_id, movieId)
         }
 
         // Profile: an extra button

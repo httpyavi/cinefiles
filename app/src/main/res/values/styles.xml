@@ -164,6 +164,20 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
+    <!-- A mood card: a card that can be "checked". When checked it gets a gold outline and a gold check badge
+         (the badge means selection is never shown by color alone). The checked state is set from code. -->
+    <style name="Widget.CineFiles.Card.Mood">
+        <item name="android:checkable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="strokeColor">@color/mood_card_stroke</item>
+        <item name="strokeWidth">@dimen/mood_card_stroke</item>
+        <item name="checkedIcon">@drawable/ic_check_filled</item>
+        <item name="checkedIconTint">@color/gold</item>
+        <item name="checkedIconSize">@dimen/icon_size</item>
+        <item name="checkedIconMargin">@dimen/space_8</item>
+    </style>
+
     <!-- Bottom tab bar: tonal surface, quiet gray tabs, gold for the active one -->
     <style name="Widget.CineFiles.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="labelVisibilityMode">labeled</item>

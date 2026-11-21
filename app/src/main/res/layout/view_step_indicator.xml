@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contents of StepIndicatorView: three little bars and the words "Step 1 of 3".
+     The bars are decoration; the words are what a screen reader reads. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <View
+        android:id="@+id/segmentOne"
+        android:layout_width="@dimen/step_segment_width"
+        android:layout_height="@dimen/step_segment_height"
+        android:background="@drawable/bg_step_segment"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:id="@+id/segmentTwo"
+        android:layout_width="@dimen/step_segment_width"
+        android:layout_height="@dimen/step_segment_height"
+        android:layout_marginStart="@dimen/space_4"
+        android:background="@drawable/bg_step_segment"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:id="@+id/segmentThree"
+        android:layout_width="@dimen/step_segment_width"
+        android:layout_height="@dimen/step_segment_height"
+        android:layout_marginStart="@dimen/space_4"
+        android:background="@drawable/bg_step_segment"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/stepLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+        tools:text="Step 1 of 3" />
+
+</merge>

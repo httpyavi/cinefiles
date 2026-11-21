@@ -6,12 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.databinding.FragmentHomeBinding
+import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.ImageUrls
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.loadImage
@@ -32,6 +34,9 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: HomeViewModel by viewModels()
+
+    // Shared with the Mood, Preferences and Swipe screens. Home only starts a fresh flow with it.
+    private val watchFlow: WatchFlowViewModel by activityViewModels()
 
     private lateinit var trendingAdapter: PosterRowAdapter
     private lateinit var popularAdapter: PosterRowAdapter
@@ -88,8 +93,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun setUpHero() {
-        // The gold button starts the journey: Home -> Mood
-        binding.heroButton.setOnClickListener { findNavController().openScreen(R.id.moodFragment) }
+        // The gold button starts the journey: Home -> Mood. A new journey starts with nothing chosen.
+        binding.heroButton.setOnClickListener {
+            watchFlow.reset()
+            findNavController().openScreen(R.id.moodFragment)
+        }
     }
 
     private fun setUpPosterRows() {

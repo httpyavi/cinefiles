@@ -5,12 +5,16 @@
     <string name="temp_discover_message">Coming in a later batch.</string>
     <string name="temp_collection_message">Coming in Batch 6.</string>
     <string name="temp_profile_message">Coming in a later batch.</string>
-    <string name="temp_mood_title">Choose your mood</string>
-    <string name="temp_mood_message">Coming in Batch 3.</string>
     <string name="temp_details_title">Movie details</string>
     <string name="temp_details_message">Coming in a later batch.</string>
     <string name="temp_movie_id">Movie id: %1$d</string>
     <string name="temp_open_gallery">Open design gallery</string>
+
+    <!-- The Swipe stand-in (Batch 4): it lists the user's choices from the Mood and Preferences screens -->
+    <string name="temp_swipe_title">Swipe movies</string>
+    <string name="temp_swipe_message">Coming in Batch 4.</string>
+    <string name="temp_swipe_none">none (any)</string>
+    <string name="temp_swipe_summary">Moods: %1$s\nGenre ids: %2$s\nRelease period: %3$s\nMinimum rating: %4$s\nLength: %5$s\nLanguage: %6$s</string>
 
     <!-- Home test modes: long-press the name "Movie Lover" on Home to step through them -->
     <string name="temp_test_normal">Test mode: normal</string>

@@ -45,9 +45,10 @@
             android:maxWidth="@dimen/state_text_max_width"
             android:textAppearance="@style/TextAppearance.CineFiles.Callout" />
 
-        <!-- Only shown when a movie id was passed (Details) -->
+        <!-- An optional extra line, hidden unless a screen fills it: the movie id (Details)
+             or the summary of the user's choices (Swipe stub) -->
         <TextView
-            android:id="@+id/tempMovieId"
+            android:id="@+id/tempExtra"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_16"

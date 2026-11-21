@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One little bar of the step indicator. StepIndicatorView tints it: light when done, dark when still to come. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/text_primary" />
+    <corners android:radius="@dimen/radius_pill" />
+</shape>

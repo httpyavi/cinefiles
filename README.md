@@ -26,11 +26,13 @@ app/src/main/java/com/example/cinefiles/
   MainActivity.kt      The only Activity; hosts the Navigation Component and the bottom tab bar
   ui/                  Screens (Fragments) and reusable views
     home/              HomeFragment, HomeViewModel, HomeState, PosterRowAdapter
-    components/        PosterView (poster + status badge)
+    mood/              MoodFragment, MoodAdapter, PreferencesFragment, WatchFlowViewModel (the shared flow state)
+    swipe/             TEMP swipe stand-in (Batch 4 builds the real one)
+    components/        PosterView (poster + status badge), StepIndicatorView ("Step 1 of 3")
     temp/              TEMP stand-in screens
     gallery/           TEMP design gallery
   data/                Movie, MovieRepository, Retrofit API, Room database (later batches); TEMP SampleData
-  logic/               Plain Kotlin rule logic, no Android code (Greeting.kt)
+  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences). Only resource ids, no screens.
   util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls
 app/src/main/res/
   values/              colors, dimens, styles, themes, strings
@@ -54,6 +56,14 @@ Fragments only show the UI and forward clicks. ViewModels hold screen state. One
 - To add a new screen: add a `<fragment>` to `nav_graph.xml`. To add a tab: also add a menu item and its id to `TAB_SCREEN_IDS`.
 - A tab screen reserves room for the floating bar: `android:paddingBottom="@dimen/bottom_nav_height"` on its scrolling area (plus `clipToPadding="false"`).
 
+## The "watch something" flow (Home → Mood → Preferences → Swipe → Picks)
+
+- **One shared state:** every screen of the flow gets the same `WatchFlowViewModel` with `private val watchFlow: WatchFlowViewModel by activityViewModels()`. It holds the picked moods (`selection`) and the `preferences`. Home calls `watchFlow.reset()` when the gold button starts a new flow.
+- **Moods live in one file:** `logic/Moods.kt` has the nine moods, their TMDB genre ids, icons and tints. Never copy genre ids anywhere else; call `Moods.genreIdsFor(selection.ids)`. To add or change a mood, edit that file and its two strings (`mood_<id>`, `mood_<id>_hint`).
+- **Selection rules** (max three, "Surprise Me" stands alone) are in `logic/MoodSelection.kt` and are unit-tested. The ViewModel only calls them.
+- **Mood photos (Batch 5):** a `MoodCard` has an `imageUrl`. When it is null or the download fails, the card shows its tinted fallback (faint color + icon).
+- **Preferences** are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
+
 ## Design system cheat sheet
 
 Always reuse these. Never type a color, size or text directly in a layout.
@@ -67,7 +77,9 @@ Always reuse these. Never type a color, size or text directly in a layout.
 | Buttons | `@style/Widget.CineFiles.Button.Primary` (gold, one per screen), `.Tonal`, `.Text` |
 | Round icon button | `@style/Widget.CineFiles.RoundActionButton` + `layout_width/height=@dimen/round_button_size`, `app:icon`, `app:iconTint`, **and a `contentDescription`** |
 | Chip | `@style/Widget.CineFiles.Chip` (inside a `ChipGroup`) |
-| Card / tile | `@style/Widget.CineFiles.Card` (tonal block); `Widget.CineFiles.Card.Tile` is the tappable version. Change the corner with `app:cardCornerRadius`. |
+| Card / tile | `@style/Widget.CineFiles.Card` (tonal block); `Widget.CineFiles.Card.Tile` is the tappable version; `Widget.CineFiles.Card.Mood` is a card that can be checked (gold outline + check badge). Change the corner with `app:cardCornerRadius`. |
+| Step indicator | `<com.example.cinefiles.ui.components.StepIndicatorView app:currentStep="1" />` |
+| "No" wiggle | `view.shake()` (from `util/ViewExtensions.kt`) |
 | Poster | `<com.example.cinefiles.ui.components.PosterView>` ; set `badge = PosterBadge.LIKED / WATCHLIST / WATCHED` or `null`. In a horizontal row use `PosterRowAdapter` (`item_poster_row.xml`). |
 | Loading a picture | `imageView.loadImage(ImageUrls.poster(path))` (or `ImageUrls.backdrop(path)`): placeholder, fade-in and size are handled |
 | Image scrim | `@drawable/scrim_bottom` in a view stacked above the image (same corner shape) |
@@ -85,5 +97,6 @@ The font is named in only two styles in `values/styles.xml`: `TextAppearance.Cin
 ## Status
 
 - **Batch 1 (done, approved):** project setup, design system, design gallery (temporary).
-- **Batch 2 (built, waiting for review):** bottom navigation, Home screen, stand-in screens.
+- **Batch 2 (done, approved):** bottom navigation, Home screen, stand-in screens.
+- **Batch 3 (built, waiting for review):** Mood screen, Preferences screen, shared `WatchFlowViewModel`, Swipe stand-in.
 - See `TEMP.md` for everything that is temporary.

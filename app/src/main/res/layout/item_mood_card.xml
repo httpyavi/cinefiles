@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One mood card. Layers, bottom to top:
+       1. moodTint   a faint wash of the mood's color         \  the FALLBACK look: visible whenever
+       2. (the icon, inside layer 5)                          /  there is no photo
+       3. moodImage  the photo (empty until one arrives, so the fallback never looks broken)
+       4. a soft scrim, so the text is readable on any photo
+       5. the icon, the name and the one-line hint, stacked in one column
+     The checked state (gold outline + check badge) comes from the Widget.CineFiles.Card.Mood style.
+
+     Height: at least 104 dp, but the card is as tall as its CONTENT needs. The name always reserves two lines
+     (minLines="2"), so every card has the same height at every font size and the icon never meets the text. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/moodCard"
+    style="@style/Widget.CineFiles.Card.Mood"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/mood_grid_half_gap">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/mood_card_height">
+
+        <View
+            android:id="@+id/moodTint"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no" />
+
+        <ImageView
+            android:id="@+id/moodImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/scrim_bottom"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:padding="@dimen/space_12">
+
+            <!-- Part of the fallback look: MoodAdapter hides it once a photo has loaded -->
+            <ImageView
+                android:id="@+id/moodIcon"
+                android:layout_width="@dimen/mood_icon_size"
+                android:layout_height="@dimen/mood_icon_size"
+                android:importantForAccessibility="no"
+                tools:src="@drawable/ic_mood_happy" />
+
+            <TextView
+                android:id="@+id/moodName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:ellipsize="end"
+                android:gravity="bottom"
+                android:maxLines="2"
+                android:minLines="2"
+                android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                tools:text="Excited / Adventurous" />
+
+            <TextView
+                android:id="@+id/moodHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                tools:text="Big thrills" />
+
+        </LinearLayout>
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>
