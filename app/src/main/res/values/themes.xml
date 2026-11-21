@@ -76,11 +76,16 @@
     </style>
 
     <!-- Only used for the very first moment of app start (the splash screen).
-         MainActivity switches to Theme.CineFiles as soon as the app is ready. -->
+         MainActivity switches to Theme.CineFiles as soon as the app is ready.
+         The whole screen is the logo red, including the status and navigation bars. The system draws no icon
+         (a transparent one): MainActivity puts the real logo on a red layer on top, so it can fade and grow in. -->
     <style name="Theme.CineFiles.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo</item>
+        <item name="windowSplashScreenBackground">@color/accent</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
         <item name="postSplashScreenTheme">@style/Theme.CineFiles</item>
+        <item name="android:statusBarColor">@color/accent</item>
+        <item name="android:navigationBarColor">@color/accent</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 </resources>

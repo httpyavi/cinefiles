@@ -51,6 +51,31 @@ class MainActivity : AppCompatActivity() {
         navController = navHost.navController
 
         setUpTabBar()
+
+        // A new launch shows the red logo screen. A rotation (savedInstanceState != null) does not.
+        playLaunchSplash(isNewLaunch = savedInstanceState == null)
+    }
+
+    /**
+     * The red launch screen: the logo fades in and grows a very little, stays a moment, then the red layer fades
+     * away and Home is there. (The system splash before it is plain red, so there is no flash in between.)
+     */
+    private fun playLaunchSplash(isNewLaunch: Boolean) {
+        val overlay = binding.launchOverlay
+        if (!isNewLaunch) {
+            overlay.isGone = true
+            return
+        }
+
+        val logo = binding.launchLogo
+        logo.alpha = 0f
+        logo.scaleX = LOGO_START_SCALE
+        logo.scaleY = LOGO_START_SCALE
+        logo.animate().alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(LOGO_IN_MS).setInterpolator(DecelerateInterpolator()).start()
+
+        overlay.animate().alpha(0f).setStartDelay(SPLASH_HOLD_MS).setDuration(SPLASH_FADE_MS)
+            .withEndAction { overlay.isGone = true }.start()
     }
 
     private fun setUpTabBar() {
@@ -120,6 +145,12 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val BAR_SLIDE_MS = 220L
+
+        // The launch splash
+        const val LOGO_START_SCALE = 0.92f   // the logo grows from 92% to 100% while it fades in
+        const val LOGO_IN_MS = 450L
+        const val SPLASH_HOLD_MS = 800L      // when the red layer starts to fade away
+        const val SPLASH_FADE_MS = 300L
 
         // The screens that are tabs. Every other screen hides the bar.
         val TAB_SCREEN_IDS = setOf(

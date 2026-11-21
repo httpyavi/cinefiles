@@ -28,4 +28,25 @@
         android:layout_marginBottom="@dimen/bottom_nav_margin_bottom"
         app:menu="@menu/bottom_nav" />
 
+    <!-- The launch splash: a full red layer with the logo in the exact center. MainActivity fades the logo in,
+         waits a moment and fades the layer away. It blocks touches while it is showing. -->
+    <FrameLayout
+        android:id="@+id/launchOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/accent"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/launchLogo"
+            android:layout_width="@dimen/launch_logo_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/cinefiles_logo" />
+
+    </FrameLayout>
+
 </FrameLayout>

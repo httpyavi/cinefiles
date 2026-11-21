@@ -49,6 +49,9 @@
     <dimen name="nav_indicator_width">56dp</dimen>
     <dimen name="nav_indicator_height">32dp</dimen>
 
+    <!-- Launch splash -->
+    <dimen name="launch_logo_width">180dp</dimen>         <!-- the logo on the red launch screen (the height follows its shape) -->
+
     <!-- Home screen -->
     <dimen name="logo_header_width">56dp</dimen>          <!-- the logo in the Home header (the height follows its shape) -->
     <dimen name="cta_height">64dp</dimen>                 <!-- the big "Let's watch something!" button -->
