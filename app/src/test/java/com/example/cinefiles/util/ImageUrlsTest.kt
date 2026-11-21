@@ -12,6 +12,11 @@ class ImageUrlsTest {
     }
 
     @Test
+    fun bigPosterUrlUsesTheLargeSize() {
+        assertEquals("https://image.tmdb.org/t/p/w780/abc.jpg", ImageUrls.bigPoster("/abc.jpg"))
+    }
+
+    @Test
     fun backdropUrlUsesTheWideSize() {
         assertEquals("https://image.tmdb.org/t/p/w780/abc.jpg", ImageUrls.backdrop("/abc.jpg"))
     }
@@ -19,6 +24,7 @@ class ImageUrlsTest {
     @Test
     fun missingPathGivesNoUrl() {
         assertNull(ImageUrls.poster(null))
+        assertNull(ImageUrls.bigPoster(null))
         assertNull(ImageUrls.backdrop(null))
     }
 }

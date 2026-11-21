@@ -29,6 +29,12 @@
         android:label="@string/pref_title"
         tools:layout="@layout/fragment_preferences" />
 
+    <fragment
+        android:id="@+id/swipeFragment"
+        android:name="com.example.cinefiles.ui.swipe.SwipeFragment"
+        android:label="@string/swipe_progress"
+        tools:layout="@layout/fragment_swipe" />
+
     <!-- ===== TEMP: stand-in screens. Each one is replaced by its real screen in a later batch:
          change android:name to the new Fragment and delete the arguments. See TEMP.md. ===== -->
 
@@ -110,12 +116,26 @@
             app:argType="integer" />
     </fragment>
 
-    <!-- TEMP: stand-in for the swipe screen. It is replaced by the real swipe screen in Batch 4. -->
+    <!-- TEMP: stand-in for Your Picks (the real screen is Batch 7). It opens from the "Picks (n)" pill and
+         from "Show my picks" on the swipe screen. -->
     <fragment
-        android:id="@+id/swipeFragment"
-        android:name="com.example.cinefiles.ui.swipe.SwipeFragment"
-        android:label="@string/temp_swipe_title"
-        tools:layout="@layout/fragment_temp_screen" />
+        android:id="@+id/picksFragment"
+        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
+        android:label="@string/temp_picks_title"
+        tools:layout="@layout/fragment_temp_screen">
+        <argument
+            android:name="title"
+            android:defaultValue="@string/temp_picks_title"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            android:defaultValue="@string/temp_picks_message"
+            app:argType="reference" />
+        <argument
+            android:name="showBack"
+            android:defaultValue="true"
+            app:argType="boolean" />
+    </fragment>
 
     <!-- TEMP: the Batch 1 design gallery. Reachable from the Profile screen. Removed in Batch 8. -->
     <fragment

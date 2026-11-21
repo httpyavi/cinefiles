@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contents of SwipeCardView: a full-bleed poster, a soft scrim, the title and the rating / year / genres,
+     and the two stamps (LIKE top-left, PASS top-right) that fade in while the card is dragged.
+     The rounded corners (24 dp) and the shadow are done by SwipeCardView itself. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <!-- surface color shows while the poster is still loading -->
+    <ImageView
+        android:id="@+id/cardPoster"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/surface"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/swipe_scrim_height"
+        android:layout_gravity="bottom"
+        android:background="@drawable/scrim_bottom"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="@dimen/space_20">
+
+        <TextView
+            android:id="@+id/cardTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.CineFiles.Title"
+            tools:text="The Shawshank Redemption" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/cardStar"
+                android:layout_width="@dimen/icon_size_small"
+                android:layout_height="@dimen/icon_size_small"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_star_filled"
+                app:tint="@color/gold" />
+
+            <TextView
+                android:id="@+id/cardRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_4"
+                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                android:textColor="@color/text_primary"
+                tools:text="8.7" />
+
+            <TextView
+                android:id="@+id/cardMeta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_12"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                tools:text="1994 · Drama, Crime" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- The stamps are decoration: their alpha is set from the drag. They start invisible. -->
+    <TextView
+        android:id="@+id/stampLike"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="@dimen/space_24"
+        android:background="@drawable/bg_stamp_like"
+        android:importantForAccessibility="no"
+        android:paddingStart="@dimen/space_12"
+        android:paddingTop="@dimen/space_4"
+        android:paddingEnd="@dimen/space_12"
+        android:paddingBottom="@dimen/space_4"
+        android:text="@string/swipe_stamp_like"
+        android:textAppearance="@style/TextAppearance.CineFiles.Stamp"
+        android:textColor="@color/like_green" />
+
+    <TextView
+        android:id="@+id/stampPass"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="@dimen/space_24"
+        android:background="@drawable/bg_stamp_pass"
+        android:importantForAccessibility="no"
+        android:paddingStart="@dimen/space_12"
+        android:paddingTop="@dimen/space_4"
+        android:paddingEnd="@dimen/space_12"
+        android:paddingBottom="@dimen/space_4"
+        android:text="@string/swipe_stamp_pass"
+        android:textAppearance="@style/TextAppearance.CineFiles.Stamp"
+        android:textColor="@color/pass_red" />
+
+    <!-- A flat surface-colored sheet over the whole card. A card waiting BEHIND the top card is fully covered
+         by it (so it reads as a quiet tonal card); the sheet fades away as the card comes to the front. -->
+    <View
+        android:id="@+id/cardDim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/surface"
+        android:importantForAccessibility="no" />
+
+</merge>

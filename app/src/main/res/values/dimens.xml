@@ -55,6 +55,16 @@
     <dimen name="mood_grid_half_gap">6dp</dimen>         <!-- each card has 6 dp around it, so cards are 12 dp apart -->
     <dimen name="mood_grid_padding">14dp</dimen>         <!-- 20 dp screen margin minus the 6 dp half gap -->
 
+    <!-- Swipe screen -->
+    <dimen name="swipe_card_elevation">12dp</dimen>       <!-- the soft shadow of the TOP card only -->
+    <dimen name="swipe_next_card_offset">24dp</dimen>     <!-- the card behind sits this much lower -->
+    <dimen name="swipe_scrim_height">240dp</dimen>
+    <dimen name="swipe_progress_height">4dp</dimen>
+    <dimen name="swipe_stamp_stroke">3dp</dimen>
+    <dimen name="swipe_fling_velocity">600dp</dimen>      <!-- a flick faster than 600 dp per second counts as a swipe -->
+    <dimen name="icon_size_large">32dp</dimen>
+    <dimen name="round_button_large_size">72dp</dimen>    <!-- Pass and Like -->
+
     <!-- Step indicator (the little "Step 1 of 3" bars) -->
     <dimen name="step_segment_width">20dp</dimen>
     <dimen name="step_segment_height">4dp</dimen>

@@ -101,4 +101,44 @@
     <string name="pref_language_filipino">Filipino</string>
     <string name="pref_language_korean">Korean</string>
     <string name="pref_language_japanese">Japanese</string>
+
+    <!-- One-word mood names, for small places like the caption on the swipe screen -->
+    <string name="mood_happy_short">Happy</string>
+    <string name="mood_excited_short">Excited</string>
+    <string name="mood_romantic_short">Romantic</string>
+    <string name="mood_scared_short">Scared</string>
+    <string name="mood_emotional_short">Emotional</string>
+    <string name="mood_relaxed_short">Relaxed</string>
+    <string name="mood_escape_short">Escape</string>
+    <string name="mood_mind_bending_short">Mind-bending</string>
+    <string name="mood_surprise_short">Surprise Me</string>
+
+    <!-- Swipe screen -->
+    <string name="swipe_progress">%1$d of %2$d</string>
+    <string name="swipe_picks_pill">Picks (%1$d)</string>
+    <string name="swipe_undo">Undo</string>
+    <string name="swipe_pass">Pass</string>
+    <string name="swipe_like">Like</string>
+    <string name="swipe_info">Movie details</string>
+    <string name="swipe_stamp_like">LIKE</string>
+    <string name="swipe_stamp_pass">PASS</string>
+    <string name="swipe_rating_description">Rated %1$s out of 10</string>
+
+    <!-- Swipe screen: end of the deck -->
+    <string name="swipe_end_title">You\'ve seen them all</string>
+    <plurals name="swipe_end_liked">
+        <item quantity="one">You liked %1$d movie.</item>
+        <item quantity="other">You liked %1$d movies.</item>
+    </plurals>
+    <string name="swipe_end_show_picks">Show my picks</string>
+    <string name="swipe_end_keep_swiping">Keep swiping</string>
+    <string name="swipe_end_zero_title">Nothing caught your eye?</string>
+    <string name="swipe_end_zero_message">Try another batch of cards, or pick a different mood.</string>
+    <string name="swipe_end_try_new_cards">Try new cards</string>
+    <string name="swipe_end_change_mood">Change mood</string>
+
+    <!-- Swipe screen: nothing to swipe -->
+    <string name="swipe_empty_title">No movies for this mix</string>
+    <string name="swipe_empty_message">Try a different mood or other preferences.</string>
+    <string name="swipe_empty_action">Change mood</string>
 </resources>

@@ -48,6 +48,12 @@
         <item name="android:textColor">@color/text_secondary</item>
     </style>
 
+    <!-- The LIKE / PASS stamp on a swipe card: small capital letters, a little spaced out -->
+    <style name="TextAppearance.CineFiles.Stamp" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">20sp</item>
+        <item name="android:letterSpacing">0.12</item>
+    </style>
+
     <!-- Two helpers for controls: button text (16) and chip / tab label text (14) -->
     <style name="TextAppearance.CineFiles.Button" parent="TextAppearance.CineFiles.Medium">
         <item name="android:textSize">16sp</item>
@@ -130,6 +136,16 @@
         <item name="android:paddingBottom">@dimen/space_16</item>
         <item name="iconPadding">0dp</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- The big version (72 dp) for the main actions, Pass and Like.
+         Use layout_width/height = @dimen/round_button_large_size. (72 dp - 32 dp icon) / 2 = 20 dp padding. -->
+    <style name="Widget.CineFiles.RoundActionButton.Large">
+        <item name="iconSize">@dimen/icon_size_large</item>
+        <item name="android:paddingLeft">@dimen/space_20</item>
+        <item name="android:paddingRight">@dimen/space_20</item>
+        <item name="android:paddingTop">@dimen/space_20</item>
+        <item name="android:paddingBottom">@dimen/space_20</item>
     </style>
 
     <!-- Selectable chip: elevated pill; gold with dark text when selected -->

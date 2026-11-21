@@ -27,13 +27,13 @@ app/src/main/java/com/example/cinefiles/
   ui/                  Screens (Fragments) and reusable views
     home/              HomeFragment, HomeViewModel, HomeState, PosterRowAdapter
     mood/              MoodFragment, MoodAdapter, PreferencesFragment, WatchFlowViewModel (the shared flow state)
-    swipe/             TEMP swipe stand-in (Batch 4 builds the real one)
+    swipe/             SwipeFragment, SwipeViewModel, SwipeDeckView (touch + animation), SwipeCardView (one card)
     components/        PosterView (poster + status badge), StepIndicatorView ("Step 1 of 3")
     temp/              TEMP stand-in screens
     gallery/           TEMP design gallery
   data/                Movie, MovieRepository, Retrofit API, Room database (later batches); TEMP SampleData
-  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences). Only resource ids, no screens.
-  util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls
+  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences, SwipeDeck, SwipeGesture). Only resource ids, no screens.
+  util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls, TestMode (TEMP)
 app/src/main/res/
   values/              colors, dimens, styles, themes, strings
   drawable/            icons (ic_*), scrim, shapes
@@ -63,6 +63,15 @@ Fragments only show the UI and forward clicks. ViewModels hold screen state. One
 - **Selection rules** (max three, "Surprise Me" stands alone) are in `logic/MoodSelection.kt` and are unit-tested. The ViewModel only calls them.
 - **Mood photos (Batch 5):** a `MoodCard` has an `imageUrl`. When it is null or the download fails, the card shows its tinted fallback (faint color + icon).
 - **Preferences** are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
+
+## The swipe deck (Batch 4)
+
+- **Who does what:** `SwipeFragment` only shows things and forwards clicks. `SwipeViewModel` holds the state (a `SwipeDeck`). `logic/SwipeDeck.kt` is the plain-Kotlin deck: cards plus a history of swipes, and the position, the liked list and Undo are all worked out from that history, so they can never disagree. `logic/SwipeGesture.kt` is the rule for "does this drag count as a swipe?" (past 35% of the card width, or a flick faster than 600 dp/s). Both are unit-tested.
+- **`SwipeDeckView`** owns three reusable `SwipeCardView`s (top, next, and one hidden behind them) and does the touch handling and the animations with only `MotionEvent`, `VelocityTracker` and `ViewPropertyAnimator`. It never knows the movies: the screen calls `setCards(top, second, third)` after every change.
+- **The buttons and the finger do the same thing:** `swipeTop(direction)` flies the top card away; when it lands the deck calls `listener.onSwiped(...)`, the ViewModel updates, and the screen calls `setCards` again. Undo is `bringBack(...)`.
+- **While a card is moving, touches and taps are ignored** (`isBusy`), so quick tapping can never skip or double-count a card.
+- **Tuning the feel:** the numbers (scale of the card behind, flight time, overshoot, rotation) are constants at the bottom of `SwipeDeckView.kt`; the fling speed and card offset are in `dimens.xml` (`swipe_*`).
+- **Testing gestures:** `SwipeDeckViewTest` (in `androidTest`) sends real `MotionEvent`s with exact timestamps. `adb shell input swipe` cannot be used for flicks: on emulators it gives too few samples for a speed.
 
 ## Design system cheat sheet
 
@@ -98,5 +107,6 @@ The font is named in only two styles in `values/styles.xml`: `TextAppearance.Cin
 
 - **Batch 1 (done, approved):** project setup, design system, design gallery (temporary).
 - **Batch 2 (done, approved):** bottom navigation, Home screen, stand-in screens.
-- **Batch 3 (built, waiting for review):** Mood screen, Preferences screen, shared `WatchFlowViewModel`, Swipe stand-in.
+- **Batch 3 (done, approved):** Mood screen, Preferences screen, shared `WatchFlowViewModel`.
+- **Batch 4 (built, waiting for review):** Tinder-style swipe deck (gestures, buttons, Undo, end-of-deck states) on sample cards.
 - See `TEMP.md` for everything that is temporary.

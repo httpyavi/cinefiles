@@ -33,6 +33,10 @@
 
     <color name="badge_background">#CC111318</color> <!-- 80% background, behind poster badges -->
 
+    <!-- Faint backgrounds for the Pass and Like buttons: the red / green at 16% -->
+    <color name="pass_red_tint">#29E46D73</color>
+    <color name="like_green_tint">#294DBB8A</color>
+
     <!-- Mood tints: one faint hue per mood. They are ONLY used as a faint wash (and for the icon) on a
          mood card that has no photo. Real photos replace them in Batch 5. -->
     <color name="mood_tint_happy">#F2C75C</color>

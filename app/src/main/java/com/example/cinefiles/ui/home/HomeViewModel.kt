@@ -1,7 +1,6 @@
 package com.example.cinefiles.ui.home
 
 import android.app.Application
-import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -10,20 +9,11 @@ import com.example.cinefiles.R
 import com.example.cinefiles.data.SampleData
 import com.example.cinefiles.logic.DayPart
 import com.example.cinefiles.logic.dayPartForHour
+import com.example.cinefiles.util.TestMode
 import java.util.Calendar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-// TEMP: ways to force the Home screen into each of its states, so loading / error / empty can be
-// tested on a phone. Long-press the name "Movie Lover" on Home to step to the next mode.
-// Removed in Batch 5, when Home has real loading and errors (see TEMP.md).
-enum class HomeTestMode(@StringRes val label: Int) {
-    NORMAL(R.string.temp_test_normal),
-    LOADING_FOREVER(R.string.temp_test_loading),
-    FAIL_ONCE(R.string.temp_test_error), // fails the next load; Retry then works
-    EMPTY(R.string.temp_test_empty)
-}
 
 /**
  * Holds what the Home screen shows. It survives screen rotation and tab switches, so the movies
@@ -48,9 +38,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private var loadJob: Job? = null
 
-    // TEMP: see HomeTestMode. testMode is the mode picked by long-press; failNextLoad makes
+    // TEMP: see TestMode. testMode is the mode picked by long-press; failNextLoad makes
     // the FAIL_ONCE mode fail exactly one load, so that Retry can then succeed.
-    private var testMode = HomeTestMode.NORMAL
+    private var testMode = TestMode.NORMAL
     private var failNextLoad = false
 
     init {
@@ -83,9 +73,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 popular = SampleData.popular
             )
             when (testMode) {
-                HomeTestMode.NORMAL -> _state.value = content
-                HomeTestMode.LOADING_FOREVER -> Unit // stay on Loading
-                HomeTestMode.FAIL_ONCE -> {
+                TestMode.NORMAL -> _state.value = content
+                TestMode.LOADING_FOREVER -> Unit // stay on Loading
+                TestMode.FAIL_ONCE -> {
                     if (failNextLoad) {
                         failNextLoad = false
                         _state.value = HomeState.Error
@@ -93,16 +83,16 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                         _state.value = content // this is what Retry gets
                     }
                 }
-                HomeTestMode.EMPTY -> _state.value = HomeState.Empty
+                TestMode.EMPTY -> _state.value = HomeState.Empty
             }
         }
     }
 
     // TEMP: step to the next test mode, reload, and say which mode is now active.
-    fun nextTestMode(): HomeTestMode {
-        val modes = HomeTestMode.values()
+    fun nextTestMode(): TestMode {
+        val modes = TestMode.values()
         testMode = modes[(testMode.ordinal + 1) % modes.size]
-        failNextLoad = testMode == HomeTestMode.FAIL_ONCE
+        failNextLoad = testMode == TestMode.FAIL_ONCE
         load()
         return testMode
     }
