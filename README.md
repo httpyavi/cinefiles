@@ -26,14 +26,15 @@ app/src/main/java/com/example/cinefiles/
   MainActivity.kt      The only Activity; hosts the Navigation Component and the bottom tab bar
   ui/                  Screens (Fragments) and reusable views
     home/              HomeFragment, HomeViewModel, HomeState, PosterRowAdapter
-    mood/              MoodFragment, MoodAdapter, PreferencesFragment, WatchFlowViewModel (the shared flow state)
+    mood/              MoodFragment, MoodFaceView (the animated face), MoodSliderView, MoodSpectrum, PreferencesFragment, WatchFlowViewModel (the shared flow state)
     swipe/             SwipeFragment, SwipeViewModel, SwipeDeckView (touch + animation), SwipeCardView (one card)
-    components/        PosterView (poster + status badge), StepIndicatorView ("Step 1 of 3")
+    profile/           ProfileFragment, ProfileViewModel, AchievementAdapter
+    components/        PosterView, StepIndicatorView, AmbientGlowView (the colored light behind a screen), AchievementBadgeView
     temp/              TEMP stand-in screens
     gallery/           TEMP design gallery
-  data/                Movie, MovieRepository, Retrofit API, Room database (later batches); TEMP SampleData
-  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences, SwipeDeck, SwipeGesture). Only resource ids, no screens.
-  util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls, TestMode (TEMP)
+  data/                Movie, AchievementTracker, MovieRepository, Retrofit API, Room database (later batches); TEMP SampleData
+  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences, SwipeDeck, SwipeGesture, Discovery, Achievements, PosterColor). Only resource ids, no screens.
+  util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls, PosterTint, Event, TestMode (TEMP)
 app/src/main/res/
   values/              colors, dimens, styles, themes, strings
   drawable/            icons (ic_*), scrim, shapes
@@ -58,20 +59,29 @@ Fragments only show the UI and forward clicks. ViewModels hold screen state. One
 
 ## The "watch something" flow (Home → Mood → Preferences → Swipe → Picks)
 
-- **One shared state:** every screen of the flow gets the same `WatchFlowViewModel` with `private val watchFlow: WatchFlowViewModel by activityViewModels()`. It holds the picked moods (`selection`) and the `preferences`. Home calls `watchFlow.reset()` when the gold button starts a new flow.
-- **Moods live in one file:** `logic/Moods.kt` has the nine moods, their TMDB genre ids, icons and tints. Never copy genre ids anywhere else; call `Moods.genreIdsFor(selection.ids)`. To add or change a mood, edit that file and its two strings (`mood_<id>`, `mood_<id>_hint`).
+- **One shared state:** every screen of the flow gets the same `WatchFlowViewModel` with `private val watchFlow: WatchFlowViewModel by activityViewModels()`. It holds the picked moods (`selection`), the `preferences` and where the mood slider is. Home calls `watchFlow.reset()` when the red button starts a new flow.
+- **Moods live in one file:** `logic/Moods.kt` has the nine moods, their TMDB genre ids and colors. Never copy genre ids anywhere else; call `Moods.genreIdsFor(selection.ids)`. `Moods.spectrum` is the order on the Mood screen's slider. To add or change a mood, edit that file, its strings (`mood_<id>`, `_short`, `_hint`, `_line`), its color (`mood_tint_<id>`) and its face pose (`MoodFaceView.poses`).
+- **The Mood screen:** drag the slider (`MoodSliderView`) and the face (`MoodFaceView`) changes with it; the light behind (`AmbientGlowView`) takes the mood's color. Tap the face, or the pill under the name, to add the mood to your mix. The face is drawn with Canvas shapes: each mood is one list of numbers (a "pose": eye shape, brows, mouth, blush, tears...) and the numbers are blended between two moods while you drag, so nothing is swapped.
 - **Selection rules** (max three, "Surprise Me" stands alone) are in `logic/MoodSelection.kt` and are unit-tested. The ViewModel only calls them.
-- **Mood photos (Batch 5):** a `MoodCard` has an `imageUrl`. When it is null or the download fails, the card shows its tinted fallback (faint color + icon).
 - **Preferences** are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
 
-## The swipe deck (Batch 4)
+## The swipe deck (Batch 4, and the design pass)
 
 - **Who does what:** `SwipeFragment` only shows things and forwards clicks. `SwipeViewModel` holds the state (a `SwipeDeck`). `logic/SwipeDeck.kt` is the plain-Kotlin deck: cards plus a history of swipes, and the position, the liked list and Undo are all worked out from that history, so they can never disagree. `logic/SwipeGesture.kt` is the rule for "does this drag count as a swipe?" (past 35% of the card width, or a flick faster than 600 dp/s). Both are unit-tested.
+- **Which movies come up:** `logic/Discovery.kt`. The deck is a MIX of five kinds (what fits your mood, top rated, hidden gems, trending, popular), taken in turns, each movie once, skipping movies already swiped. If your mood and preferences fit too few movies, the search is loosened one step at a time (language, length, release period, rating, genres) and those cards are labelled "Something different". Today the questions are answered by `SampleData.discover`; in Batch 5 `SwipeViewModel.nextPicks` sends the same `DiscoveryRequest`s to `MovieRepository`.
 - **`SwipeDeckView`** owns three reusable `SwipeCardView`s (top, next, and one hidden behind them) and does the touch handling and the animations with only `MotionEvent`, `VelocityTracker` and `ViewPropertyAnimator`. It never knows the movies: the screen calls `setCards(top, second, third)` after every change.
+- **The light behind the cards:** `AmbientGlowView` takes the color of the poster on top (`util/PosterTint.kt` + `logic/PosterColor.kt`: a tiny copy of the poster is loaded through Glide and its pixels are averaged; no library), leans red while a card is dragged toward "like" and cool slate toward "pass".
+- **Like / pass feedback:** while a card is dragged, `SwipeCardView.setFeedback(like, pass)` fades in a see-through red (right) or slate (left) veil and grows a heart or X in the middle, both following the distance; at rest the poster is completely clear.
 - **The buttons and the finger do the same thing:** `swipeTop(direction)` flies the top card away; when it lands the deck calls `listener.onSwiped(...)`, the ViewModel updates, and the screen calls `setCards` again. Undo is `bringBack(...)`.
 - **While a card is moving, touches and taps are ignored** (`isBusy`), so quick tapping can never skip or double-count a card.
 - **Tuning the feel:** the numbers (scale of the card behind, flight time, overshoot, rotation) are constants at the bottom of `SwipeDeckView.kt`; the fling speed and card offset are in `dimens.xml` (`swipe_*`).
 - **Testing gestures:** `SwipeDeckViewTest` (in `androidTest`) sends real `MotionEvent`s with exact timestamps. `adb shell input swipe` cannot be used for flicks: on emulators it gives too few samples for a speed.
+
+## Achievements
+
+- **The rules** are in `logic/Achievements.kt` (nine badges, each with a goal) and work from one summary, `AchievementStats`. `data/AchievementTracker.kt` updates it after every swipe (and every Undo, so liking, undoing and liking again does not count twice), remembers which badges are earned (they are never taken back) and says which ones a swipe just earned. There is one tracker for the app: `(application as CineFilesApp).achievements`.
+- **Where you see them:** a slim glass banner slides in on the swipe screen for a moment when a badge is earned (tap it to send it away), and the Profile tab shows all badges with progress rings, a "Next up" panel, and a shine animation the first time you look at a newly earned badge.
+- **Adding a badge:** add an id and a goal in `Achievements.all`, a counter in `AchievementStats` if it needs one (and in `AchievementTracker.read/write`), its name and description strings, and an icon in `res/drawable`.
 
 ## Design system cheat sheet
 
@@ -82,22 +92,22 @@ Always reuse these. Never type a color, size or text directly in a layout.
 | Colors | `@color/background`, `surface`, `elevated`, `gold`, `on_gold`, `text_primary`, `text_secondary`, `like_green`, `pass_red` (see `values/colors.xml`) |
 | Spacing | `@dimen/space_4 … space_48` (4 dp grid), screen sides: `@dimen/screen_margin` (20 dp) |
 | Corner radius | `@dimen/radius_small/medium/large/xlarge/pill` = 8 / 12 / 16 / 24 dp / pill. Images: `app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Medium"` (or `.Large`, `.Small`) |
-| Text | `@style/TextAppearance.CineFiles.LargeTitle` (32), `.Title` (24), `.Headline` (18), `.Body` (16), `.Callout` (14, gray), `.Caption` (12, gray). Controls: `.Button` (16), `.Label` (14) |
-| Buttons | `@style/Widget.CineFiles.Button.Primary` (gold, one per screen), `.Tonal`, `.Text` |
-| Round icon button | `@style/Widget.CineFiles.RoundActionButton` + `layout_width/height=@dimen/round_button_size`, `app:icon`, `app:iconTint`, **and a `contentDescription`** |
-| Chip | `@style/Widget.CineFiles.Chip` (inside a `ChipGroup`) |
-| Card / tile | `@style/Widget.CineFiles.Card` (tonal block); `Widget.CineFiles.Card.Tile` is the tappable version; `Widget.CineFiles.Card.Mood` is a card that can be checked (gold outline + check badge). Change the corner with `app:cardCornerRadius`. |
+| Text | `@style/TextAppearance.CineFiles.Display` (40), `.LargeTitle` (32), `.Title` (24), `.Headline` (18), `.Body` (16), `.Callout` (14, gray), `.Caption` (12, gray), `.Eyebrow` (11, spaced capitals: put it above a title). Controls: `.Button` (16), `.Label` (14) |
+| Buttons | `@style/Widget.CineFiles.Button.Primary` (red with a soft glow, one per screen), `.Tonal` (glass), `.Text`. Do not set `cornerRadius`: Material buttons are already pills, and an absolute radius turns the glow into a rectangle. A container of a glowing button needs `clipToPadding="false"`. |
+| Round icon button | `@style/Widget.CineFiles.RoundActionButton` (glass) + `layout_width/height=@dimen/round_button_size`, `app:icon`, `app:iconTint`, **and a `contentDescription`**. Variants: `.Large.Like` (red), `.Large.Pass` (slate icon) |
+| Chip | `@style/Widget.CineFiles.Chip` (inside a `ChipGroup`): glass, with a red edge when selected |
+| Card / tile | `@style/Widget.CineFiles.Card` (a quiet surface block, use sparingly); `.Card.Glass`. Change the corner with `app:cardCornerRadius`. |
 | Step indicator | `<com.example.cinefiles.ui.components.StepIndicatorView app:currentStep="1" />` |
 | "No" wiggle | `view.shake()` (from `util/ViewExtensions.kt`) |
 | Poster | `<com.example.cinefiles.ui.components.PosterView>` ; set `badge = PosterBadge.LIKED / WATCHLIST / WATCHED` or `null`. In a horizontal row use `PosterRowAdapter` (`item_poster_row.xml`). |
 | Loading a picture | `imageView.loadImage(ImageUrls.poster(path))` (or `ImageUrls.backdrop(path)`): placeholder, fade-in and size are handled |
 | Image scrim | `@drawable/scrim_bottom` in a view stacked above the image (same corner shape) |
-| Icons | `@drawable/ic_home`, `ic_discover`, `ic_bookmark`, `ic_profile`, `ic_heart`, `ic_check`, `ic_star` (+ `_filled` versions for selected states), `ic_search`, `ic_close`, `ic_back`, `ic_undo`, `ic_info`, `ic_play`, `ic_filter`. Tint with `app:tint`. |
+| Icons | `@drawable/ic_home`, `ic_discover`, `ic_bookmark`, `ic_profile`, `ic_heart`, `ic_check`, `ic_star` (+ `_filled` versions for selected states), `ic_search`, `ic_close`, `ic_back`, `ic_add`, `ic_undo`, `ic_info`, `ic_play`, `ic_filter`, and the badge icons `ic_film`, `ic_moon`, `ic_layers`, `ic_sparkle`, `ic_drop`, `ic_heart_broken`. Tint with `app:tint`. |
 | Screen states | `view_state_empty` (change icon / texts / button from code), `view_state_error` (set what Retry does), `view_state_loading` (full-screen placeholders), `view_row_loading` (placeholders for a poster row) |
 | Press animation | `android:stateListAnimator="@animator/press_scale"` (already built into buttons, chips, tiles and `PosterView`) |
 | Edge-to-edge | call `rootView.applySystemBarsPadding()` (from `util/ViewExtensions.kt`) on a screen's root |
 
-Gold means "primary action or selected". Depth comes from the tonal surfaces (`background` → `surface` → `elevated`), not from borders or shadows.
+Red means "primary action, selected or liked": use it for the one thing that matters on a screen. Depth comes from pictures, light (`AmbientGlowView`) and glass, not from borders and boxes.
 
 ### Changing the font
 
@@ -108,5 +118,6 @@ The font is named in only two styles in `values/styles.xml`: `TextAppearance.Cin
 - **Batch 1 (done, approved):** project setup, design system, design gallery (temporary).
 - **Batch 2 (done, approved):** bottom navigation, Home screen, stand-in screens.
 - **Batch 3 (done, approved):** Mood screen, Preferences screen, shared `WatchFlowViewModel`.
-- **Batch 4 (built, waiting for review):** Tinder-style swipe deck (gestures, buttons, Undo, end-of-deck states) on sample cards.
+- **Batch 4 (done, committed):** Tinder-style swipe deck (gestures, buttons, Undo, end-of-deck states) on sample cards.
+- **Design pass (built, waiting for review):** new look (red accent, glass, light), animated mood face + slider, discovery mix, poster-colored light, achievements and a real Profile. Batch 5 (TMDB) has not started.
 - See `TEMP.md` for everything that is temporary.

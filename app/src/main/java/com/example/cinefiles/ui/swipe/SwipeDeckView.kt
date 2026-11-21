@@ -47,9 +47,24 @@ class SwipeDeckView @JvmOverloads constructor(
 
         /** The top card was tapped, without dragging. */
         fun onCardTapped()
+
+        /**
+         * The card is being dragged. [progress] is -1f (far left, a pass is certain) ... 0f ... +1f (far right,
+         * a like is certain). The screen uses it to turn its background light up and down.
+         */
+        fun onDrag(progress: Float) = Unit
+
+        /** The finger let go and the card is going back to the middle (no swipe). */
+        fun onDragCancelled() = Unit
+
+        /** The card has started to fly away (by finger or by button), BEFORE it has landed. */
+        fun onCardLeaving(direction: SwipeDirection) = Unit
     }
 
     var listener: Listener? = null
+
+    /** Gives the small line shown above a card's title ("Top rated"...). The screen sets it once. */
+    var eyebrowFor: (Movie) -> String? = { null }
 
     /** True while a card is flying away, springing back or coming back. Everything is ignored then. */
     var isBusy: Boolean = false
@@ -125,7 +140,7 @@ class SwipeDeckView @JvmOverloads constructor(
             if (order[role] != null) continue
             val card = unused.removeAt(0)
             val movie = wanted[role]
-            if (movie != null) card.bind(movie) else card.clear()
+            if (movie != null) card.bind(movie, eyebrowFor(movie)) else card.clear()
             order[role] = card
         }
         applyOrder(order.requireNoNulls().asList())
@@ -154,10 +169,10 @@ class SwipeDeckView @JvmOverloads constructor(
         val sign = if (from == SwipeDirection.LIKE) 1f else -1f
         val offscreen = sign * (width + incoming.width)
 
-        // The returning card starts off-screen, on the side where it left, still showing its stamp
+        // The returning card starts off-screen, on the side where it left, still showing its like / pass feedback
         incoming.animate().cancel()
         incoming.cancelChildAnimations()
-        incoming.bind(movie)
+        incoming.bind(movie, eyebrowFor(movie))
         incoming.setCover(0f) // it comes back as the top card: poster fully visible
         incoming.alpha = 1f
         incoming.scaleX = 1f
@@ -166,12 +181,12 @@ class SwipeDeckView @JvmOverloads constructor(
         incoming.translationX = offscreen
         incoming.rotation = rotationFor(offscreen)
         incoming.elevation = topCardElevation
-        incoming.setStamps(
-            likeAlpha = if (from == SwipeDirection.LIKE) 1f else 0f,
-            passAlpha = if (from == SwipeDirection.PASS) 1f else 0f
+        incoming.setFeedback(
+            like = if (from == SwipeDirection.LIKE) 1f else 0f,
+            pass = if (from == SwipeDirection.PASS) 1f else 0f
         )
         incoming.bringToFront()
-        incoming.fadeOutStamps(COME_BACK_MS)
+        incoming.fadeOutFeedback(COME_BACK_MS)
 
         // The cards that were in front step back one place
         if (oldTop.movieId != null) {
@@ -269,9 +284,11 @@ class SwipeDeckView @JvmOverloads constructor(
         top.translationY = dy
         top.rotation = rotationFor(dx)
 
-        // The stamps fade in as the card goes right (LIKE) or left (PASS)
-        val stamp = (abs(dx) / (cardWidth * STAMP_FULL_AT_FRACTION)).coerceAtMost(1f)
-        if (dx > 0f) top.setStamps(stamp, 0f) else top.setStamps(0f, stamp)
+        listener?.onDrag((dx / (cardWidth * SwipeGesture.COMMIT_FRACTION)).coerceIn(-1f, 1f))
+
+        // A red veil and a heart (right) or a slate veil and an X (left) grow with the distance, up to the "swipe" line
+        val feedback = (abs(dx) / (cardWidth * SwipeGesture.COMMIT_FRACTION)).coerceAtMost(1f)
+        if (dx > 0f) top.setFeedback(feedback, 0f) else top.setFeedback(0f, feedback)
 
         // The card behind grows toward full size, and rises, as the top card approaches the "point of no return"
         val progress = (abs(dx) / (cardWidth * SwipeGesture.COMMIT_FRACTION)).coerceAtMost(1f)
@@ -336,9 +353,10 @@ class SwipeDeckView @JvmOverloads constructor(
         val sign = if (direction == SwipeDirection.LIKE) 1f else -1f
         val distance = sign * (width + top.width) // far enough to be completely off the screen
 
-        // The stamp is fully shown while it flies (a swipe from a button never showed it before)
+        // The feedback grows to full while the card flies (a swipe by a button had none before)
         top.cancelChildAnimations()
-        top.setStamps(if (sign > 0f) 1f else 0f, if (sign < 0f) 1f else 0f)
+        top.showFullFeedback(like = sign > 0f, durationMs = FLY_OFF_MS)
+        listener?.onCardLeaving(direction)
 
         // The card behind grows to full size and shows its poster, and the hidden one behind it fades in
         next.animateCover(0f, FLY_OFF_MS)
@@ -365,8 +383,9 @@ class SwipeDeckView @JvmOverloads constructor(
         val top = cards[TOP]
         val next = cards[NEXT]
         isBusy = true
+        listener?.onDragCancelled()
 
-        top.fadeOutStamps(SPRING_BACK_MS)
+        top.fadeOutFeedback(SPRING_BACK_MS)
         next.animateCover(WAITING_CARD_COVER, SPRING_BACK_MS)
         next.animate().scaleX(NEXT_CARD_SCALE).scaleY(NEXT_CARD_SCALE).translationY(nextCardOffset)
             .setDuration(SPRING_BACK_MS)
@@ -409,7 +428,7 @@ class SwipeDeckView @JvmOverloads constructor(
     private fun placeAtRest(card: SwipeCardView, role: Int) {
         card.animate().cancel()
         card.cancelChildAnimations()
-        card.setStamps(0f, 0f)
+        card.setFeedback(0f, 0f)
         card.setCover(if (role == TOP) 0f else WAITING_CARD_COVER)
         card.translationX = 0f
         card.rotation = 0f
@@ -459,7 +478,6 @@ class SwipeDeckView @JvmOverloads constructor(
         // How the cards look and behave. These are the numbers to change to tune the feel.
         const val NEXT_CARD_SCALE = 0.94f           // the card behind is a bit smaller
         const val WAITING_CARD_COVER = 1f           // a waiting card is fully covered by a flat surface-colored sheet
-        const val STAMP_FULL_AT_FRACTION = 0.30f    // the stamp is fully visible at 30% of the width
         const val MAX_ROTATION_DEGREES = 12f        // turn at one card-width of movement
         const val ROTATION_LIMIT_DEGREES = 40f
 

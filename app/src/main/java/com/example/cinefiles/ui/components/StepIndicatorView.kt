@@ -42,7 +42,7 @@ class StepIndicatorView @JvmOverloads constructor(
     private fun showStep() {
         val bars = listOf(binding.segmentOne, binding.segmentTwo, binding.segmentThree)
         bars.forEachIndexed { index, bar ->
-            val color = if (index < currentStep) R.color.text_primary else R.color.elevated
+            val color = if (index < currentStep) R.color.accent else R.color.glass_fill_strong
             bar.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, color))
         }
         binding.stepLabel.text = context.getString(R.string.flow_step_label, currentStep, TOTAL_STEPS)

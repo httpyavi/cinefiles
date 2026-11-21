@@ -51,7 +51,15 @@
 
     <!-- Mood screen -->
     <string name="mood_title">What are you feeling today?</string>
-    <string name="mood_hint">Choose up to three.</string>
+    <string name="mood_hint">Tap the face to add a mood. Up to three.</string>
+    <string name="mood_add">Add to my mix</string>
+    <string name="mood_added">In my mix</string>
+    <string name="mood_slider_description">Mood slider</string>
+    <string name="mood_slider_state">%1$s, %2$d of %3$d</string>
+    <string name="mood_slider_cozy">Cozy</string>
+    <string name="mood_slider_wild">Wild</string>
+    <string name="mood_remove_description">Remove %1$s from my mix</string>
+    <string name="mood_add_description">Add %1$s to my mix</string>
     <!-- "2 of 3 selected" reads the same for any number, so no plural form is needed -->
     <string name="mood_selected_count" tools:ignore="PluralsCandidate">%1$d of %2$d selected</string>
     <string name="mood_continue">Continue</string>
@@ -76,6 +84,17 @@
     <string name="mood_mind_bending_hint">Twisty plots</string>
     <string name="mood_surprise">Surprise Me</string>
     <string name="mood_surprise_hint">Let us pick for you</string>
+
+    <!-- One friendly sentence per mood, shown under its name while you slide -->
+    <string name="mood_happy_line">Bright, funny, feel-good movies.</string>
+    <string name="mood_excited_line">Big action and wild adventures.</string>
+    <string name="mood_romantic_line">Love stories to melt into.</string>
+    <string name="mood_scared_line">Suspense and scares. Lights off.</string>
+    <string name="mood_emotional_line">Stories that hit you right in the feelings.</string>
+    <string name="mood_relaxed_line">Gentle, cozy and easy to watch.</string>
+    <string name="mood_escape_line">Fantasy and sci-fi, far from here.</string>
+    <string name="mood_mind_bending_line">Mysteries and twists to untangle.</string>
+    <string name="mood_surprise_line">No rules. We will pick for you.</string>
 
     <!-- Preferences screen -->
     <string name="pref_title">Make it yours</string>
@@ -120,8 +139,6 @@
     <string name="swipe_pass">Pass</string>
     <string name="swipe_like">Like</string>
     <string name="swipe_info">Movie details</string>
-    <string name="swipe_stamp_like">LIKE</string>
-    <string name="swipe_stamp_pass">PASS</string>
     <string name="swipe_rating_description">Rated %1$s out of 10</string>
 
     <!-- Swipe screen: end of the deck -->
@@ -137,8 +154,61 @@
     <string name="swipe_end_try_new_cards">Try new cards</string>
     <string name="swipe_end_change_mood">Change mood</string>
 
+    <!-- Swipe screen: end of the deck, and there is nothing new to show -->
+    <string name="swipe_end_exhausted_title">That\'s everything for now</string>
+    <plurals name="swipe_end_exhausted_liked">
+        <item quantity="one">You liked %1$d movie. That is every movie we have for this mix.</item>
+        <item quantity="other">You liked %1$d movies. That is every movie we have for this mix.</item>
+    </plurals>
+    <string name="swipe_end_exhausted_none">You have seen every movie we have for this mix. A different mood or other preferences will find more.</string>
+    <string name="swipe_end_change_preferences">Change preferences</string>
+
+    <!-- Swipe screen: the small line above a title that says why this movie is here -->
+    <string name="discovery_mood_match">For your mood</string>
+    <string name="discovery_top_rated">Top rated</string>
+    <string name="discovery_hidden_gem">Hidden gem</string>
+    <string name="discovery_trending">Trending now</string>
+    <string name="discovery_popular">Popular pick</string>
+    <string name="discovery_explore">Something different</string>
+
     <!-- Swipe screen: nothing to swipe -->
     <string name="swipe_empty_title">No movies for this mix</string>
     <string name="swipe_empty_message">Try a different mood or other preferences.</string>
     <string name="swipe_empty_action">Change mood</string>
+
+    <!-- Achievements -->
+    <string name="ach_banner_title">Achievement unlocked</string>
+    <string name="ach_first_frame">First Frame</string>
+    <string name="ach_first_frame_desc">Like your first movie.</string>
+    <string name="ach_scene_explorer">Scene Explorer</string>
+    <string name="ach_scene_explorer_desc">Swipe through 10 movies.</string>
+    <string name="ach_heartbreaker">Heartbreaker</string>
+    <string name="ach_heartbreaker_desc">Pass on 20 movies.</string>
+    <string name="ach_directors_cut">Director\'s Cut</string>
+    <string name="ach_directors_cut_desc">Swipe through 20 movies in one sitting.</string>
+    <string name="ach_genre_collector">Genre Collector</string>
+    <string name="ach_genre_collector_desc">Like movies from 5 different genres.</string>
+    <string name="ach_across_the_genres">Across the Genres</string>
+    <string name="ach_across_the_genres_desc">See movies from 8 different genres.</string>
+    <string name="ach_emotional_damage">Emotional Damage</string>
+    <string name="ach_emotional_damage_desc">Swipe 5 movies with the Emotional mood chosen.</string>
+    <string name="ach_night_owl">Night Owl</string>
+    <string name="ach_night_owl_desc">Swipe 5 movies between 11 p.m. and 5 a.m.</string>
+    <string name="ach_movie_buff">Movie Buff</string>
+    <string name="ach_movie_buff_desc">Like 25 movies.</string>
+
+    <!-- Profile -->
+    <string name="profile_member">CineFiles member</string>
+    <string name="profile_stat_swiped">Discovered</string>
+    <string name="profile_stat_liked">Liked</string>
+    <string name="profile_stat_passed">Passed</string>
+    <string name="profile_achievements_title">Achievements</string>
+    <string name="profile_achievements_count">%1$d of %2$d unlocked</string>
+    <string name="profile_next_up">Next up</string>
+    <string name="profile_selected">Selected</string>
+    <string name="profile_all_done">All unlocked</string>
+    <string name="profile_progress">%1$d / %2$d</string>
+    <string name="profile_badge_unlocked">%1$s, unlocked</string>
+    <string name="profile_badge_locked">%1$s, locked, %2$d of %3$d</string>
+    <string name="profile_unlocked_label">Unlocked</string>
 </resources>

@@ -2,14 +2,17 @@ package com.example.cinefiles
 
 import android.app.Application
 import android.util.Log
+import com.example.cinefiles.data.AchievementTracker
 
 /**
  * The Application class. Android creates it once when the app process starts, before any screen.
  *
- * Later batches create the Room database and the TMDB API here, so there is only ever
- * one of each in the whole app.
+ * Things there must be only ONE of live here. Later batches add the Room database and the TMDB API.
  */
 class CineFilesApp : Application() {
+
+    /** The user's achievements. The swipe screen feeds it, the Profile screen shows it. */
+    val achievements: AchievementTracker by lazy { AchievementTracker(this) }
 
     override fun onCreate() {
         super.onCreate()

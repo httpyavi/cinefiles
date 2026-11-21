@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PROFILE (a tab). A light glow behind a big avatar, three numbers, and the achievements:
+     a panel that says what to do next, and a grid of medals. Everything scrolls. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/profileGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/profileScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/bottom_nav_height"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/profileContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <!-- ===== Who you are ===== -->
+            <TextView
+                android:id="@+id/profileAvatar"
+                android:layout_width="@dimen/avatar_large_size"
+                android:layout_height="@dimen/avatar_large_size"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/space_24"
+                android:background="@drawable/bg_avatar"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                tools:text="M" />
+
+            <TextView
+                android:id="@+id/profileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:accessibilityHeading="true"
+    tools:targetApi="28"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:text="Movie Lover" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:gravity="center"
+                android:text="@string/profile_member"
+                android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
+
+            <!-- ===== Three numbers, in one glass strip ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_24"
+                android:background="@drawable/bg_glass_panel"
+                android:orientation="horizontal"
+                android:paddingTop="@dimen/space_16"
+                android:paddingBottom="@dimen/space_16">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/statSwiped"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        tools:text="24" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_stat_swiped"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/glass_stroke_width"
+                    android:layout_height="match_parent"
+                    android:background="@color/glass_stroke"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/statLiked"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        android:textColor="@color/accent_soft"
+                        tools:text="9" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_stat_liked"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/glass_stroke_width"
+                    android:layout_height="match_parent"
+                    android:background="@color/glass_stroke"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/statPassed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        tools:text="15" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_stat_passed"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ===== Achievements ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_32"
+                android:baselineAligned="false"
+                android:gravity="bottom"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:accessibilityHeading="true"
+    tools:targetApi="28"
+                    android:text="@string/profile_achievements_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                <TextView
+                    android:id="@+id/achievementCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                    tools:text="3 of 9 unlocked" />
+
+            </LinearLayout>
+
+            <!-- What to do next (or the badge you tapped) -->
+            <LinearLayout
+                android:id="@+id/focusPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:background="@drawable/bg_glass_panel"
+                android:orientation="vertical"
+                android:padding="@dimen/space_20">
+
+                <TextView
+                    android:id="@+id/focusEyebrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                    android:textColor="@color/accent_soft"
+                    tools:text="Next up" />
+
+                <TextView
+                    android:id="@+id/focusName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                    tools:text="Genre Collector" />
+
+                <TextView
+                    android:id="@+id/focusDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                    tools:text="Like movies from 5 different genres." />
+
+                <LinearLayout
+                    android:id="@+id/focusProgressRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/focusProgress"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:indicatorColor="@color/accent"
+                        app:trackColor="@color/glass_fill_strong"
+                        app:trackCornerRadius="@dimen/radius_pill"
+                        app:trackStopIndicatorSize="0dp"
+                        app:trackThickness="@dimen/swipe_progress_height"
+                        tools:progress="60" />
+
+                    <TextView
+                        android:id="@+id/focusProgressText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                        tools:text="3 / 5" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- The medals. The grid does not scroll by itself: the NestedScrollView around it does. -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/achievementGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                tools:itemCount="9"
+                tools:listitem="@layout/item_achievement" />
+
+            <!-- TEMP: keeps the Batch 1 design gallery reachable. Removed in Batch 8 with the gallery. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openGallery"
+                style="@style/Widget.CineFiles.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/space_16"
+                android:layout_marginBottom="@dimen/space_24"
+                android:text="@string/temp_open_gallery" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</FrameLayout>

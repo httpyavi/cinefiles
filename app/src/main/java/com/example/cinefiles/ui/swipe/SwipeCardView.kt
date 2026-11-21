@@ -6,7 +6,9 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.bumptech.glide.Glide
 import com.example.cinefiles.R
@@ -17,7 +19,7 @@ import com.example.cinefiles.util.loadImage
 import java.text.NumberFormat
 
 /**
- * ONE movie card: a big rounded poster with the title, rating, year, genres and the LIKE / PASS stamps.
+ * ONE movie card: a big rounded poster with the title, rating, year and genres. While it is dragged, a see-through veil and a big heart (like) or X (pass) show on it.
  *
  * It only knows how to LOOK. Moving it with a finger is done by SwipeDeckView, which owns three of
  * these cards and reuses them (rebinding them to new movies) instead of making one per movie.
@@ -49,11 +51,10 @@ class SwipeCardView @JvmOverloads constructor(
             }
         }
         clipToOutline = true
+        // A hair-thin light edge, drawn over the poster: the card looks like a sheet of glass
+        foreground = ContextCompat.getDrawable(context, R.drawable.fg_card_edge)
 
-        // The two stamps lean a little, like a rubber stamp pressed by hand
-        binding.stampLike.rotation = -STAMP_ROTATION_DEGREES
-        binding.stampPass.rotation = STAMP_ROTATION_DEGREES
-        setStamps(likeAlpha = 0f, passAlpha = 0f)
+        setFeedback(like = 0f, pass = 0f)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -63,17 +64,18 @@ class SwipeCardView @JvmOverloads constructor(
         pivotY = h * PIVOT_HEIGHT_FRACTION
     }
 
-    /** Shows [movie] on this card. */
-    fun bind(movie: Movie) {
+    /** Shows [movie] on this card. [eyebrow] is the small line above the title, "Top rated" for example (or null). */
+    fun bind(movie: Movie, eyebrow: String? = null) {
         movieId = movie.id
         isVisible = true
 
+        binding.cardEyebrow.text = eyebrow
+        binding.cardEyebrow.isVisible = !eyebrow.isNullOrEmpty()
         binding.cardTitle.text = movie.title
         binding.cardPoster.loadImage(ImageUrls.bigPoster(movie.posterPath))
 
         val ratingText = movie.voteAverage?.let { ratingFormat.format(it) }
-        binding.cardStar.isVisible = ratingText != null
-        binding.cardRating.isVisible = ratingText != null
+        binding.cardRatingPill.isVisible = ratingText != null
         binding.cardRating.text = ratingText
 
         // "1994 · Drama, Crime" (the year and up to two genres; anything unknown is left out)
@@ -100,15 +102,38 @@ class SwipeCardView @JvmOverloads constructor(
         visibility = INVISIBLE // keeps its size, so nothing jumps around
     }
 
-    /** Sets how visible the LIKE and PASS stamps are: 0 = invisible, 1 = fully visible. */
-    fun setStamps(likeAlpha: Float, passAlpha: Float) {
-        binding.stampLike.alpha = likeAlpha
-        binding.stampPass.alpha = passAlpha
+    /**
+     * Sets the like / pass feedback: 0 = nothing (the poster is completely clear), 1 = fully shown.
+     * The veil gets stronger and the heart or X bigger the larger the amount, so it follows the finger smoothly.
+     */
+    fun setFeedback(like: Float, pass: Float) {
+        applyFeedback(binding.overlayLike, binding.iconLike, like)
+        applyFeedback(binding.overlayPass, binding.iconPass, pass)
     }
 
-    fun fadeOutStamps(durationMs: Long) {
-        binding.stampLike.animate().alpha(0f).setDuration(durationMs)
-        binding.stampPass.animate().alpha(0f).setDuration(durationMs)
+    private fun applyFeedback(veil: View, icon: View, amount: Float) {
+        veil.alpha = amount * MAX_VEIL_ALPHA
+        icon.alpha = (amount * ICON_FADE_SPEED).coerceAtMost(1f) // the icon shows a little sooner than the veil is strong
+        val scale = ICON_MIN_SCALE + (ICON_MAX_SCALE - ICON_MIN_SCALE) * amount
+        icon.scaleX = scale
+        icon.scaleY = scale
+    }
+
+    /** The card is flying away: the feedback grows to full in [durationMs] (a swipe by finger is already close to it). */
+    fun showFullFeedback(like: Boolean, durationMs: Long) {
+        val veil = if (like) binding.overlayLike else binding.overlayPass
+        val icon = if (like) binding.iconLike else binding.iconPass
+        veil.animate().alpha(MAX_VEIL_ALPHA).setDuration(durationMs)
+        icon.animate().alpha(1f).scaleX(ICON_MAX_SCALE).scaleY(ICON_MAX_SCALE).setDuration(durationMs)
+            .setInterpolator(DecelerateInterpolator())
+    }
+
+    /** The feedback fades away (the card is going back to the middle, or is coming back with Undo). */
+    fun fadeOutFeedback(durationMs: Long) {
+        binding.overlayLike.animate().alpha(0f).setDuration(durationMs)
+        binding.iconLike.animate().alpha(0f).setDuration(durationMs)
+        binding.overlayPass.animate().alpha(0f).setDuration(durationMs)
+        binding.iconPass.animate().alpha(0f).setDuration(durationMs)
     }
 
     /**
@@ -123,16 +148,21 @@ class SwipeCardView @JvmOverloads constructor(
         binding.cardDim.animate().alpha(amount).setDuration(durationMs)
     }
 
-    /** Stops the stamp and cover animations (the card's own animation is stopped with animate().cancel()). */
+    /** Stops the feedback and cover animations (the card's own animation is stopped with animate().cancel()). */
     fun cancelChildAnimations() {
-        binding.stampLike.animate().cancel()
-        binding.stampPass.animate().cancel()
+        binding.overlayLike.animate().cancel()
+        binding.iconLike.animate().cancel()
+        binding.overlayPass.animate().cancel()
+        binding.iconPass.animate().cancel()
         binding.cardDim.animate().cancel()
     }
 
     private companion object {
-        const val STAMP_ROTATION_DEGREES = 12f
         const val PIVOT_HEIGHT_FRACTION = 0.75f
         const val MAX_GENRES_SHOWN = 2
+        const val MAX_VEIL_ALPHA = 0.5f      // the veil never gets more than half opaque, so the poster always shows through
+        const val ICON_FADE_SPEED = 1.8f     // the icon is fully visible when the veil is at about 55%
+        const val ICON_MIN_SCALE = 0.45f
+        const val ICON_MAX_SCALE = 1f
     }
 }

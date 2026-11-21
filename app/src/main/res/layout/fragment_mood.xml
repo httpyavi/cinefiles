@@ -1,122 +1,202 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- MOOD: "What are you feeling today?" Step 1 of 3.
-     Top bar (close + step indicator) and footer (counter + Continue) are FIXED.
-     Only the title, hint and the grid of cards in between scroll, so on a short phone the
-     footer is always visible. No bottom tab bar on this screen. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     One big animated face, and a slider under it that runs through all the moods. The light behind
+     everything takes the color of the mood. Nothing scrolls, so it fits a small phone.
+     Tap the face (or the pill under the name) to add the mood to your mix; up to three.
+     No bottom tab bar on this screen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <FrameLayout
-        android:id="@+id/moodTopBar"
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/moodGlow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/space_8"
-        android:paddingTop="@dimen/space_8"
-        android:paddingEnd="@dimen/space_8">
+        android:layout_height="match_parent" />
 
-        <ImageButton
-            android:id="@+id/moodClose"
-            android:layout_width="@dimen/touch_target"
-            android:layout_height="@dimen/touch_target"
-            android:layout_gravity="start|center_vertical"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/action_close"
-            android:src="@drawable/ic_close"
-            app:tint="@color/text_primary" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <com.example.cinefiles.ui.components.StepIndicatorView
-            android:id="@+id/moodStepIndicator"
+        <FrameLayout
+            android:id="@+id/moodTopBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/space_12">
+
+            <ImageButton
+                android:id="@+id/moodClose"
+                android:layout_width="@dimen/round_button_small_size"
+                android:layout_height="@dimen/round_button_small_size"
+                android:layout_gravity="start|center_vertical"
+                android:background="@drawable/bg_glass_circle"
+                android:contentDescription="@string/action_close"
+                android:padding="@dimen/space_10"
+                android:src="@drawable/ic_close"
+                app:tint="@color/text_primary" />
+
+            <com.example.cinefiles.ui.components.StepIndicatorView
+                android:id="@+id/moodStepIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:currentStep="1" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/moodEyebrow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginEnd="@dimen/screen_margin"
+            android:accessibilityHeading="true"
+    tools:targetApi="28"
+            android:gravity="center"
+            android:text="@string/mood_title"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
+
+        <!-- The face takes whatever height is left. It is decoration: the pill below does the same job for TalkBack. -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:minHeight="@dimen/mood_face_min_height">
+
+            <com.example.cinefiles.ui.mood.MoodFaceView
+                android:id="@+id/moodFace"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/moodName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginEnd="@dimen/screen_margin"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.CineFiles.Display"
+            tools:text="Happy" />
+
+        <!-- Two lines are always kept free, so the screen does not jump when the sentence changes length -->
+        <TextView
+            android:id="@+id/moodLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginTop="@dimen/space_4"
+            android:layout_marginEnd="@dimen/screen_margin"
+            android:gravity="center_horizontal"
+            android:minLines="2"
+            android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+            tools:text="Bright, funny, feel-good movies." />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/moodToggle"
+            style="@style/Widget.CineFiles.Button.Tonal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:currentStep="1" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/space_4"
+            android:minHeight="@dimen/chip_height"
+            android:paddingStart="@dimen/space_20"
+            android:paddingEnd="@dimen/space_20"
+            android:text="@string/mood_add"
+            app:icon="@drawable/ic_add"
+            app:iconSize="@dimen/icon_size_small" />
 
-    </FrameLayout>
+        <com.example.cinefiles.ui.mood.MoodSliderView
+            android:id="@+id/moodSlider"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/mood_slider_height"
+            android:layout_marginTop="@dimen/space_8"
+            android:contentDescription="@string/mood_slider_description" />
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/moodScroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:scrollbars="none">
-
-        <!-- clipChildren=false on every parent of the cards, so a selected (slightly bigger) card is not cut off -->
+        <!-- The two ends of the slider -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/screen_margin"
-                android:layout_marginTop="@dimen/space_16"
-                android:layout_marginEnd="@dimen/screen_margin"
-                android:text="@string/mood_title"
-                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle" />
+                android:layout_weight="1"
+                android:importantForAccessibility="no"
+                android:text="@string/mood_slider_cozy"
+                android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/screen_margin"
-                android:layout_marginTop="@dimen/space_8"
-                android:layout_marginEnd="@dimen/screen_margin"
-                android:text="@string/mood_hint"
-                android:textAppearance="@style/TextAppearance.CineFiles.Callout" />
-
-            <!-- The grid does not scroll by itself: the NestedScrollView around it does -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/moodGrid"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_16"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:nestedScrollingEnabled="false"
-                android:overScrollMode="never"
-                android:paddingStart="@dimen/mood_grid_padding"
-                android:paddingEnd="@dimen/mood_grid_padding"
-                android:paddingBottom="@dimen/space_8"
-                tools:itemCount="9"
-                tools:listitem="@layout/item_mood_card" />
+                android:layout_weight="1"
+                android:gravity="end"
+                android:importantForAccessibility="no"
+                android:text="@string/mood_slider_wild"
+                android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-    <LinearLayout
-        android:id="@+id/moodFooter"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        android:orientation="vertical"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="@dimen/space_16"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="@dimen/space_16">
-
-        <TextView
-            android:id="@+id/moodCounter"
+        <LinearLayout
+            android:id="@+id/moodFooter"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textAppearance="@style/TextAppearance.CineFiles.Callout"
-            tools:text="2 of 3 selected" />
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_4"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_16">
 
-        <!-- Gold, and dim until at least one mood is selected -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/continueButton"
-            style="@style/Widget.CineFiles.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_12"
-            android:text="@string/mood_continue" />
+            <!-- "Tap the face to add a mood" before the first one, then "2 of 3 selected" -->
+            <TextView
+                android:id="@+id/moodCounter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                tools:text="2 of 3 selected" />
 
+            <!-- The chosen moods. Tap the x on one to take it out. -->
+            <!-- A fixed height, so the screen does not jump when the first chip appears -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/touch_target"
+                android:clipToPadding="false"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/moodChips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    app:chipSpacingHorizontal="@dimen/space_8"
+                    app:singleLine="true" />
+
+            </HorizontalScrollView>
+
+            <!-- Red, and dim until at least one mood is chosen -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/continueButton"
+                style="@style/Widget.CineFiles.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:text="@string/mood_continue" />
+
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

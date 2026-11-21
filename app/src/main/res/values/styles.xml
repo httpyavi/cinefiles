@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- =====================================================================
          TYPE
@@ -8,6 +8,9 @@
          To switch to Inter later: put the Inter files in res/font/ and change the
          two android:fontFamily lines to @font/inter_regular and @font/inter_medium.
          (On Android 7.x, also add the app:fontFamily line with the same value.)
+
+         The feel is editorial: big titles with slightly tight letters, and small
+         spaced-out capitals (Eyebrow) above them, like a film poster credit line.
          ===================================================================== -->
 
     <style name="TextAppearance.CineFiles.Regular" parent="">
@@ -20,13 +23,22 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <!-- The six sizes of the design system -->
+    <!-- The sizes of the design system -->
+
+    <!-- Display: one huge word, like the mood name or a hero title -->
+    <style name="TextAppearance.CineFiles.Display" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">40sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
     <style name="TextAppearance.CineFiles.LargeTitle" parent="TextAppearance.CineFiles.Medium">
         <item name="android:textSize">32sp</item>
+        <item name="android:letterSpacing">-0.015</item>
     </style>
 
     <style name="TextAppearance.CineFiles.Title" parent="TextAppearance.CineFiles.Medium">
         <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 
     <style name="TextAppearance.CineFiles.Headline" parent="TextAppearance.CineFiles.Medium">
@@ -48,10 +60,21 @@
         <item name="android:textColor">@color/text_secondary</item>
     </style>
 
-    <!-- The LIKE / PASS stamp on a swipe card: small capital letters, a little spaced out -->
-    <style name="TextAppearance.CineFiles.Stamp" parent="TextAppearance.CineFiles.Medium">
-        <item name="android:textSize">20sp</item>
-        <item name="android:letterSpacing">0.12</item>
+    <!-- Eyebrow: a small line of capitals above a title ("FEATURED TODAY"). Gray; add the accent
+         color with android:textColor where it should shout. -->
+    <style name="TextAppearance.CineFiles.Eyebrow" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <!-- The label of the big Home button: a little larger and bolder than a normal button -->
+    <style name="TextAppearance.CineFiles.Cta" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/on_accent</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <!-- Two helpers for controls: button text (16) and chip / tab label text (14) -->
@@ -85,44 +108,62 @@
         <item name="cornerSize">@dimen/radius_large</item>
     </style>
 
+    <style name="ShapeAppearance.CineFiles.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
 
     <!-- =====================================================================
          COMPONENTS
-         Colors for these come from the theme: primary = gold, secondary container = elevated.
+         Colors come from the theme: primary = the red accent, secondary container = elevated.
          ===================================================================== -->
 
-    <!-- Primary button: gold pill, 52 dp tall. One per screen, for the main action. -->
+    <!-- (Material 3 buttons are already full pills: do NOT set cornerRadius, an absolute radius makes the glow a rectangle.)
+         Primary button: red pill, 52 dp tall, with a soft red glow under it (API 28+; older phones just have no glow).
+         One per screen, for the main action. -->
     <style name="Widget.CineFiles.Button.Primary" parent="Widget.Material3.Button">
         <item name="android:minHeight">@dimen/button_height</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
-        <item name="cornerRadius">@dimen/radius_pill</item>
-        <item name="android:stateListAnimator">@animator/press_scale</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Button</item>
+        <item name="android:textColor">@color/primary_button_text</item>
+        <item name="android:outlineSpotShadowColor" tools:targetApi="28">@color/accent</item>
+        <item name="android:outlineAmbientShadowColor" tools:targetApi="28">@color/accent</item>
+        <item name="android:stateListAnimator">@animator/glow_press_scale</item>
     </style>
 
-    <!-- Tonal button: quiet elevated pill, for secondary actions -->
+    <!-- Tonal button: a glass pill, for secondary actions -->
     <style name="Widget.CineFiles.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
         <item name="android:minHeight">@dimen/button_height</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
-        <item name="cornerRadius">@dimen/radius_pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Button</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="backgroundTint">@color/glass_fill_strong</item>
+        <item name="strokeColor">@color/glass_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
-    <!-- Text button: just gold text, for tertiary actions -->
+    <!-- Text button: just red text, for tertiary actions -->
     <style name="Widget.CineFiles.Button.Text" parent="Widget.Material3.Button.TextButton">
         <item name="android:minHeight">@dimen/button_height</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
-        <item name="cornerRadius">@dimen/radius_pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Button</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
-    <!-- Round action button: icon only (pass, like, undo, info).
+    <!-- Round action button: a glass circle with an icon (undo, info, close, back...).
          Give it layout_width/height = @dimen/round_button_size, an app:icon and a contentDescription.
-         Change the icon color with app:iconTint (for example @color/like_green). -->
+         Change the icon color with app:iconTint. -->
     <style name="Widget.CineFiles.RoundActionButton" parent="Widget.Material3.Button.IconButton.Filled.Tonal">
         <item name="iconSize">@dimen/icon_size</item>
+        <item name="backgroundTint">@color/glass_fill_strong</item>
+        <item name="strokeColor">@color/glass_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
+        <item name="iconTint">@color/text_primary</item>
         <!-- Material's icon-button style has a 4 dp left/right inset; without these two lines
              the circle would be 8 dp narrower than it is tall -->
         <item name="android:insetLeft">0dp</item>
@@ -148,12 +189,28 @@
         <item name="android:paddingBottom">@dimen/space_20</item>
     </style>
 
-    <!-- Selectable chip: elevated pill; gold with dark text when selected -->
+    <!-- The Like button: a solid red circle with a red glow -->
+    <style name="Widget.CineFiles.RoundActionButton.Large.Like">
+        <item name="backgroundTint">@color/accent</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="iconTint">@color/on_accent</item>
+        <item name="android:outlineSpotShadowColor" tools:targetApi="28">@color/accent</item>
+        <item name="android:outlineAmbientShadowColor" tools:targetApi="28">@color/accent</item>
+        <item name="android:stateListAnimator">@animator/glow_press_scale</item>
+    </style>
+
+    <!-- The Pass button: glass, with a cool slate icon -->
+    <style name="Widget.CineFiles.RoundActionButton.Large.Pass">
+        <item name="iconTint">@color/pass</item>
+    </style>
+
+    <!-- Selectable chip: glass pill; with a red edge and a red wash when selected -->
     <style name="Widget.CineFiles.Chip" parent="Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/chip_background</item>
+        <item name="chipStrokeColor">@color/chip_stroke</item>
         <item name="android:textColor">@color/chip_text</item>
         <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
-        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipStrokeWidth">@dimen/glass_stroke_width</item>
         <item name="chipMinHeight">@dimen/chip_height</item>
         <item name="chipCornerRadius">@dimen/radius_pill</item>
         <item name="chipStartPadding">@dimen/space_8</item>
@@ -165,7 +222,23 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
-    <!-- Card: a tonal surface block. No border, no shadow. Change the corner with app:cardCornerRadius. -->
+    <!-- A removable chip for a chosen mood (the edge color is set from code, in the mood's own color) -->
+    <style name="Widget.CineFiles.Chip.Entry" parent="Widget.Material3.Chip.Input">
+        <item name="chipBackgroundColor">@color/glass_fill_strong</item>
+        <item name="chipStrokeColor">@color/glass_stroke</item>
+        <item name="chipStrokeWidth">@dimen/glass_stroke_width</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
+        <item name="chipMinHeight">@dimen/chip_height</item>
+        <item name="chipCornerRadius">@dimen/radius_pill</item>
+        <item name="closeIconVisible">true</item>
+        <item name="closeIcon">@drawable/ic_close</item>
+        <item name="closeIconTint">@color/text_secondary</item>
+        <item name="closeIconSize">@dimen/icon_size_small</item>
+    </style>
+
+    <!-- Card: a quiet surface block. No border, no shadow. Change the corner with app:cardCornerRadius.
+         Use it sparingly: pictures and space should carry a screen, not boxes. -->
     <style name="Widget.CineFiles.Card" parent="Widget.Material3.CardView.Filled">
         <item name="cardBackgroundColor">@color/surface</item>
         <item name="cardCornerRadius">@dimen/radius_large</item>
@@ -173,36 +246,21 @@
         <item name="strokeWidth">0dp</item>
     </style>
 
-    <!-- A card you can tap: it ripples and shrinks slightly while pressed -->
-    <style name="Widget.CineFiles.Card.Tile">
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="android:stateListAnimator">@animator/press_scale</item>
+    <!-- A glass card: a soft white wash with a light edge. Only over a picture or a glow. -->
+    <style name="Widget.CineFiles.Card.Glass">
+        <item name="cardBackgroundColor">@color/glass_fill</item>
+        <item name="cardCornerRadius">@dimen/radius_xlarge</item>
+        <item name="strokeColor">@color/glass_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
     </style>
 
-    <!-- A mood card: a card that can be "checked". When checked it gets a gold outline and a gold check badge
-         (the badge means selection is never shown by color alone). The checked state is set from code. -->
-    <style name="Widget.CineFiles.Card.Mood">
-        <item name="android:checkable">true</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="strokeColor">@color/mood_card_stroke</item>
-        <item name="strokeWidth">@dimen/mood_card_stroke</item>
-        <item name="checkedIcon">@drawable/ic_check_filled</item>
-        <item name="checkedIconTint">@color/gold</item>
-        <item name="checkedIconSize">@dimen/icon_size</item>
-        <item name="checkedIconMargin">@dimen/space_8</item>
-    </style>
-
-    <!-- Bottom tab bar: tonal surface, quiet gray tabs, gold for the active one -->
+    <!-- Floating tab bar: a dark glass pill with a light edge. The red accent marks the active tab,
+         with a soft red wash behind it. -->
     <style name="Widget.CineFiles.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="labelVisibilityMode">labeled</item>
-        <!-- Material's own minimum is 80 dp. Ours is lower (see bottom_nav_height in dimens.xml). -->
-        <item name="android:minHeight">@dimen/bottom_nav_height</item>
-        <!-- Pin the bar to our surface color with no shadow. (Material 1.13 otherwise picks its own
-             gray from a built-in token plus an elevation tint, which is not in our palette.) -->
-        <item name="android:background">@color/surface</item>
-        <item name="backgroundTint">@color/surface</item>
+        <item name="android:minHeight">@dimen/bottom_nav_bar_height</item>
+        <!-- Our own shape (a pill with a glass edge). Material leaves a non-color background alone. -->
+        <item name="android:background">@drawable/bg_glass_nav</item>
         <item name="elevation">0dp</item>
         <item name="itemIconTint">@color/bottom_nav_item</item>
         <item name="itemTextColor">@color/bottom_nav_item</item>
@@ -211,11 +269,18 @@
         <item name="itemActiveIndicatorStyle">@style/Widget.CineFiles.BottomNavigationIndicator</item>
         <item name="itemPaddingTop">@dimen/space_8</item>
         <item name="itemPaddingBottom">@dimen/space_8</item>
+        <!-- MainActivity places the bar above the gesture bar itself -->
+        <item name="paddingBottomSystemWindowInsets">false</item>
+        <item name="paddingLeftSystemWindowInsets">false</item>
+        <item name="paddingRightSystemWindowInsets">false</item>
     </style>
 
-    <!-- Material draws a pill behind the active tab. We want none: gold alone says "selected". -->
+    <!-- The soft red wash behind the active tab -->
     <style name="Widget.CineFiles.BottomNavigationIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">@android:color/transparent</item>
+        <item name="android:color">@color/accent_glow</item>
+        <item name="android:height">@dimen/nav_indicator_height</item>
+        <item name="android:width">@dimen/nav_indicator_width</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.CineFiles.Pill</item>
     </style>
 
 </resources>

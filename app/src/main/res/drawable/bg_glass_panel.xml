@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A glass panel: a soft white wash with a light edge. For floating overlays and info panels that sit over
+     a picture or a glow (never stack glass on glass). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/glass_fill" />
+    <stroke
+        android:width="@dimen/glass_stroke_width"
+        android:color="@color/glass_stroke" />
+    <corners android:radius="@dimen/radius_xlarge" />
+</shape>

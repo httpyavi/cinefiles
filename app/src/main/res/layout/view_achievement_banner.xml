@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The achievement banner: a slim dark-glass pill that slides in from the top for a moment when a badge is
+     earned, then leaves by itself. It never blocks the screen; tapping it sends it away at once.
+     SwipeFragment fills in the badge picture and its name. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/achievementBanner"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:background="@drawable/bg_glass_nav"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/space_8"
+    android:paddingTop="@dimen/space_8"
+    android:paddingEnd="@dimen/space_24"
+    android:paddingBottom="@dimen/space_8"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/achievementBannerIcon"
+        android:layout_width="@dimen/banner_icon_size"
+        android:layout_height="@dimen/banner_icon_size"
+        android:background="@drawable/bg_medal_unlocked"
+        android:importantForAccessibility="no"
+        android:padding="@dimen/space_10"
+        app:tint="@color/on_accent"
+        tools:src="@drawable/ic_film" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ach_banner_title"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft" />
+
+        <TextView
+            android:id="@+id/achievementBannerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.CineFiles.Label"
+            tools:text="First Frame" />
+
+    </LinearLayout>
+</LinearLayout>

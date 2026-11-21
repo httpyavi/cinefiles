@@ -8,18 +8,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:gravity="center"
     android:orientation="vertical"
     android:paddingTop="@dimen/space_24"
     android:paddingBottom="@dimen/space_24">
 
+    <!-- The icon sits on a round glass plate with a red glow behind it -->
     <ImageView
         android:id="@+id/swipeEndIcon"
-        android:layout_width="@dimen/state_icon_size"
-        android:layout_height="@dimen/state_icon_size"
+        android:layout_width="@dimen/end_icon_plate_size"
+        android:layout_height="@dimen/end_icon_plate_size"
+        android:background="@drawable/bg_glass_circle"
         android:importantForAccessibility="no"
+        android:padding="@dimen/space_20"
         android:src="@drawable/ic_check"
-        app:tint="@color/text_secondary" />
+        app:tint="@color/accent" />
 
     <TextView
         android:id="@+id/swipeEndTitle"
@@ -27,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_16"
         android:gravity="center"
-        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+        android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
         tools:text="You've seen them all" />
 
     <TextView
@@ -40,7 +45,7 @@
         android:textAppearance="@style/TextAppearance.CineFiles.Callout"
         tools:text="You liked 3 movies." />
 
-    <!-- The main action: gold -->
+    <!-- The main action: red -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/swipeEndPrimary"
         style="@style/Widget.CineFiles.Button.Primary"

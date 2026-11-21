@@ -2,51 +2,74 @@
 <resources>
 
     <!-- ===== CineFiles color tokens (dark theme only) =====
-         Never type a hex color in a layout. Always point to one of these names. -->
+         Never type a hex color in a layout. Always point to one of these names.
 
-    <!-- Surfaces: depth comes from these tonal steps, not from borders or shadows -->
-    <color name="background">#111318</color>   <!-- screens -->
-    <color name="surface">#1D2129</color>      <!-- cards, sheets, bars -->
-    <color name="elevated">#262B35</color>     <!-- chips, tonal buttons, dialogs -->
+         The look: a near-black stage, one signature red (the accent), and "glass" (a little white at low
+         opacity) for things that float above pictures: the tab bar, round buttons, pills, panels.
+         Red means "primary action, selected, liked". Use it for the one thing that matters on a screen. -->
 
-    <!-- Accent: gold means "primary action" or "selected" -->
-    <color name="gold">#E9B96E</color>
-    <color name="on_gold">#1A1408</color>      <!-- text/icons placed on gold -->
+    <!-- Surfaces (opaque). Depth comes from these steps and from glass, not from borders. -->
+    <color name="background">#0A0A0D</color>   <!-- screens -->
+    <color name="surface">#141419</color>      <!-- quiet blocks, loading placeholders -->
+    <color name="elevated">#1E1E26</color>     <!-- dialogs, snackbars, step bars -->
+
+    <!-- Glass: white at low opacity. Put it over a picture or a glow and it looks like frosted glass.
+         (Real "blur what is behind" needs API 31+, so we fake it with a soft fill + a light edge.) -->
+    <color name="glass_fill">#14FFFFFF</color>           <!-- 8% white -->
+    <color name="glass_fill_strong">#1FFFFFFF</color>    <!-- 12% white: buttons and pills -->
+    <color name="glass_stroke">#26FFFFFF</color>         <!-- 15% white: the light edge of glass -->
+    <color name="glass_stroke_bright">#47FFFFFF</color>  <!-- 28% white: the top-left highlight of glass -->
+    <color name="glass_dark">#F5101015</color>           <!-- 96% near-black: bars that float over scrolling content -->
+
+    <!-- The accent: CineFiles red -->
+    <color name="accent">#FF3449</color>
+    <color name="accent_soft">#FF7A8A</color>            <!-- lighter, for glows and highlights -->
+    <color name="accent_deep">#D81B33</color>            <!-- darker, for the bottom of a gradient -->
+    <color name="accent_glow">#38FF3449</color>          <!-- 22%: a soft red wash -->
+    <color name="on_accent">#FFFFFF</color>              <!-- text / icons placed on the accent -->
+
+    <!-- Ratings are gold. (Gold is no longer the accent: it only marks stars.) -->
+    <color name="star">#FFC857</color>
 
     <!-- Text -->
-    <color name="text_primary">#F5F3EF</color>
-    <color name="text_secondary">#9297A2</color>
+    <color name="text_primary">#F7F5F2</color>
+    <color name="text_secondary">#A1A1AD</color>
 
-    <!-- Swipe feedback -->
-    <color name="like_green">#4DBB8A</color>
-    <color name="pass_red">#E46D73</color>
+    <!-- Swipe feedback: LIKE is the accent, PASS is a cool slate, so the two can never be mixed up -->
+    <color name="like">@color/accent</color>
+    <color name="pass">#9DB0D0</color>
+    <color name="pass_overlay">#4E5B73</color>   <!-- the slate veil over a poster while it is dragged to the left (shown at about half opacity) -->
 
     <!-- ===== Derived tokens (made from the colors above) ===== -->
-    <color name="text_disabled">#61F5F3EF</color>   <!-- text_primary at 38% -->
-    <color name="outline">#4D9297A2</color>         <!-- text_secondary at 30%, only for rare hairlines -->
+    <color name="text_disabled">#61F7F5F2</color>   <!-- text_primary at 38% -->
+    <color name="outline">#26FFFFFF</color>         <!-- same as glass_stroke, for Material components -->
 
-    <!-- Soft scrim that sits on the bottom of an image so text stays readable.
+    <!-- Soft scrim that sits on the bottom of a picture so text stays readable.
          All three are the background color with different transparency. -->
-    <color name="scrim_clear">#00111318</color>     <!-- 0% -->
-    <color name="scrim_mid">#99111318</color>       <!-- 60% -->
-    <color name="scrim_solid">#F2111318</color>     <!-- 95% -->
+    <color name="scrim_clear">#000A0A0D</color>     <!-- 0% -->
+    <color name="scrim_mid">#8C0A0A0D</color>       <!-- 55% -->
+    <color name="scrim_solid">#FF0A0A0D</color>     <!-- 100%: so a picture melts into the screen with no seam -->
 
-    <color name="badge_background">#CC111318</color> <!-- 80% background, behind poster badges -->
+    <color name="badge_background">#CC0A0A0D</color> <!-- 80% background, behind poster badges -->
 
-    <!-- Faint backgrounds for the Pass and Like buttons: the red / green at 16% -->
-    <color name="pass_red_tint">#29E46D73</color>
-    <color name="like_green_tint">#294DBB8A</color>
+    <!-- Mood colors: each mood has its own hue. They tint the Mood screen's glow and the face, and are
+         laid out around the color wheel in slider order, so sliding from one mood to the next
+         always travels smoothly through nearby hues. -->
+    <color name="mood_tint_relaxed">#3EC8B4</color>      <!-- teal -->
+    <color name="mood_tint_happy">#FFB938</color>        <!-- sunny amber -->
+    <color name="mood_tint_romantic">#FF5C93</color>     <!-- rose -->
+    <color name="mood_tint_emotional">#4F8BFF</color>    <!-- ocean blue -->
+    <color name="mood_tint_scared">#8A5CFF</color>       <!-- violet -->
+    <color name="mood_tint_mind_bending">#36C5F0</color> <!-- electric cyan -->
+    <color name="mood_tint_escape">#52E08A</color>       <!-- aurora green -->
+    <color name="mood_tint_excited">#FF7A3D</color>      <!-- hot orange -->
+    <color name="mood_tint_surprise">#C9A7FF</color>     <!-- lilac -->
 
-    <!-- Mood tints: one faint hue per mood. They are ONLY used as a faint wash (and for the icon) on a
-         mood card that has no photo. Real photos replace them in Batch 5. -->
-    <color name="mood_tint_happy">#F2C75C</color>
-    <color name="mood_tint_excited">#F08A4B</color>
-    <color name="mood_tint_romantic">#E8708F</color>
-    <color name="mood_tint_scared">#8E6BD1</color>
-    <color name="mood_tint_emotional">#5E9BE0</color>
-    <color name="mood_tint_relaxed">#6CC3A5</color>
-    <color name="mood_tint_escape">#4FB6D6</color>
-    <color name="mood_tint_mind_bending">#7C86E8</color>
-    <color name="mood_tint_surprise">@color/text_secondary</color>
+    <!-- The animated face on the Mood screen -->
+    <color name="face_ink">#1B1216</color>      <!-- eyes, brows, mouth -->
+    <color name="face_white">#FFFFFF</color>    <!-- the whites of wide eyes -->
+    <color name="face_tear">#9ADBFF</color>     <!-- tears -->
+    <color name="face_heart">#D4174A</color>    <!-- heart eyes -->
+    <color name="face_blush">#FF5A6E</color>    <!-- cheeks -->
 
 </resources>

@@ -4,7 +4,6 @@
 <resources>
     <string name="temp_discover_message">Coming in a later batch.</string>
     <string name="temp_collection_message">Coming in Batch 6.</string>
-    <string name="temp_profile_message">Coming in a later batch.</string>
     <string name="temp_details_title">Movie details</string>
     <string name="temp_details_message">Coming in a later batch.</string>
     <string name="temp_movie_id">Movie id: %1$d</string>
@@ -20,4 +19,5 @@
     <string name="temp_test_loading">Test mode: loading never ends</string>
     <string name="temp_test_error">Test mode: error (Retry works)</string>
     <string name="temp_test_empty">Test mode: empty</string>
+    <string name="temp_coming_soon">Coming soon</string>
 </resources>

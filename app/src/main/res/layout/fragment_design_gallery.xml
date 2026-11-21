@@ -213,7 +213,7 @@
                 android:layout_height="@dimen/round_button_size"
                 android:contentDescription="@string/gallery_action_pass"
                 app:icon="@drawable/ic_close"
-                app:iconTint="@color/pass_red" />
+                app:iconTint="@color/pass" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/actionUndo"
@@ -243,7 +243,7 @@
                 android:layout_marginStart="@dimen/space_16"
                 android:contentDescription="@string/gallery_action_like"
                 app:icon="@drawable/ic_heart"
-                app:iconTint="@color/like_green" />
+                app:iconTint="@color/like" />
 
         </LinearLayout>
 

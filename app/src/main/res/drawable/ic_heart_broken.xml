@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 24 dp icon: a heart with a crack down the middle. Colored by the theme unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,20.5 C12,20.5 3.5,15 3.5,9.25 C3.5,6.5 5.7,4.5 8.25,4.5 C9.85,4.5 11.25,5.3 12,6.7 C12.75,5.3 14.15,4.5 15.75,4.5 C18.3,4.5 20.5,6.5 20.5,9.25 C20.5,15 12,20.5 12,20.5 Z M12,6.7 L10,10 L13.5,12.3 L11.3,16" />
+</vector>

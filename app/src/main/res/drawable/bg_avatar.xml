@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The round avatar plate. It is drawn 4 dp smaller than the view on every side, so the circle is 40 dp
-     while the tappable area stays 48 dp. -->
+<!-- The round avatar plate: a soft red wash with a thin red ring. It is drawn 4 dp smaller than the view on
+     every side, so the circle is 40 dp while the tappable area stays 48 dp. -->
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:inset="@dimen/space_4">
     <shape android:shape="oval">
-        <solid android:color="@color/elevated" />
+        <solid android:color="@color/accent_glow" />
+        <stroke
+            android:width="@dimen/glass_stroke_width"
+            android:color="@color/accent" />
     </shape>
 </inset>

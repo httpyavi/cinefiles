@@ -42,6 +42,7 @@ class PreferencesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.prefsTopBar.applySystemBarsPadding(top = true, bottom = false)
         binding.prefsFooter.applySystemBarsPadding(top = false, bottom = true)
+        binding.prefsGlow.strength = GLOW_STRENGTH
 
         setUpButtons()
         setUpChips()
@@ -109,5 +110,9 @@ class PreferencesFragment : Fragment() {
             val option = checkedIds.firstOrNull()?.let { optionOfChip[it] }
             if (option != null) onPicked(option)
         }
+    }
+
+    private companion object {
+        const val GLOW_STRENGTH = 0.4f
     }
 }

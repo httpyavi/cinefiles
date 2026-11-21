@@ -9,7 +9,6 @@ import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Mood
 import com.example.cinefiles.logic.MoodSelection
-import com.example.cinefiles.logic.Moods
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.ReleasePeriod
 import com.example.cinefiles.logic.ToggleResult
@@ -23,6 +22,7 @@ import com.example.cinefiles.logic.ToggleResult
  * Home calls [reset] when a new flow starts.
  *
  * The rules for picking moods live in logic/MoodSelection.kt; this class only holds the result.
+ * (The old grid of mood cards and its TEMP photo map are gone: the Mood screen is a slider now.)
  */
 class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -32,14 +32,11 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
     /** The moods picked so far. */
     val selection: LiveData<MoodSelection> = _selection
 
-    // TEMP: no mood photos yet (no TMDB data), so every card shows its tinted fallback.
-    // Batch 5 fills this in: mood id -> photo web address. Replaced in Batch 5 (see TEMP.md).
-    private val moodImageUrls: Map<String, String> = emptyMap()
-
-    private val _moodCards = MutableLiveData(buildCards())
-
-    /** The nine cards, ready to draw (mood + photo + selected or not). */
-    val moodCards: LiveData<List<MoodCard>> = _moodCards
+    /**
+     * Which place on the Mood screen's slider is showing (an index into Moods.spectrum). Kept here so that
+     * going on to Preferences and coming back, or turning the phone, leaves the slider where it was.
+     */
+    var moodSliderIndex = DEFAULT_MOOD_INDEX
 
     /** The choices of the Preferences screen. Nothing needs to watch them yet, so this is a plain value. */
     var preferences = Preferences()
@@ -53,7 +50,6 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
         val outcome = currentSelection.toggle(mood)
         currentSelection = outcome.selection
         _selection.value = currentSelection
-        _moodCards.value = buildCards()
         return outcome.result
     }
 
@@ -82,11 +78,11 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
     fun reset() {
         currentSelection = MoodSelection()
         _selection.value = currentSelection
-        _moodCards.value = buildCards()
         preferences = Preferences()
+        moodSliderIndex = DEFAULT_MOOD_INDEX
     }
 
-    private fun buildCards(): List<MoodCard> = Moods.all.map { mood ->
-        MoodCard(mood, moodImageUrls[mood.id], currentSelection.isSelected(mood))
+    private companion object {
+        const val DEFAULT_MOOD_INDEX = 1 // the slider starts on the second mood, Happy
     }
 }

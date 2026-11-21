@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Mood icon (24 dp, outline). Colored by whoever uses it (the mood card tints it). -->
+<!-- 24 dp icon. Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="@dimen/icon_size"
     android:height="@dimen/icon_size"
+    android:autoMirrored="true"
     android:tint="?attr/colorControlNormal"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:pathData="M13,2.5 L5,13.5 H11 L10,21.5 L19,10 H13 Z"
         android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:strokeWidth="1.75" />
+        android:pathData="M5,12 H19 M13,6 L19,12 L13,18" />
 </vector>

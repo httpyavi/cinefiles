@@ -6,19 +6,19 @@
          widget (dialogs, snackbars, bottom nav...) automatically matches the design. -->
     <style name="Theme.CineFiles" parent="Theme.Material3.Dark.NoActionBar">
 
-        <!-- Gold = primary action / selected -->
-        <item name="colorPrimary">@color/gold</item>
-        <item name="colorOnPrimary">@color/on_gold</item>
-        <item name="colorPrimaryContainer">@color/elevated</item>
+        <!-- The red accent = primary action / selected -->
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorPrimaryContainer">@color/accent_glow</item>
         <item name="colorOnPrimaryContainer">@color/text_primary</item>
-        <item name="colorSecondary">@color/gold</item>
-        <item name="colorOnSecondary">@color/on_gold</item>
+        <item name="colorSecondary">@color/accent_soft</item>
+        <item name="colorOnSecondary">@color/background</item>
         <!-- "Secondary container" is what tonal buttons use: a quiet elevated tone -->
         <item name="colorSecondaryContainer">@color/elevated</item>
         <item name="colorOnSecondaryContainer">@color/text_primary</item>
-        <item name="colorTertiary">@color/like_green</item>
+        <item name="colorTertiary">@color/accent_soft</item>
         <item name="colorOnTertiary">@color/background</item>
-        <item name="colorError">@color/pass_red</item>
+        <item name="colorError">@color/accent_soft</item>
         <item name="colorOnError">@color/background</item>
 
         <!-- Surfaces -->
@@ -39,14 +39,14 @@
         <item name="colorOutline">@color/outline</item>
         <item name="colorOutlineVariant">@color/outline</item>
 
-        <!-- Snackbars: a dark elevated pill with a gold action (instead of the default light one) -->
+        <!-- Snackbars: a dark elevated pill with a red action (instead of the default light one) -->
         <item name="colorSurfaceInverse">@color/elevated</item>
         <item name="colorOnSurfaceInverse">@color/text_primary</item>
-        <item name="colorPrimaryInverse">@color/gold</item>
+        <item name="colorPrimaryInverse">@color/accent_soft</item>
 
-        <!-- Icons are quiet gray by default; "activated" ones are gold -->
+        <!-- Icons are quiet gray by default; "activated" ones are red -->
         <item name="colorControlNormal">@color/text_secondary</item>
-        <item name="colorControlActivated">@color/gold</item>
+        <item name="colorControlActivated">@color/accent</item>
 
         <!-- System bars: transparent, drawn behind (edge-to-edge), with light icons -->
         <item name="android:statusBarColor">@android:color/transparent</item>
@@ -56,6 +56,7 @@
         <!-- Text sizes for Material components. The font itself comes from the text appearances
              (see styles.xml). Do NOT add a theme-wide android:fontFamily here: it would override
              the font of every text appearance. -->
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.CineFiles.Display</item>
         <item name="textAppearanceHeadlineLarge">@style/TextAppearance.CineFiles.LargeTitle</item>
         <item name="textAppearanceHeadlineMedium">@style/TextAppearance.CineFiles.Title</item>
         <item name="textAppearanceHeadlineSmall">@style/TextAppearance.CineFiles.Title</item>

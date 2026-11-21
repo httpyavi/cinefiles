@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The floating tab bar: a dark glass pill with a light edge. It is darker than other glass because
+     content scrolls underneath it and the tab labels must stay readable. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/glass_dark" />
+    <stroke
+        android:width="@dimen/glass_stroke_width"
+        android:color="@color/glass_stroke" />
+    <corners android:radius="@dimen/radius_pill" />
+</shape>

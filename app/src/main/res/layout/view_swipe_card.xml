@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Contents of SwipeCardView: a full-bleed poster, a soft scrim, the title and the rating / year / genres,
-     and the two stamps (LIKE top-left, PASS top-right) that fade in while the card is dragged.
-     The rounded corners (24 dp) and the shadow are done by SwipeCardView itself. -->
+<!-- Contents of SwipeCardView: a full-bleed poster, a soft scrim, the title with the rating / year / genres,
+     and the like / pass feedback (a veil and a centered icon) that appears only while the card is dragged.
+     The rounded corners (24 dp), the light edge and the shadow are done by SwipeCardView itself. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -30,10 +30,22 @@
         android:orientation="vertical"
         android:padding="@dimen/space_20">
 
+        <!-- Why this movie is here: "Top rated", "Hidden gem"... -->
+        <TextView
+            android:id="@+id/cardEyebrow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft"
+            tools:text="Top rated" />
+
         <TextView
             android:id="@+id/cardTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="@style/TextAppearance.CineFiles.Title"
@@ -42,26 +54,40 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginTop="@dimen/space_12"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/cardStar"
-                android:layout_width="@dimen/icon_size_small"
-                android:layout_height="@dimen/icon_size_small"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_star_filled"
-                app:tint="@color/gold" />
-
-            <TextView
-                android:id="@+id/cardRating"
+            <!-- The rating in a small glass pill -->
+            <LinearLayout
+                android:id="@+id/cardRatingPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_4"
-                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
-                android:textColor="@color/text_primary"
-                tools:text="8.7" />
+                android:background="@drawable/bg_glass_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/space_8"
+                android:paddingTop="@dimen/space_4"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingBottom="@dimen/space_4">
+
+                <ImageView
+                    android:id="@+id/cardStar"
+                    android:layout_width="@dimen/icon_size_small"
+                    android:layout_height="@dimen/icon_size_small"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_star_filled"
+                    app:tint="@color/star" />
+
+                <TextView
+                    android:id="@+id/cardRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_4"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                    tools:text="8.7" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/cardMeta"
@@ -77,38 +103,44 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- The stamps are decoration: their alpha is set from the drag. They start invisible. -->
-    <TextView
-        android:id="@+id/stampLike"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:layout_margin="@dimen/space_24"
-        android:background="@drawable/bg_stamp_like"
-        android:importantForAccessibility="no"
-        android:paddingStart="@dimen/space_12"
-        android:paddingTop="@dimen/space_4"
-        android:paddingEnd="@dimen/space_12"
-        android:paddingBottom="@dimen/space_4"
-        android:text="@string/swipe_stamp_like"
-        android:textAppearance="@style/TextAppearance.CineFiles.Stamp"
-        android:textColor="@color/like_green" />
+    <!-- Swipe feedback. At rest all four are invisible and the poster is untouched. While the card is dragged,
+         a see-through red (right) or slate (left) veil fades in over the poster and a big heart or X grows in
+         the middle; SwipeCardView.setFeedback() sets their opacity and size from the distance dragged. -->
+    <View
+        android:id="@+id/overlayLike"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="@color/accent"
+        android:importantForAccessibility="no" />
 
-    <TextView
-        android:id="@+id/stampPass"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_margin="@dimen/space_24"
-        android:background="@drawable/bg_stamp_pass"
+    <View
+        android:id="@+id/overlayPass"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="@color/pass_overlay"
+        android:importantForAccessibility="no" />
+
+    <ImageView
+        android:id="@+id/iconLike"
+        android:layout_width="@dimen/swipe_feedback_icon_size"
+        android:layout_height="@dimen/swipe_feedback_icon_size"
+        android:layout_gravity="center"
+        android:alpha="0"
         android:importantForAccessibility="no"
-        android:paddingStart="@dimen/space_12"
-        android:paddingTop="@dimen/space_4"
-        android:paddingEnd="@dimen/space_12"
-        android:paddingBottom="@dimen/space_4"
-        android:text="@string/swipe_stamp_pass"
-        android:textAppearance="@style/TextAppearance.CineFiles.Stamp"
-        android:textColor="@color/pass_red" />
+        android:src="@drawable/ic_heart_filled"
+        app:tint="@color/on_accent" />
+
+    <ImageView
+        android:id="@+id/iconPass"
+        android:layout_width="@dimen/swipe_feedback_icon_size"
+        android:layout_height="@dimen/swipe_feedback_icon_size"
+        android:layout_gravity="center"
+        android:alpha="0"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_close"
+        app:tint="@color/on_accent" />
 
     <!-- A flat surface-colored sheet over the whole card. A card waiting BEHIND the top card is fully covered
          by it (so it reads as a quiet tonal card); the sheet fades away as the card comes to the front. -->

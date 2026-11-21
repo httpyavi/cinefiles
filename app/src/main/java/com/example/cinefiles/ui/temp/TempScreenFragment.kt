@@ -25,6 +25,10 @@ private const val ARG_ACTION_DESTINATION = "actionDestination"
 // the arguments in nav_graph.xml. Removed screen by screen in later batches (see TEMP.md).
 class TempScreenFragment : Fragment() {
 
+    private companion object {
+        const val GLOW_STRENGTH = 0.5f
+    }
+
     private var _binding: FragmentTempScreenBinding? = null
     private val binding get() = _binding!!
 
@@ -38,7 +42,8 @@ class TempScreenFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding.tempRoot.applySystemBarsPadding()
+        binding.tempContent.applySystemBarsPadding() // not the glow: it fills the whole screen
+        binding.tempGlow.strength = GLOW_STRENGTH
 
         val args = requireArguments()
         binding.tempTitle.setText(args.getInt(ARG_TITLE))

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The CineFiles logo: a red mark with the name in white. The artwork is the original one, untouched:
+     only the size (a 2204 x 1726 canvas was far too big: 128 x 100 dp keeps the same shape and is easy to scale
+     in any ImageView) and the colors (now the theme tokens accent and on_accent) were changed.
+     Used in the Home header, and (through ic_logo.xml) on the splash screen and as the launcher icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="100dp"
+    android:viewportWidth="2204"
+    android:viewportHeight="1726">
+  <path
+      android:pathData="M2203.5,1209.5L1788.5,962L1692,1362L1382.5,1429L1175,1395.5L1039,1426L1004,1701L680.5,1725.5L793.5,1465.1L161.5,1514.5L18,1395.5L0,182.5L324,35L649.5,19.5L922,62L1788.5,0L1724.5,434L2203.5,287.5V1209.5Z"
+      android:fillColor="@color/accent"/>
+  <path
+      android:pathData="M2098.7,587.6L2098,416.1L1867.3,506.6L1853.8,628.2L1963.5,792.2L1829.1,676.8L1752.6,814.6L2081,1029.7L2079.8,743.2L1962.8,602.7L2098.7,587.6Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M669.5,1144L528.5,1181L489,445L655.5,456L734,615.5L669.5,123.5L852,140V878.5H711L635,680L669.5,1144Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M645.5,397.5L622.5,148H386L110.5,245L129,1322.5L224.5,1383L674.5,1354.5V1184L524.5,1218.5L335.5,1207L309.5,383.5L645.5,397.5Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M487,1176L377,1161L358.5,644L462.5,652.5L487,1176Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M462.5,598L358.5,573L353.5,422L444,426L462.5,598Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M1165,1278L914.2,1318L892.4,159.1L1670.2,99.4L1639,301.7L1135.8,382.3L1136.1,446.3L1385.9,391.6L1368.4,651.1L1136.9,648.7L1165,1278Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M1371.1,1288.6L1208.5,1277.8L1189,905.4L1353.6,818.2L1371.1,1288.6Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M1353.4,761.7L1188.7,844.9L1176.7,703.9L1368.7,703.1L1353.4,761.7Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M1419,675.4L1432.9,388.9L1627.3,364.1L1568.5,674.8L1536.3,884L1701.2,858.8L1616,1263.6L1412.1,1287L1393.7,832.5L1419,675.4Z"
+      android:fillColor="@color/on_accent"/>
+  <path
+      android:pathData="M1630.6,567.1L1806.4,518.8L1831.3,609.7L1791.1,682.9L1684,662.9L1763.8,726.5L1725,786.2L1608.6,810.7L1598.8,739.2L1630.6,567.1ZM1763.3,617.5L1729.3,610.2L1748.7,584.6L1767.2,584.5L1763.3,617.5Z"
+      android:fillColor="@color/on_accent"
+      android:fillType="evenOdd"/>
+  <path
+      android:pathData="M851.5,909L868.5,969.5L872.5,1076.5L844.5,1118L766,1108L759,1137L776,1193L808,1179L825.5,1143.5L882,1179V1320.5L758.5,1345L715.5,1333L687,1019L724,929L851.5,909ZM781,1032L811.5,1038.5L831,1019L808,984.5L774.5,1009L781,1032Z"
+      android:fillColor="@color/on_accent"
+      android:fillType="evenOdd"/>
+</vector>

@@ -4,6 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
+import android.widget.Button
+import androidx.core.view.AccessibilityDelegateCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -38,6 +44,20 @@ class HomeFragment : Fragment() {
     // Shared with the Mood, Preferences and Swipe screens. Home only starts a fresh flow with it.
     private val watchFlow: WatchFlowViewModel by activityViewModels()
 
+    // A small invitation: the arrow on the big button slides forward and springs back, then waits a few seconds
+    private val nudgeArrow = object : Runnable {
+        override fun run() {
+            val arrow = _binding?.heroButtonArrow ?: return
+            val distance = resources.getDimension(R.dimen.cta_arrow_nudge)
+            arrow.animate().translationX(distance).setDuration(NUDGE_OUT_MS).setInterpolator(DecelerateInterpolator())
+                .withEndAction {
+                    _binding?.heroButtonArrow?.animate()?.translationX(0f)?.setDuration(NUDGE_BACK_MS)
+                        ?.setInterpolator(OvershootInterpolator(NUDGE_OVERSHOOT))?.start()
+                }.start()
+            arrow.postDelayed(this, NUDGE_EVERY_MS)
+        }
+    }
+
     private lateinit var trendingAdapter: PosterRowAdapter
     private lateinit var popularAdapter: PosterRowAdapter
 
@@ -51,7 +71,7 @@ class HomeFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // The header sits under the status bar; the scrolling area needs room above the tab bar
+        // The header floats on the hero picture, under the status bar; the scrolling area needs room above the tab bar
         binding.homeHeader.applySystemBarsPadding(top = true, bottom = false)
         binding.homeScroll.applySystemBarsPadding(top = false, bottom = true)
 
@@ -67,6 +87,18 @@ class HomeFragment : Fragment() {
         super.onResume()
         // The app may have been open since the morning: check the time again
         viewModel.refreshGreeting()
+        // The arrow of the big button starts giving its small nudge now and then
+        _binding?.heroButtonArrow?.postDelayed(nudgeArrow, NUDGE_FIRST_MS)
+    }
+
+    override fun onPause() {
+        // Stop the nudging while the screen is not showing
+        _binding?.heroButtonArrow?.let {
+            it.removeCallbacks(nudgeArrow)
+            it.animate().cancel()
+            it.translationX = 0f
+        }
+        super.onPause()
     }
 
     override fun onDestroyView() {
@@ -93,7 +125,15 @@ class HomeFragment : Fragment() {
     }
 
     private fun setUpHero() {
-        // The gold button starts the journey: Home -> Mood. A new journey starts with nothing chosen.
+        // For screen readers the big button is a button, not just a group of views
+        ViewCompat.setAccessibilityDelegate(binding.heroButton, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfoCompat) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.className = Button::class.java.name
+            }
+        })
+
+        // The red button starts the journey: Home -> Mood. A new journey starts with nothing chosen.
         binding.heroButton.setOnClickListener {
             watchFlow.reset()
             findNavController().openScreen(R.id.moodFragment)
@@ -164,6 +204,10 @@ class HomeFragment : Fragment() {
         binding.heroFilled.isVisible = featured != null
         if (featured != null) {
             binding.heroTitle.text = featured.title
+            // "2017 · Science Fiction, Drama"
+            val genres = featured.genreNames.take(2).joinToString(", ").ifEmpty { null }
+            binding.heroMeta.text = listOfNotNull(featured.releaseYear?.toString(), genres).joinToString(" · ")
+            binding.heroMeta.isVisible = binding.heroMeta.text.isNotEmpty()
             binding.heroImage.loadImage(ImageUrls.backdrop(featured.backdropPath))
         }
 
@@ -186,5 +230,13 @@ class HomeFragment : Fragment() {
         loadingPlaceholders.isVisible = isLoading
         list.isVisible = !isLoading
         if (movies != null) adapter.submitList(movies)
+    }
+
+    private companion object {
+        const val NUDGE_FIRST_MS = 1800L
+        const val NUDGE_EVERY_MS = 4500L
+        const val NUDGE_OUT_MS = 260L
+        const val NUDGE_BACK_MS = 420L
+        const val NUDGE_OVERSHOOT = 2.5f
     }
 }

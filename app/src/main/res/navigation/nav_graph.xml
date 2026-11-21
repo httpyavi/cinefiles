@@ -15,6 +15,14 @@
         android:label="@string/nav_home"
         tools:layout="@layout/fragment_home" />
 
+    <!-- Profile (a tab): your numbers and your achievements. It has a TEMP button that opens the
+         Batch 1 design gallery, so the gallery stays reachable. -->
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.cinefiles.ui.profile.ProfileFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_profile" />
+
     <!-- The "watch something" flow. Home -> Mood -> Preferences -> Swipe (Batch 4).
          All of them share one WatchFlowViewModel. The bottom bar is hidden on all of them. -->
     <fragment
@@ -68,29 +76,7 @@
             app:argType="reference" />
     </fragment>
 
-    <!-- Profile also has a button that opens the Batch 1 design gallery, so it stays reachable -->
-    <fragment
-        android:id="@+id/profileFragment"
-        android:name="com.example.cinefiles.ui.temp.TempScreenFragment"
-        android:label="@string/nav_profile"
-        tools:layout="@layout/fragment_temp_screen">
-        <argument
-            android:name="title"
-            android:defaultValue="@string/nav_profile"
-            app:argType="reference" />
-        <argument
-            android:name="message"
-            android:defaultValue="@string/temp_profile_message"
-            app:argType="reference" />
-        <argument
-            android:name="actionText"
-            android:defaultValue="@string/temp_open_gallery"
-            app:argType="reference" />
-        <argument
-            android:name="actionDestination"
-            android:defaultValue="@id/designGalleryFragment"
-            app:argType="reference" />
-    </fragment>
+    <!-- (Profile used to be a stand-in here. It is a real screen now: see below, next to Home.) -->
 
     <fragment
         android:id="@+id/detailsFragment"

@@ -2,13 +2,17 @@ package com.example.cinefiles
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.FragmentContainerView
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -50,6 +54,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpTabBar() {
+        // The bar floats as a pill above the gesture bar: lift it by the height of that bar
+        val baseMargin = resources.getDimensionPixelSize(R.dimen.bottom_nav_margin_bottom)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav) { bar, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            bar.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = baseMargin + bars.bottom }
+            insets
+        }
+
         // This keeps the highlighted tab in sync with the screen that is showing
         // (also when a screen switches tabs by itself, like the search icon on Home).
         binding.bottomNav.setupWithNavController(navController)
@@ -74,6 +86,8 @@ class MainActivity : AppCompatActivity() {
         val bar = binding.bottomNav
         isBarShown = show
         bar.animate().cancel()
+        // To hide the bar it must slide past the screen edge: its own height plus the gap below it
+        val slideDistance = (bar.height + (bar.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin).toFloat()
 
         if (!animate) {
             bar.translationY = 0f
@@ -83,7 +97,7 @@ class MainActivity : AppCompatActivity() {
 
         if (show) {
             if (bar.isGone) {
-                bar.translationY = bar.height.toFloat() // start below the screen edge
+                bar.translationY = slideDistance // start below the screen edge
                 bar.isVisible = true
             }
             bar.animate()
@@ -93,7 +107,7 @@ class MainActivity : AppCompatActivity() {
                 .start()
         } else {
             bar.animate()
-                .translationY(bar.height.toFloat())
+                .translationY(slideDistance)
                 .setDuration(BAR_SLIDE_MS)
                 .setInterpolator(DecelerateInterpolator())
                 .withEndAction {

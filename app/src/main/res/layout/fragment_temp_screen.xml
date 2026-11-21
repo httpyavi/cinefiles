@@ -7,15 +7,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Only visible on screens that are not tabs (Mood, Details) -->
+    <!-- A faint red light on a dark stage, like the other screens -->
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/tempGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Everything except the glow: this is what is moved away from the status and gesture bars -->
+    <FrameLayout
+        android:id="@+id/tempContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <!-- Only visible on screens that are not tabs (Details, Picks) -->
     <ImageButton
         android:id="@+id/tempBack"
-        android:layout_width="@dimen/touch_target"
-        android:layout_height="@dimen/touch_target"
+        android:layout_width="@dimen/round_button_small_size"
+        android:layout_height="@dimen/round_button_small_size"
         android:layout_gravity="top|start"
-        android:layout_marginStart="@dimen/space_8"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginTop="@dimen/space_8"
+        android:background="@drawable/bg_glass_circle"
         android:contentDescription="@string/action_back"
+        android:padding="@dimen/space_10"
         android:src="@drawable/ic_back"
         android:visibility="gone"
         app:tint="@color/text_primary" />
@@ -30,11 +44,20 @@
         android:paddingEnd="@dimen/screen_margin">
 
         <TextView
-            android:id="@+id/tempTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+            android:text="@string/temp_coming_soon"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft" />
+
+        <TextView
+            android:id="@+id/tempTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle" />
 
         <TextView
             android:id="@+id/tempMessage"
@@ -65,5 +88,7 @@
             android:visibility="gone" />
 
     </LinearLayout>
+
+    </FrameLayout>
 
 </FrameLayout>

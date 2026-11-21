@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The rounded outline of the LIKE stamp (green). The stamp is quiet on purpose: an outline, no fill. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <stroke
-        android:width="@dimen/swipe_stamp_stroke"
-        android:color="@color/like_green" />
-    <corners android:radius="@dimen/radius_medium" />
-</shape>

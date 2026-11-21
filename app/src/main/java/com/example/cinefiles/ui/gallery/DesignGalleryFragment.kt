@@ -58,8 +58,8 @@ class DesignGalleryFragment : Fragment() {
     private fun addColorSwatches() {
         val colors = listOf(
             R.color.background, R.color.surface, R.color.elevated,
-            R.color.gold, R.color.on_gold, R.color.text_primary,
-            R.color.text_secondary, R.color.like_green, R.color.pass_red
+            R.color.accent, R.color.on_accent, R.color.text_primary,
+            R.color.text_secondary, R.color.like, R.color.pass
         )
         for (colorRes in colors) {
             val color = ContextCompat.getColor(requireContext(), colorRes)

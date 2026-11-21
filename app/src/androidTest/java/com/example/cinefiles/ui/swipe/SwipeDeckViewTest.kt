@@ -31,7 +31,8 @@ class SwipeDeckViewTest {
 
     private val swipes = ArrayList<SwipeDirection>()
     private var taps = 0
-    private val movies = SampleData.swipePage(0)
+    // Sixteen different sample movies (Home's two rows)
+    private val movies = SampleData.trending + SampleData.popular
 
     @Before
     fun setUp() {

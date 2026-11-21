@@ -4,6 +4,7 @@
     <!-- ===== Spacing: a 4 dp grid. The name is the size in dp. ===== -->
     <dimen name="space_4">4dp</dimen>
     <dimen name="space_8">8dp</dimen>
+    <dimen name="space_10">10dp</dimen>
     <dimen name="space_12">12dp</dimen>
     <dimen name="space_16">16dp</dimen>
     <dimen name="space_20">20dp</dimen>
@@ -29,41 +30,63 @@
     <dimen name="button_height">52dp</dimen>
     <dimen name="chip_height">40dp</dimen>       <!-- Material adds invisible padding up to 48 dp for touch -->
     <dimen name="round_button_size">56dp</dimen>
+    <dimen name="round_button_small_size">44dp</dimen>
+    <dimen name="glass_stroke_width">1dp</dimen>   <!-- the light edge of every glass surface -->
+    <dimen name="glow_elevation">10dp</dimen>      <!-- gives a red button its soft red glow (API 28+) -->
+    <dimen name="glow_elevation_pressed">4dp</dimen>
     <dimen name="badge_size">28dp</dimen>        <!-- poster status badge circle -->
     <dimen name="badge_padding">6dp</dimen>      <!-- (badge_size - icon_size_small) / 2 -->
-    <dimen name="state_icon_size">48dp</dimen>   <!-- icon in the empty state -->
+    <dimen name="end_icon_plate_size">80dp</dimen> <!-- the glass plate behind the icon of the end-of-deck screen -->
     <dimen name="state_text_max_width">280dp</dimen>
 
     <!-- Tab screens: height of the bottom tab bar (without the system navigation-bar inset).
          A tab screen reserves this much space at its bottom (android:paddingBottom) because the bar
          floats above the content. -->
-    <dimen name="bottom_nav_height">68dp</dimen>
+    <dimen name="bottom_nav_height">92dp</dimen>
+    <dimen name="bottom_nav_bar_height">64dp</dimen>     <!-- the floating pill itself -->
+    <dimen name="bottom_nav_margin_side">24dp</dimen>   <!-- gap to the screen edge, left and right -->
+    <dimen name="bottom_nav_margin_bottom">12dp</dimen> <!-- gap above the gesture bar -->
+    <dimen name="nav_indicator_width">56dp</dimen>
+    <dimen name="nav_indicator_height">32dp</dimen>
 
     <!-- Home screen -->
-    <dimen name="hero_height">260dp</dimen>
-    <dimen name="hero_scrim_height">240dp</dimen>
+    <dimen name="logo_header_width">56dp</dimen>          <!-- the logo in the Home header (the height follows its shape) -->
+    <dimen name="cta_height">64dp</dimen>                 <!-- the big "Let's watch something!" button -->
+    <dimen name="cta_badge_size">40dp</dimen>             <!-- the round play badge inside it -->
+    <dimen name="cta_glow_elevation">12dp</dimen>
+    <dimen name="cta_arrow_nudge">6dp</dimen>             <!-- how far its arrow slides when it nudges -->
+    <dimen name="hero_height">420dp</dimen>
+    <dimen name="hero_scrim_height">300dp</dimen>
+    <dimen name="hero_top_scrim_height">140dp</dimen>
     <!-- Poster rows: 112 dp wide, so on most phones three posters fit and a bit of the 4th peeks in,
          which tells you the row scrolls. The height is 1.5 x the width (posters are 2:3). -->
     <dimen name="poster_row_width">112dp</dimen>
     <dimen name="poster_row_height">168dp</dimen>
 
     <!-- Mood screen -->
-    <!-- The least height of a card. A card grows beyond it when big fonts need more room (see item_mood_card.xml). -->
-    <dimen name="mood_card_height">104dp</dimen>
-    <dimen name="mood_card_stroke">2dp</dimen>           <!-- the gold outline of a selected card -->
-    <dimen name="mood_icon_size">28dp</dimen>            <!-- icon of a card that has no photo -->
-    <dimen name="mood_grid_half_gap">6dp</dimen>         <!-- each card has 6 dp around it, so cards are 12 dp apart -->
-    <dimen name="mood_grid_padding">14dp</dimen>         <!-- 20 dp screen margin minus the 6 dp half gap -->
+    <dimen name="mood_face_min_height">120dp</dimen>      <!-- the animated face never gets smaller than this -->
+    <dimen name="mood_slider_height">56dp</dimen>
+    <dimen name="mood_slider_handle_radius">16dp</dimen>
+    <dimen name="mood_slider_track_thickness">6dp</dimen>
+    <dimen name="mood_slider_tick_radius">2dp</dimen>
+    <dimen name="mood_text_shift">12dp</dimen>            <!-- how far the mood name slides when it changes -->
 
     <!-- Swipe screen -->
     <dimen name="swipe_card_elevation">12dp</dimen>       <!-- the soft shadow of the TOP card only -->
     <dimen name="swipe_next_card_offset">24dp</dimen>     <!-- the card behind sits this much lower -->
-    <dimen name="swipe_scrim_height">240dp</dimen>
+    <dimen name="swipe_scrim_height">300dp</dimen>
     <dimen name="swipe_progress_height">4dp</dimen>
-    <dimen name="swipe_stamp_stroke">3dp</dimen>
+    <dimen name="swipe_feedback_icon_size">96dp</dimen>   <!-- the heart / X in the middle of a dragged card (at full size) -->
     <dimen name="swipe_fling_velocity">600dp</dimen>      <!-- a flick faster than 600 dp per second counts as a swipe -->
     <dimen name="icon_size_large">32dp</dimen>
     <dimen name="round_button_large_size">72dp</dimen>    <!-- Pass and Like -->
+
+    <!-- Achievements and Profile -->
+    <dimen name="badge_medal_size">72dp</dimen>
+    <dimen name="badge_ring_width">3dp</dimen>
+    <dimen name="avatar_large_size">88dp</dimen>
+    <dimen name="banner_icon_size">40dp</dimen>
+    <dimen name="banner_slide">96dp</dimen>               <!-- how far above the screen the banner waits -->
 
     <!-- Step indicator (the little "Step 1 of 3" bars) -->
     <dimen name="step_segment_width">20dp</dimen>
