@@ -70,6 +70,5 @@
     <color name="face_white">#FFFFFF</color>    <!-- the whites of wide eyes -->
     <color name="face_tear">#9ADBFF</color>     <!-- tears -->
     <color name="face_heart">#D4174A</color>    <!-- heart eyes -->
-    <color name="face_blush">#FF5A6E</color>    <!-- cheeks -->
 
 </resources>

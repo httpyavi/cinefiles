@@ -82,6 +82,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginTop="@dimen/space_8"
             android:layout_marginEnd="@dimen/screen_margin"
             android:gravity="center"
             android:maxLines="1"
@@ -107,7 +108,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/space_4"
+            android:layout_marginTop="@dimen/space_12"
             android:minHeight="@dimen/chip_height"
             android:paddingStart="@dimen/space_20"
             android:paddingEnd="@dimen/space_20"
@@ -115,39 +116,37 @@
             app:icon="@drawable/ic_add"
             app:iconSize="@dimen/icon_size_small" />
 
-        <com.example.cinefiles.ui.mood.MoodSliderView
-            android:id="@+id/moodSlider"
+        <!-- The slider, with the two ends of the spectrum named under it (in the slider's own space) -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/mood_slider_height"
-            android:layout_marginTop="@dimen/space_8"
-            android:contentDescription="@string/mood_slider_description" />
+            android:layout_marginTop="@dimen/space_4">
 
-        <!-- The two ends of the slider -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="@dimen/screen_margin"
-            android:paddingEnd="@dimen/screen_margin">
+            <com.example.cinefiles.ui.mood.MoodSliderView
+                android:id="@+id/moodSlider"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/mood_slider_description" />
 
             <TextView
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="@dimen/screen_margin"
                 android:importantForAccessibility="no"
                 android:text="@string/mood_slider_cozy"
                 android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
 
             <TextView
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="@dimen/screen_margin"
                 android:importantForAccessibility="no"
                 android:text="@string/mood_slider_wild"
                 android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
 
-        </LinearLayout>
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/moodFooter"

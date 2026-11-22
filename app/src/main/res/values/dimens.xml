@@ -68,10 +68,10 @@
 
     <!-- Mood screen -->
     <dimen name="mood_face_min_height">120dp</dimen>      <!-- the animated face never gets smaller than this -->
-    <dimen name="mood_slider_height">56dp</dimen>
-    <dimen name="mood_slider_handle_radius">16dp</dimen>
-    <dimen name="mood_slider_track_thickness">6dp</dimen>
-    <dimen name="mood_slider_tick_radius">2dp</dimen>
+    <dimen name="mood_slider_height">72dp</dimen>
+    <dimen name="mood_slider_handle_radius">20dp</dimen>
+    <dimen name="mood_slider_track_thickness">12dp</dimen>
+    <dimen name="mood_slider_tick_radius">2.5dp</dimen>
     <dimen name="mood_text_shift">12dp</dimen>            <!-- how far the mood name slides when it changes -->
 
     <!-- Swipe screen -->
