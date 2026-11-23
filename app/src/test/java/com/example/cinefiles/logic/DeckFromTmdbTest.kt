@@ -48,7 +48,7 @@ class DeckFromTmdbTest {
             assertEquals("a movie is in a deck once", ids.size, ids.toSet().size)
             seen.addAll(ids)
         }
-        assertEquals(80, seen.size)
+        assertEquals(4 * Discovery.DECK_SIZE, seen.size)
     }
 
     @Test
@@ -61,9 +61,11 @@ class DeckFromTmdbTest {
         val second = Discovery.buildDeck(listOf(comedy), Preferences(), seen.toSet(), tmdb::answer)
         seen.addAll(second.map { it.movie.id })
         val third = Discovery.buildDeck(listOf(comedy), Preferences(), seen.toSet(), tmdb::answer)
+        seen.addAll(third.map { it.movie.id })
+        val fourth = Discovery.buildDeck(listOf(comedy), Preferences(), seen.toSet(), tmdb::answer)
 
         assertEquals(30, seen.size) // every movie was shown exactly once
-        assertTrue(third.isEmpty())
+        assertTrue(fourth.isEmpty())
     }
 
     @Test

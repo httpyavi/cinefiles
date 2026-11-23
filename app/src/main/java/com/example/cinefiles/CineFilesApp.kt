@@ -3,7 +3,6 @@ package com.example.cinefiles
 import android.app.Application
 import android.os.StrictMode
 import android.util.Log
-import com.example.cinefiles.data.AchievementTracker
 import com.example.cinefiles.data.AppDatabase
 import com.example.cinefiles.data.MovieRepository
 import com.example.cinefiles.data.TmdbApi
@@ -18,9 +17,6 @@ import kotlin.concurrent.thread
  */
 class CineFilesApp : Application() {
 
-    /** The user's achievements. The swipe screen feeds it, the Profile screen shows it. */
-    val achievements: AchievementTracker by lazy { AchievementTracker(this) }
-
     /** The user's display name (the Profile screen edits it, Home shows it). */
     val userSettings: UserSettings by lazy { UserSettings(this) }
 
@@ -34,7 +30,12 @@ class CineFilesApp : Application() {
      */
     val movieRepository: MovieRepository by lazy {
         val token = BuildConfig.TMDB_READ_TOKEN
-        MovieRepository(api = TmdbApi.create(token), hasToken = token.isNotBlank(), dao = database.movieDao())
+        MovieRepository(
+            api = TmdbApi.create(token),
+            hasToken = token.isNotBlank(),
+            dao = database.movieDao(),
+            diaryDao = database.diaryDao()
+        )
     }
 
     override fun onCreate() {
@@ -51,13 +52,12 @@ class CineFilesApp : Application() {
     }
 
     /**
-     * Makes the four shared objects on a background thread right away. Reading the small settings files and setting
+     * Makes the shared objects on a background thread right away. Reading the small settings files and setting
      * up the network client touch the disk, and that must not happen on the main thread while a screen is drawing.
      * A screen that needs one of them before it is ready simply waits for it (a lazy value is made only once).
      */
     private fun warmUp() {
         thread(name = "cinefiles-warm-up") {
-            achievements
             userSettings
             movieRepository
         }

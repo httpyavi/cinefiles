@@ -33,7 +33,8 @@ import kotlinx.coroutines.flow.Flow
 class MovieRepository(
     private val api: TmdbApi,
     private val hasToken: Boolean,
-    private val dao: MovieDao
+    private val dao: MovieDao,
+    private val diaryDao: DiaryDao? = null
 ) {
 
     // Movies seen in the lists during this run of the app (NOT saved to the database). When the user opens
@@ -279,6 +280,105 @@ class MovieRepository(
     }
 
     private fun now(): Long = System.currentTimeMillis()
+
+    // ====================================================================================
+    //  Personal Ratings (0.5 to 5.0 stars, half-star increments)
+    // ====================================================================================
+
+    suspend fun setPersonalRating(movie: Movie, rating: Float?) {
+        saveIfMissing(movie)
+        if (rating == null || rating <= 0f) {
+            dao.clearPersonalRating(movie.id)
+        } else {
+            val clamped = (Math.round(rating * 2f) / 2f).coerceIn(0.5f, 5.0f)
+            dao.setPersonalRating(movie.id, clamped, now())
+        }
+    }
+
+    suspend fun removePersonalRating(movieId: Int) {
+        dao.clearPersonalRating(movieId)
+    }
+
+    fun observeRated(): Flow<List<Movie>> = dao.observeRated()
+
+    fun observeRatedCount(): Flow<Int> = dao.observeRatedCount()
+
+    // ====================================================================================
+    //  Favorites (Maximum 4 movies)
+    // ====================================================================================
+
+    /**
+     * Toggles favorite status.
+     * Returns true if favorite was toggled.
+     * Returns false if limit of 4 is already reached and cannot add another.
+     */
+    suspend fun toggleFavorite(movie: Movie): Boolean {
+        saveIfMissing(movie)
+        val current = dao.get(movie.id)
+        if (current?.isFavorite == true) {
+            dao.setFavorite(movie.id, false, 0L)
+            return true
+        }
+        val count = dao.countFavorites()
+        if (count >= 4) {
+            return false // Limit of 4 reached
+        }
+        dao.setFavorite(movie.id, true, now())
+        return true
+    }
+
+    suspend fun removeFavorite(movieId: Int) {
+        dao.setFavorite(movieId, false, 0L)
+    }
+
+    fun observeFavorites(): Flow<List<Movie>> = dao.observeFavorites()
+
+    suspend fun getFavorites(): List<Movie> = dao.getFavorites()
+
+    // ====================================================================================
+    //  Personal Movie Diary
+    // ====================================================================================
+
+    suspend fun saveDiaryEntry(
+        movie: Movie,
+        notes: String,
+        rating: Float?,
+        dateWatched: Long,
+        isRewatch: Boolean
+    ): Long {
+        saveIfMissing(movie)
+        if (rating != null && rating > 0f) {
+            setPersonalRating(movie, rating)
+        }
+        val entry = DiaryEntry(
+            movieId = movie.id,
+            movieTitle = movie.title,
+            posterPath = movie.posterPath,
+            releaseYear = movie.releaseYear,
+            rating = rating,
+            notes = notes,
+            dateWatched = dateWatched,
+            isRewatch = isRewatch,
+            createdAt = now()
+        )
+        return diaryDao?.insert(entry) ?: 0L
+    }
+
+    suspend fun deleteDiaryEntry(id: Long) {
+        diaryDao?.delete(id)
+    }
+
+    fun observeDiaryForMovie(movieId: Int): Flow<List<DiaryEntry>>? =
+        diaryDao?.observeForMovie(movieId)
+
+    fun observeDiary(): Flow<List<DiaryEntry>>? =
+        diaryDao?.observeAll()
+
+    fun observeDiaryCount(): Flow<Int>? =
+        diaryDao?.observeCount()
+
+    suspend fun getDiaryCount(): Int =
+        diaryDao?.count() ?: 0
 
     // ====================================================================================
     //  Shared by the TMDB functions

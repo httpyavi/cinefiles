@@ -98,6 +98,33 @@ interface MovieDao {
     @Query("SELECT * FROM movies WHERE isWatched = 1 ORDER BY watchedAt DESC, id DESC")
     fun observeWatched(): Flow<List<Movie>>
 
+    @Query("UPDATE movies SET personalRating = :rating, ratedAt = :at WHERE id = :id")
+    suspend fun setPersonalRating(id: Int, rating: Float?, at: Long)
+
+    @Query("UPDATE movies SET personalRating = NULL, ratedAt = 0 WHERE id = :id")
+    suspend fun clearPersonalRating(id: Int)
+
+    @Query("UPDATE movies SET isFavorite = :isFavorite, favoritedAt = :at WHERE id = :id")
+    suspend fun setFavorite(id: Int, isFavorite: Boolean, at: Long)
+
+    @Query("SELECT COUNT(*) FROM movies WHERE isFavorite = 1")
+    suspend fun countFavorites(): Int
+
+    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoritedAt DESC, id DESC LIMIT 4")
+    fun observeFavorites(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoritedAt DESC, id DESC LIMIT 4")
+    suspend fun getFavorites(): List<Movie>
+
+    @Query("SELECT * FROM movies WHERE personalRating IS NOT NULL ORDER BY ratedAt DESC, id DESC")
+    fun observeRated(): Flow<List<Movie>>
+
+    @Query("SELECT COUNT(*) FROM movies WHERE personalRating IS NOT NULL")
+    fun observeRatedCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM movies WHERE personalRating IS NOT NULL")
+    suspend fun countRated(): Int
+
     // ---------- Numbers ----------
 
     /** Live counts for all the lists. They use the same conditions as the lists above, so they always agree. */

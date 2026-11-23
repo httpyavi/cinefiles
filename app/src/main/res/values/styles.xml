@@ -14,34 +14,46 @@
          ===================================================================== -->
 
     <style name="TextAppearance.CineFiles.Regular" parent="">
-        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:fontFamily">@font/poppins_regular</item>
+        <item name="fontFamily">@font/poppins_regular</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.CineFiles.Medium" parent="TextAppearance.CineFiles.Regular">
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="fontFamily">@font/poppins_medium</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.SemiBold" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:fontFamily">@font/poppins_semibold</item>
+        <item name="fontFamily">@font/poppins_semibold</item>
+    </style>
+
+    <style name="TextAppearance.CineFiles.Bold" parent="TextAppearance.CineFiles.Regular">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="fontFamily">@font/poppins_bold</item>
     </style>
 
     <!-- The sizes of the design system -->
 
     <!-- Display: one huge word, like the mood name or a hero title -->
-    <style name="TextAppearance.CineFiles.Display" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Display" parent="TextAppearance.CineFiles.Bold">
         <item name="android:textSize">40sp</item>
         <item name="android:letterSpacing">-0.02</item>
     </style>
 
-    <style name="TextAppearance.CineFiles.LargeTitle" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.LargeTitle" parent="TextAppearance.CineFiles.Bold">
         <item name="android:textSize">32sp</item>
         <item name="android:letterSpacing">-0.015</item>
     </style>
 
-    <style name="TextAppearance.CineFiles.Title" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Title" parent="TextAppearance.CineFiles.SemiBold">
         <item name="android:textSize">24sp</item>
         <item name="android:letterSpacing">-0.01</item>
     </style>
 
-    <style name="TextAppearance.CineFiles.Headline" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Headline" parent="TextAppearance.CineFiles.SemiBold">
         <item name="android:textSize">18sp</item>
     </style>
 
@@ -62,7 +74,7 @@
 
     <!-- Eyebrow: a small line of capitals above a title ("FEATURED TODAY"). Gray; add the accent
          color with android:textColor where it should shout. -->
-    <style name="TextAppearance.CineFiles.Eyebrow" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Eyebrow" parent="TextAppearance.CineFiles.SemiBold">
         <item name="android:textSize">11sp</item>
         <item name="android:textAllCaps">true</item>
         <item name="android:letterSpacing">0.14</item>
@@ -75,15 +87,14 @@
     </style>
 
     <!-- The label of the big Home button: a little larger and bolder than a normal button -->
-    <style name="TextAppearance.CineFiles.Cta" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Cta" parent="TextAppearance.CineFiles.Bold">
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/on_accent</item>
         <item name="android:letterSpacing">0.01</item>
-        <item name="android:textStyle">bold</item>
     </style>
 
     <!-- Two helpers for controls: button text (16) and chip / tab label text (14) -->
-    <style name="TextAppearance.CineFiles.Button" parent="TextAppearance.CineFiles.Medium">
+    <style name="TextAppearance.CineFiles.Button" parent="TextAppearance.CineFiles.SemiBold">
         <item name="android:textSize">16sp</item>
     </style>
 

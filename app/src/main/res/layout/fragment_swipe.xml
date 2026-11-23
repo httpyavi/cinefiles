@@ -233,19 +233,4 @@
 
         </FrameLayout>
     </LinearLayout>
-
-    <!-- The achievement banner waits above the screen. The host only adds room for the status bar. -->
-    <FrameLayout
-        android:id="@+id/swipeBannerHost"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:clipChildren="false"
-        android:paddingTop="@dimen/space_8">
-
-        <include
-            android:id="@+id/swipeBanner"
-            layout="@layout/view_achievement_banner" />
-
-    </FrameLayout>
 </FrameLayout>

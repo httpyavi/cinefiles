@@ -188,13 +188,7 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
 
     /** "Happy · Romantic · 7 liked · 12 passed · 10 new picks" */
     private fun summaryLine(moods: List<Mood>, pickCount: Int): String {
-        val app = getApplication<Application>()
-        val parts = moods.map { app.getString(it.shortLabel) } + listOf(
-            app.getString(R.string.picks_summary_liked, picksLiked.size),
-            app.getString(R.string.picks_summary_passed, picksPassed.size),
-            app.resources.getQuantityString(R.plurals.picks_summary_new, pickCount, pickCount)
-        )
-        return parts.joinToString(" · ")
+        return getApplication<Application>().getString(R.string.picks_subtitle)
     }
 
     private fun chosenMoods(): List<Mood> = Moods.all.filter { it.id in currentSelection.ids }

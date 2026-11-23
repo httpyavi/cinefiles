@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PROFILE (a tab). A light glow behind a big avatar and the name (with Edit), three numbers, "Your taste", the
-     achievements (a panel that says what to do next, and a grid of medals), About CineFiles with the TMDB credit,
-     and Clear my data. Everything scrolls. -->
+<!-- Redesigned Profile Screen: personal, cinematic film tracking with Favorites, Personal Stats,
+     and quick access to Liked, Watchlist, Watched, Personal Ratings, and Diary. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -29,20 +28,61 @@
             android:paddingStart="@dimen/screen_margin"
             android:paddingEnd="@dimen/screen_margin">
 
-            <!-- ===== Who you are ===== -->
+            <!-- ===== CineFiles Branding Header ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_glass_circle"
+                    android:importantForAccessibility="no"
+                    android:padding="6dp"
+                    android:src="@drawable/cinefiles_logo_white"
+                    app:tint="@color/accent" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_12"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_brand_title"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_brand_subtitle"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                        android:textColor="@color/accent_soft" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ===== User Profile Header ===== -->
             <TextView
                 android:id="@+id/profileAvatar"
                 android:layout_width="@dimen/avatar_large_size"
                 android:layout_height="@dimen/avatar_large_size"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="@dimen/space_24"
+                android:layout_marginTop="@dimen/space_20"
                 android:background="@drawable/bg_avatar"
                 android:gravity="center"
                 android:importantForAccessibility="no"
                 android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
                 tools:text="M" />
 
-            <!-- The name, with a small Edit button next to it -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -82,11 +122,84 @@
                 android:text="@string/profile_member"
                 android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow" />
 
-            <!-- ===== Three numbers, in one glass strip ===== -->
+            <!-- ===== Favorites Section (Maximum of 4 Movies) ===== -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_24"
+                android:gravity="bottom"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:accessibilityHeading="true"
+                    android:text="@string/profile_favorites_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <TextView
+                    android:id="@+id/favoritesCountLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_favorites_subtitle"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                    android:textColor="@color/accent_soft" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/favoritesHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:text="@string/profile_favorites_empty"
+                android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                android:textColor="@color/text_secondary" />
+
+            <!-- The 4 Favorite Movie Slots -->
+            <LinearLayout
+                android:id="@+id/favoritesRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/slot1"
+                    layout="@layout/view_favorite_slot" />
+
+                <include
+                    android:id="@+id/slot2"
+                    layout="@layout/view_favorite_slot" />
+
+                <include
+                    android:id="@+id/slot3"
+                    layout="@layout/view_favorite_slot" />
+
+                <include
+                    android:id="@+id/slot4"
+                    layout="@layout/view_favorite_slot" />
+
+            </LinearLayout>
+
+            <!-- ===== Personal Movie Statistics ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_24"
+                android:accessibilityHeading="true"
+                android:text="@string/profile_stats_title"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:targetApi="28" />
+
+            <!-- Stats Glass Strip 1: Watched, Liked, Watchlist -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
                 android:background="@drawable/bg_glass_panel"
                 android:orientation="horizontal"
                 android:paddingTop="@dimen/space_16"
@@ -100,16 +213,17 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/statSwiped"
+                        android:id="@+id/statWatched"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.CineFiles.Title"
-                        tools:text="24" />
+                        android:textColor="@color/text_primary"
+                        tools:text="14" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_swiped"
+                        android:text="@string/profile_stats_watched"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
                 </LinearLayout>
 
@@ -137,7 +251,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/status_liked"
+                        android:text="@string/profile_stats_liked"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
                 </LinearLayout>
 
@@ -155,28 +269,92 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/statPassed"
+                        android:id="@+id/statWatchlist"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.CineFiles.Title"
-                        tools:text="15" />
+                        android:textColor="@color/text_primary"
+                        tools:text="7" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_passed"
+                        android:text="@string/profile_stats_watchlist"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
                 </LinearLayout>
+
             </LinearLayout>
 
-            <!-- ===== Your taste: the genre you like most, and how many movies you like in all ===== -->
+            <!-- Stats Glass Strip 2: Personal Ratings, Diary Entries -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_16"
+                android:layout_marginTop="@dimen/space_8"
+                android:background="@drawable/bg_glass_panel"
+                android:orientation="horizontal"
+                android:paddingTop="@dimen/space_16"
+                android:paddingBottom="@dimen/space_16">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/statRated"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        android:textColor="@color/accent"
+                        tools:text="11" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_stats_rated"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/glass_stroke_width"
+                    android:layout_height="match_parent"
+                    android:background="@color/glass_stroke"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/statDiary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        android:textColor="@color/text_primary"
+                        tools:text="5" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_stats_diary"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Your taste: top genre -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
                 android:background="@drawable/bg_glass_panel"
                 android:orientation="vertical"
-                android:padding="@dimen/space_20">
+                android:padding="@dimen/space_16">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -194,114 +372,263 @@
                     tools:text="Drama · 9 liked movies" />
             </LinearLayout>
 
-            <!-- ===== Achievements ===== -->
-            <LinearLayout
+            <!-- ===== Library & Journal Quick Access ===== -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_32"
-                android:baselineAligned="false"
-                android:gravity="bottom"
-                android:orientation="horizontal">
+                android:layout_marginTop="@dimen/space_24"
+                android:accessibilityHeading="true"
+                android:text="@string/profile_nav_header"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:targetApi="28" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:accessibilityHeading="true"
-                    tools:targetApi="28"
-                    android:text="@string/profile_achievements_title"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
-
-                <TextView
-                    android:id="@+id/achievementCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Caption"
-                    tools:text="3 of 9 unlocked" />
-
-            </LinearLayout>
-
-            <!-- What to do next (or the badge you tapped) -->
             <LinearLayout
-                android:id="@+id/focusPanel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_12"
-                android:background="@drawable/bg_glass_panel"
-                android:orientation="vertical"
-                android:padding="@dimen/space_20">
+                android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/focusEyebrow"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
-                    android:textColor="@color/accent_soft"
-                    tools:text="Next up" />
-
-                <TextView
-                    android:id="@+id/focusName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Headline"
-                    tools:text="Genre Collector" />
-
-                <TextView
-                    android:id="@+id/focusDescription"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Callout"
-                    tools:text="Like movies from 5 different genres." />
-
+                <!-- Row 1: Liked Movies -->
                 <LinearLayout
-                    android:id="@+id/focusProgressRow"
+                    android:id="@+id/navLikedRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
 
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/focusProgress"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        app:indicatorColor="@color/accent"
-                        app:trackColor="@color/glass_fill_strong"
-                        app:trackCornerRadius="@dimen/radius_pill"
-                        app:trackStopIndicatorSize="0dp"
-                        app:trackThickness="@dimen/swipe_progress_height"
-                        tools:progress="60" />
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_heart_filled"
+                        app:tint="@color/like" />
 
                     <TextView
-                        android:id="@+id/focusProgressText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_liked"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navLikedCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_12"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Label"
-                        tools:text="3 / 5" />
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/text_secondary"
+                        tools:text="9" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
 
                 </LinearLayout>
+
+                <!-- Row 2: Watchlist -->
+                <LinearLayout
+                    android:id="@+id/navWatchlistRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_bookmark_filled"
+                        app:tint="@color/accent_soft" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_watchlist"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navWatchlistCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/text_secondary"
+                        tools:text="7" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <!-- Row 3: Watched Movies -->
+                <LinearLayout
+                    android:id="@+id/navWatchedRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_check_filled"
+                        app:tint="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_watched"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navWatchedCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/text_secondary"
+                        tools:text="14" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <!-- Row 4: Personal Ratings -->
+                <LinearLayout
+                    android:id="@+id/navRatingsRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_star_filled"
+                        app:tint="@color/accent" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_ratings"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navRatingsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/accent"
+                        tools:text="11" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <!-- Row 5: Movie Diary -->
+                <LinearLayout
+                    android:id="@+id/navDiaryRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_film"
+                        app:tint="@color/accent" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_diary"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navDiaryCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/accent"
+                        tools:text="5" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
             </LinearLayout>
 
-            <!-- The medals. The grid does not scroll by itself: the NestedScrollView around it does. -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/achievementGrid"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_16"
-                android:nestedScrollingEnabled="false"
-                android:overScrollMode="never"
-                tools:itemCount="9"
-                tools:listitem="@layout/item_achievement" />
-
-            <!-- ===== About CineFiles: the version and the TMDB credit ===== -->
+            <!-- ===== About CineFiles: version and TMDB credit ===== -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_32"
+                android:layout_marginTop="@dimen/space_24"
                 android:background="@drawable/bg_glass_panel"
                 android:orientation="vertical"
                 android:padding="@dimen/space_20">
@@ -329,7 +656,6 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- TMDB's credit: its colors as a small badge, then the sentence its terms ask for -->
                     <TextView
                         android:id="@+id/tmdbBadge"
                         android:layout_width="wrap_content"
@@ -355,7 +681,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ===== Clear my data (red: it cannot be undone) ===== -->
+            <!-- ===== Clear my data button ===== -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/clearData"
                 style="@style/Widget.CineFiles.Button.Text"

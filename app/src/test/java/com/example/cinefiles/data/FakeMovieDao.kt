@@ -100,4 +100,31 @@ class FakeMovieDao : MovieDao {
     override suspend fun idsWithState(): List<Int> = rows.value.values.filter { it.hasAnyState() }.map { it.id }
 
     override fun observeWithState(): Flow<List<Movie>> = rows.map { all -> all.values.filter { it.hasAnyState() } }
+
+    override suspend fun setPersonalRating(id: Int, rating: Float?, at: Long) =
+        change(id) { it.copy(personalRating = rating, ratedAt = at) }
+
+    override suspend fun clearPersonalRating(id: Int) =
+        change(id) { it.copy(personalRating = null, ratedAt = 0L) }
+
+    override suspend fun setFavorite(id: Int, isFavorite: Boolean, at: Long) =
+        change(id) { it.copy(isFavorite = isFavorite, favoritedAt = at) }
+
+    override suspend fun countFavorites(): Int =
+        rows.value.values.count { it.isFavorite }
+
+    override fun observeFavorites(): Flow<List<Movie>> =
+        rows.map { all -> all.values.filter { it.isFavorite }.sortedByDescending { it.favoritedAt }.take(4) }
+
+    override suspend fun getFavorites(): List<Movie> =
+        rows.value.values.filter { it.isFavorite }.sortedByDescending { it.favoritedAt }.take(4)
+
+    override fun observeRated(): Flow<List<Movie>> =
+        rows.map { all -> all.values.filter { it.personalRating != null }.sortedByDescending { it.ratedAt } }
+
+    override fun observeRatedCount(): Flow<Int> =
+        rows.map { all -> all.values.count { it.personalRating != null } }
+
+    override suspend fun countRated(): Int =
+        rows.value.values.count { it.personalRating != null }
 }

@@ -30,26 +30,40 @@ import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.show
 import com.example.cinefiles.util.showMessage
+import com.google.android.material.chip.Chip
 
 /**
- * The Discover tab: search, the Popular / Trending / Top rated lists and the genre chips, as a three-column poster grid.
- * This class only draws what DiscoverViewModel says and forwards taps. The rules (when a search starts, what a genre
- * chip does) are in logic/DiscoverRules.kt and ui/discover/DiscoverViewModel.kt.
+ * Discover screen: Redesigned with ONE single horizontal scrollable filter row,
+ * clearly separated movie categories (Popular, Trending, Top Rated) and genre browsing sections
+ * with horizontally browsable movie posters.
  */
 class DiscoverFragment : Fragment() {
 
-    // ViewBinding: only valid between onCreateView and onDestroyView
     private var _binding: FragmentDiscoverBinding? = null
     private val binding get() = _binding!!
 
-    // Shared by the whole app window: Home's search icon asks it for the keyboard, and your search survives tab changes
     private val viewModel: DiscoverViewModel by activityViewModels()
 
-    private lateinit var adapter: PosterAdapter
+    // Adapters for the category and genre horizontal rows
+    private lateinit var popularAdapter: PosterAdapter
+    private lateinit var trendingAdapter: PosterAdapter
+    private lateinit var topRatedAdapter: PosterAdapter
+    private lateinit var actionAdapter: PosterAdapter
+    private lateinit var adventureAdapter: PosterAdapter
+    private lateinit var animationAdapter: PosterAdapter
+    private lateinit var comedyAdapter: PosterAdapter
+    private lateinit var dramaAdapter: PosterAdapter
+    private lateinit var horrorAdapter: PosterAdapter
+    private lateinit var romanceAdapter: PosterAdapter
+    private lateinit var scifiAdapter: PosterAdapter
+    private lateinit var thrillerAdapter: PosterAdapter
 
-    private val categoryOfChip = HashMap<Int, BrowseCategory>() // chip view id -> category
-    private val genreOfChip = HashMap<Int, Int>()               // chip view id -> TMDB genre id
-    private var shownFilters: DiscoverFilters? = null           // the filters the grid is showing movies for
+    // Adapter for search results grid
+    private lateinit var searchAdapter: PosterAdapter
+
+    private var allChipId: Int = 0
+    private val chipTags = HashMap<Int, String>()
+    private val chipGenreIds = HashMap<Int, Int>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,59 +75,165 @@ class DiscoverFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // The title starts below the status bar; the grid needs room above the floating tab bar
         binding.discoverHeader.applySystemBarsPadding(top = true, bottom = false)
+        binding.sectionsScroll.applySystemBarsPadding(top = false, bottom = true)
         binding.discoverGrid.applySystemBarsPadding(top = false, bottom = true)
 
         binding.discoverGlow.strength = GLOW_STRENGTH
         binding.discoverGlow.setTint(ContextCompat.getColor(requireContext(), R.color.accent))
 
-        setUpGrid()
+        setUpAdapters()
+        setUpFilterChips()
         setUpSearch()
-        setUpChips()
         setUpStateButtons()
 
-        viewModel.start() // the first call loads the first list; later calls do nothing
-        viewModel.filters.observe(viewLifecycleOwner) { showFilters(it) }
-        viewModel.state.observe(viewLifecycleOwner) { render(it) }
-        viewModel.focusSearch.observe(viewLifecycleOwner) { event ->
-            event.getIfNotHandled()?.let { focusSearchField() }
-        }
-        viewModel.loadMoreFailed.observe(viewLifecycleOwner) { event ->
-            event.getIfNotHandled()?.let {
-                showMessage(R.string.discover_load_more_failed, R.string.state_retry, aboveTabBar = true) { viewModel.loadNextPage() }
-            }
-        }
+        viewModel.start()
+        observeViewModel()
     }
 
     override fun onDestroyView() {
         hideKeyboard()
         super.onDestroyView()
-        shownFilters = null
-        categoryOfChip.clear()
-        genreOfChip.clear()
+        chipTags.clear()
+        chipGenreIds.clear()
         _binding = null
     }
 
-    // ---------- Setup ----------
+    // ---------- Adapters & Setup ----------
 
-    private fun setUpGrid() {
-        adapter = PosterAdapter(
-            style = PosterStyle.GRID,
-            showBadges = true,
-            onMovieClick = { movie -> findNavController().openMovieDetails(movie.id) }
-        )
-        binding.discoverGrid.adapter = adapter
-        binding.discoverGrid.itemAnimator = null // posters change badges or arrive in pages: no fancy animation needed
+    private fun setUpAdapters() {
+        val openDetails = { movieId: Int -> findNavController().openMovieDetails(movieId) }
 
-        // Near the end of the list the next page is asked for (the ViewModel ignores it when there is none)
+        popularAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        trendingAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        topRatedAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+
+        actionAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        adventureAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        animationAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        comedyAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        dramaAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        horrorAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        romanceAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        scifiAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+        thrillerAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
+
+        binding.popularList.adapter = popularAdapter
+        binding.trendingList.adapter = trendingAdapter
+        binding.topRatedList.adapter = topRatedAdapter
+        binding.actionList.adapter = actionAdapter
+        binding.adventureList.adapter = adventureAdapter
+        binding.animationList.adapter = animationAdapter
+        binding.comedyList.adapter = comedyAdapter
+        binding.dramaList.adapter = dramaAdapter
+        binding.horrorList.adapter = horrorAdapter
+        binding.romanceList.adapter = romanceAdapter
+        binding.scifiList.adapter = scifiAdapter
+        binding.thrillerList.adapter = thrillerAdapter
+
+        // Search Grid Adapter
+        searchAdapter = PosterAdapter(PosterStyle.GRID, showBadges = true, onMovieClick = { openDetails(it.id) })
+        binding.discoverGrid.adapter = searchAdapter
+        binding.discoverGrid.itemAnimator = null
+
         binding.discoverGrid.addOnScrollListener(PaginationScrollListener { viewModel.loadNextPage() })
-        // Scrolling the posters puts the keyboard away
         binding.discoverGrid.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) hideKeyboard()
             }
         })
+    }
+
+    /**
+     * Builds all filter chips in ONE single horizontal row.
+     * Order: All, Popular, Trending, Top Rated, then Genres.
+     */
+    private fun setUpFilterChips() {
+        val group = binding.filterChips
+
+        val allChip = group.addChoiceChip(getString(R.string.discover_all))
+        allChipId = allChip.id
+        chipTags[allChip.id] = "all"
+
+        val popularChip = group.addChoiceChip(getString(R.string.discover_popular))
+        chipTags[popularChip.id] = "popular"
+
+        val trendingChip = group.addChoiceChip(getString(R.string.discover_trending))
+        chipTags[trendingChip.id] = "trending"
+
+        val topRatedChip = group.addChoiceChip(getString(R.string.discover_top_rated))
+        chipTags[topRatedChip.id] = "top_rated"
+
+        val majorGenres = listOf(
+            28 to "Action",
+            12 to "Adventure",
+            16 to "Animation",
+            35 to "Comedy",
+            18 to "Drama",
+            27 to "Horror",
+            10749 to "Romance",
+            878 to "Sci-Fi",
+            53 to "Thriller"
+        )
+        for ((genreId, name) in majorGenres) {
+            val chip = group.addChoiceChip(name)
+            val tag = name.lowercase().replace("-", "")
+            chipTags[chip.id] = tag
+            chipGenreIds[chip.id] = genreId
+        }
+
+        // Remaining genres
+        val majorIds = majorGenres.map { it.first }.toSet()
+        for ((genreId, name) in Genres.all) {
+            if (genreId !in majorIds) {
+                val chip = group.addChoiceChip(name)
+                chipTags[chip.id] = "genre_$genreId"
+                chipGenreIds[chip.id] = genreId
+            }
+        }
+
+        group.check(allChipId)
+
+        group.setOnCheckedStateChangeListener { _, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: allChipId
+            onFilterChipSelected(checkedId)
+        }
+    }
+
+    private fun onFilterChipSelected(chipId: Int) {
+        val tag = chipTags[chipId] ?: "all"
+        val isSearching = viewModel.filters.value?.isSearching == true
+
+        if (isSearching) {
+            val genreId = chipGenreIds[chipId]
+            viewModel.selectGenre(genreId)
+            return
+        }
+
+        // Browsing mode: smoothly scroll the sections container to the selected section
+        when (tag) {
+            "all" -> binding.sectionsScroll.smoothScrollTo(0, 0)
+            "popular" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionPopular.top)
+            "trending" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionTrending.top)
+            "top_rated" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionTopRated.top)
+            "action" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAction.top)
+            "adventure" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAdventure.top)
+            "animation" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAnimation.top)
+            "comedy" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionComedy.top)
+            "drama" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionDrama.top)
+            "horror" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionHorror.top)
+            "romance" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionRomance.top)
+            "scifi" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionScifi.top)
+            "thriller" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionThriller.top)
+            else -> Unit
+        }
+
+        scrollToChip(chipId)
+    }
+
+    private fun scrollToChip(chipId: Int) {
+        val chip = binding.filterScroll.findViewById<View>(chipId) ?: return
+        binding.filterScroll.smoothScrollTo((chip.left - binding.filterScroll.paddingStart).coerceAtLeast(0), 0)
     }
 
     private fun setUpSearch() {
@@ -123,39 +243,22 @@ class DiscoverFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 val text = s?.toString().orEmpty()
                 binding.searchClear.isVisible = text.isNotEmpty()
-                viewModel.setQuery(text) // the ViewModel waits 400 ms for a pause in typing
+                viewModel.setQuery(text)
             }
         })
+
         binding.searchInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                viewModel.searchNow() // the search key: no need to wait for the pause
+                viewModel.searchNow()
                 hideKeyboard()
                 true
             } else {
                 false
             }
         }
-        binding.searchClear.setOnClickListener { binding.searchInput.setText("") }
-    }
 
-    /** The category chips and the genre chips are built once from the lists in logic/. */
-    private fun setUpChips() {
-        for (category in BrowseCategory.values()) {
-            val chip = binding.categoryChips.addChoiceChip(getString(category.label))
-            categoryOfChip[chip.id] = category
-        }
-        for ((genreId, name) in Genres.all) {
-            val chip = binding.genreChips.addChoiceChip(name)
-            genreOfChip[chip.id] = genreId
-        }
-
-        // Set after the chips exist and the first check below, so building them does not count as a pick
-        binding.categoryChips.setOnCheckedStateChangeListener { _, checkedIds ->
-            val category = checkedIds.firstOrNull()?.let { categoryOfChip[it] } ?: return@setOnCheckedStateChangeListener
-            viewModel.selectCategory(category)
-        }
-        binding.genreChips.setOnCheckedStateChangeListener { _, checkedIds ->
-            viewModel.selectGenre(checkedIds.firstOrNull()?.let { genreOfChip[it] }) // none checked: no genre
+        binding.searchClear.setOnClickListener {
+            binding.searchInput.setText("")
         }
     }
 
@@ -164,76 +267,90 @@ class DiscoverFragment : Fragment() {
             icon = R.drawable.ic_search,
             title = R.string.discover_empty_title,
             message = R.string.discover_empty_message,
-            action = EmptyAction(R.string.discover_clear_filters) { viewModel.clearFilters() }
+            action = EmptyAction(R.string.discover_clear_filters) {
+                viewModel.clearFilters()
+                binding.filterChips.check(allChipId)
+            }
         )
         binding.stateError.errorRetry.setOnClickListener { viewModel.retry() }
     }
 
-    // ---------- Drawing what the ViewModel says ----------
+    private fun observeViewModel() {
+        viewModel.sections.observe(viewLifecycleOwner) { sections ->
+            popularAdapter.submit(null, sections.popular)
+            trendingAdapter.submit(null, sections.trending)
+            topRatedAdapter.submit(null, sections.topRated)
 
-    /** The search field and the chips show the chosen filters (they change from outside too: "Clear filters"). */
-    private fun showFilters(filters: DiscoverFilters) {
-        if (binding.searchInput.text.toString() != filters.query) {
-            binding.searchInput.setText(filters.query)
-            binding.searchInput.setSelection(binding.searchInput.length())
-        }
-        binding.searchClear.isVisible = filters.query.isNotEmpty()
-
-        val categoryChip = categoryOfChip.entries.first { it.value == filters.category }.key
-        if (binding.categoryChips.checkedChipId != categoryChip) binding.categoryChips.check(categoryChip)
-
-        val genreChip = genreOfChip.entries.firstOrNull { it.value == filters.genreId }?.key
-        if (genreChip == null) {
-            binding.genreChips.clearCheck()
-        } else if (binding.genreChips.checkedChipId != genreChip) {
-            binding.genreChips.check(genreChip)
-            binding.genreScroll.post { _binding?.let { scrollToChip(it.genreScroll, genreChip) } }
+            actionAdapter.submit(null, sections.action)
+            adventureAdapter.submit(null, sections.adventure)
+            animationAdapter.submit(null, sections.animation)
+            comedyAdapter.submit(null, sections.comedy)
+            dramaAdapter.submit(null, sections.drama)
+            horrorAdapter.submit(null, sections.horror)
+            romanceAdapter.submit(null, sections.romance)
+            scifiAdapter.submit(null, sections.scifi)
+            thrillerAdapter.submit(null, sections.thriller)
         }
 
-        // While a search is on, the lists do not apply and the genre chips only filter what has loaded
-        binding.categoryScroll.alpha = if (filters.isSearching) INACTIVE_ALPHA else 1f
-        binding.searchNote.isVisible = filters.isSearching
-    }
+        viewModel.filters.observe(viewLifecycleOwner) { filters ->
+            if (binding.searchInput.text.toString() != filters.query) {
+                binding.searchInput.setText(filters.query)
+                binding.searchInput.setSelection(binding.searchInput.length())
+            }
+            binding.searchClear.isVisible = filters.query.isNotEmpty()
+            binding.searchNote.isVisible = filters.isSearching
 
-    private fun scrollToChip(scroll: HorizontalScrollView, chipId: Int) {
-        val chip = scroll.findViewById<View>(chipId) ?: return
-        scroll.smoothScrollTo((chip.left - scroll.paddingStart).coerceAtLeast(0), 0)
-    }
-
-    private fun render(state: DiscoverState) {
-        val content = state as? DiscoverState.Content
-
-        binding.stateLoading.root.isVisible = state is DiscoverState.Loading
-        binding.stateError.root.isVisible = state is DiscoverState.Error
-        binding.stateEmpty.root.isVisible = state is DiscoverState.Empty
-        binding.discoverGrid.isVisible = content != null
-        binding.loadMoreBar.isVisible = content?.isLoadingMore == true
-
-        when (state) {
-            is DiscoverState.Error -> binding.stateError.show(state.error)
-            // "Clear filters" only makes sense when something is chosen
-            is DiscoverState.Empty -> binding.stateEmpty.emptyAction.isVisible = state.hasFilters
-            else -> Unit
+            val isSearching = filters.isSearching
+            binding.sectionsScroll.isVisible = !isSearching
+            binding.discoverGrid.isVisible = isSearching
         }
 
-        if (content == null) {
-            adapter.submit(null, emptyList()) // the next list starts at the top
-            shownFilters = null
-            return
+        viewModel.state.observe(viewLifecycleOwner) { state ->
+            renderState(state)
         }
 
-        adapter.submit(null, content.movies)
-        val filters = viewModel.filters.value
-        if (filters != null && filters != shownFilters) {
-            // A new search, list or genre: it starts at the top
-            shownFilters = filters
-            binding.discoverGrid.post { _binding?.discoverGrid?.scrollToPosition(0) }
+        viewModel.focusSearch.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { focusSearchField() }
+        }
+
+        viewModel.loadMoreFailed.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let {
+                showMessage(R.string.discover_load_more_failed, R.string.state_retry, aboveTabBar = true) {
+                    viewModel.loadNextPage()
+                }
+            }
         }
     }
 
-    // ---------- The keyboard ----------
+    private fun renderState(state: DiscoverState) {
+        val isSearching = viewModel.filters.value?.isSearching == true
 
-    /** Home's search icon: the field gets the cursor and the keyboard comes up. */
+        if (isSearching) {
+            val content = state as? DiscoverState.Content
+            binding.stateLoading.root.isVisible = state is DiscoverState.Loading
+            binding.stateError.root.isVisible = state is DiscoverState.Error
+            binding.stateEmpty.root.isVisible = state is DiscoverState.Empty
+            binding.discoverGrid.isVisible = content != null
+            binding.sectionsScroll.isVisible = false
+            binding.loadMoreBar.isVisible = content?.isLoadingMore == true
+
+            when (state) {
+                is DiscoverState.Error -> binding.stateError.show(state.error)
+                is DiscoverState.Empty -> binding.stateEmpty.emptyAction.isVisible = state.hasFilters
+                is DiscoverState.Content -> searchAdapter.submit(null, state.movies)
+                else -> searchAdapter.submit(null, emptyList())
+            }
+        } else {
+            // In browsing mode, sectionsScroll is active
+            binding.stateLoading.root.isVisible = false
+            binding.stateError.root.isVisible = state is DiscoverState.Error && (popularAdapter.itemCount == 0)
+            binding.stateEmpty.root.isVisible = false
+            binding.sectionsScroll.isVisible = true
+            binding.discoverGrid.isVisible = false
+            binding.loadMoreBar.isVisible = false
+        }
+    }
+
     private fun focusSearchField() {
         val input = binding.searchInput
         input.requestFocus()
@@ -251,6 +368,5 @@ class DiscoverFragment : Fragment() {
 
     private companion object {
         const val GLOW_STRENGTH = 0.4f
-        const val INACTIVE_ALPHA = 0.45f
     }
 }

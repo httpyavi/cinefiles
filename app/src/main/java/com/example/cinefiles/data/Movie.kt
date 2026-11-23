@@ -59,5 +59,9 @@ data class Movie(
     val inWatchlist: Boolean = false,
     val watchlistAddedAt: Long = 0L,
     val isWatched: Boolean = false,
-    val watchedAt: Long = 0L
+    val watchedAt: Long = 0L,
+    val personalRating: Float? = null,
+    val ratedAt: Long = 0L,
+    val isFavorite: Boolean = false,
+    val favoritedAt: Long = 0L
 )

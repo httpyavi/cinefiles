@@ -135,16 +135,20 @@
     <string name="swipe_rating_description">Rated %1$s out of 10</string>
 
     <!-- Swipe screen: end of the deck -->
-    <string name="swipe_end_title">You\'ve seen them all</string>
+    <string name="swipe_end_title">Your next movie night.</string>
+    <string name="swipe_end_liked_title">Your next movie night.</string>
+    <string name="swipe_end_liked_message">Based on your mood and the movies you liked, we picked these for you.</string>
+    <string name="swipe_end_see_recommendations">See recommendations</string>
+    <string name="swipe_end_discover_more">Discover 10 more movies</string>
     <plurals name="swipe_end_liked">
-        <item quantity="one">You liked %1$d movie.</item>
-        <item quantity="other">You liked %1$d movies.</item>
+        <item quantity="one">Based on your mood and the movie you liked, we picked these for you.</item>
+        <item quantity="other">Based on your mood and the movies you liked, we picked these for you.</item>
     </plurals>
-    <string name="swipe_end_show_picks">Show my picks</string>
-    <string name="swipe_end_keep_swiping">Keep swiping</string>
-    <string name="swipe_end_zero_title">Nothing caught your eye?</string>
-    <string name="swipe_end_zero_message">Try another batch of cards, or pick a different mood.</string>
-    <string name="swipe_end_try_new_cards">Try new cards</string>
+    <string name="swipe_end_show_picks">See recommendations</string>
+    <string name="swipe_end_keep_swiping">Discover 10 more movies</string>
+    <string name="swipe_end_zero_title">Aww, you didn\'t like any.</string>
+    <string name="swipe_end_zero_message">Want to explore a little more?</string>
+    <string name="swipe_end_try_new_cards">Discover 10 more movies</string>
     <string name="swipe_end_change_mood">Change mood</string>
 
     <!-- Swipe screen: end of the deck, and there is nothing new to show -->
@@ -231,7 +235,7 @@
     <string name="profile_tmdb_notice">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
     <string name="profile_clear">Clear my data</string>
     <string name="profile_clear_title">Clear all your data?</string>
-    <string name="profile_clear_message">This deletes your liked, watchlist and watched movies, your achievements and your name. It cannot be undone.</string>
+    <string name="profile_clear_message">This deletes your liked, watchlist and watched movies, favorites, diary entries, personal ratings and your name. It cannot be undone.</string>
     <string name="profile_clear_confirm">Clear</string>
     <string name="profile_cleared">Your data was cleared</string>
     <string name="profile_stat_swiped">Discovered</string>
@@ -296,7 +300,8 @@
     <string name="swipe_end_show_picks_anyway">Show picks anyway</string>
 
     <!-- Your Picks -->
-    <string name="picks_title">Your Picks</string>
+    <string name="picks_title">Your next movie night.</string>
+    <string name="picks_subtitle">Based on your mood and the movies you liked, we picked these for you.</string>
     <string name="picks_done">Done</string>
     <!-- Parts of one summary line ("7 liked · 12 passed"): they read the same for any number -->
     <string name="picks_summary_liked" tools:ignore="PluralsCandidate">%1$d liked</string>
@@ -327,6 +332,12 @@
     <string name="picks_empty_message">Everything that fits has already been seen. Keep swiping, or try a different mood.</string>
 
     <!-- Discover -->
+    <string name="discover_all">All</string>
+    <string name="discover_popular_title">Popular Movies</string>
+    <string name="discover_trending_title">Trending Movies</string>
+    <string name="discover_top_rated_title">Top Rated Movies</string>
+    <string name="discover_featured_category">Featured Category</string>
+    <string name="discover_browse_genres">Browse by Genre</string>
     <string name="discover_title">Discover</string>
     <string name="discover_search_hint">Search movies</string>
     <string name="discover_search_clear">Clear search</string>
@@ -338,4 +349,46 @@
     <string name="discover_empty_message">Try different words, or fewer filters.</string>
     <string name="discover_clear_filters">Clear filters</string>
     <string name="discover_load_more_failed">Could not load more movies.</string>
+    <!-- Personal Movie Ratings & Diary & Favorites -->
+    <string name="detail_personal_rating">Your Rating</string>
+    <string name="detail_rate_movie">Rate movie</string>
+    <string name="detail_rating_format">%1$.1f / 5.0</string>
+    <string name="detail_remove_rating">Remove rating</string>
+    <string name="detail_favorite">Favorite</string>
+    <string name="detail_favorited">Favorited</string>
+    <string name="favorite_limit_reached">You can only have up to 4 favorites. Remove an existing favorite first.</string>
+    <string name="detail_personal_diary">Movie Diary</string>
+    <string name="detail_log_in_diary">Log in Diary</string>
+    <string name="diary_title">Movie Diary</string>
+    <string name="diary_thoughts_hint">Write your personal thoughts, notes or experience…</string>
+    <string name="diary_date_watched">Date Watched</string>
+    <string name="diary_rewatch">Rewatch</string>
+    <string name="diary_save">Save Entry</string>
+    <string name="diary_empty">No diary entries yet. Start logging movies you\'ve watched!</string>
+    <string name="diary_delete">Delete</string>
+    <string name="diary_entry_saved">Saved to diary</string>
+
+    <!-- Profile & Stats -->
+    <string name="profile_favorites_title">Favorites</string>
+    <string name="profile_favorites_subtitle">Top 4 movies</string>
+    <string name="profile_favorites_empty">Tap Favorite on any movie to pin up to 4 of your all-time favorites here.</string>
+    <string name="profile_stats_title">Personal Movie Stats</string>
+    <string name="profile_stats_watched">Watched</string>
+    <string name="profile_stats_watchlist">Watchlist</string>
+    <string name="profile_stats_rated">Rated</string>
+    <string name="profile_stats_diary">Diary Entries</string>
+    <string name="profile_nav_diary">Movie Diary</string>
+    <string name="profile_nav_ratings">Personal Ratings</string>
+    <string name="profile_nav_watchlist">Watchlist</string>
+    <string name="profile_nav_watched">Watched Movies</string>
+    <string name="profile_nav_liked">Liked Movies</string>
+    <string name="profile_stats_liked">Liked</string>
+    <string name="profile_brand_title">CINEFILES</string>
+    <string name="profile_brand_subtitle">Personal Film Journal</string>
+    <string name="profile_nav_header">Library &amp; Journal</string>
+    <string name="favorites_empty_slot">Empty</string>
+    <string name="favorite_remove">Remove favorite</string>
+    <string name="dialog_close">Close</string>
+    <string name="profile_no_ratings">No rated movies yet. Rate movies from 0.5 to 5 stars on movie details.</string>
+    <string name="profile_no_diary">No diary entries yet. Write your personal reflections on movie details.</string>
 </resources>

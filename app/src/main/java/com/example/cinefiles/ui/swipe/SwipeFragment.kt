@@ -5,7 +5,6 @@ import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import androidx.core.content.ContextCompat
 import androidx.core.view.isInvisible
@@ -17,7 +16,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.databinding.FragmentSwipeBinding
-import com.example.cinefiles.logic.Achievement
 import com.example.cinefiles.logic.SwipeDirection
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.EmptyAction
@@ -53,10 +51,6 @@ class SwipeFragment : Fragment() {
     private var latest: SwipeScreenState.Ready? = null  // the newest deck state, to know the NEXT card
     private var inDeckCallback = false                  // true while the deck reports a finished swipe or undo
 
-    private val bannerQueue = ArrayDeque<Achievement>()
-    private var bannerShowing = false
-    private val hideBannerRunnable = Runnable { hideBanner() }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -70,7 +64,6 @@ class SwipeFragment : Fragment() {
         // The top bar sits under the status bar; the buttons stay above the gesture bar
         binding.swipeTopBar.applySystemBarsPadding(top = true, bottom = false)
         binding.swipeButtons.applySystemBarsPadding(top = false, bottom = true)
-        binding.swipeBannerHost.applySystemBarsPadding(top = true, bottom = false)
 
         // Only the first call creates the deck. Coming back to this screen keeps it as it was.
         viewModel.start(watchFlow.selection.value?.ids.orEmpty(), watchFlow.preferences)
@@ -85,29 +78,13 @@ class SwipeFragment : Fragment() {
         setUpStateScreens()
 
         viewModel.screen.observe(viewLifecycleOwner) { render(it) }
-        viewModel.likeBlocked.observe(viewLifecycleOwner) { event ->
-            // THE LIKE RULE: the card was swiped right but its movie is on the watchlist, so it was not liked
-            event.getIfNotHandled()?.let { movie ->
-                showMessage(getString(R.string.swipe_like_blocked, movie.title))
-            }
-        }
         viewModel.message.observe(viewLifecycleOwner) { event ->
-            // "Keep swiping" could not get more cards (offline...): say why, the buttons stay as they were
+            // Network failure: say why, the buttons stay as they were
             event.getIfNotHandled()?.let { showMessage(it.message) }
-        }
-        viewModel.earned.observe(viewLifecycleOwner) { event ->
-            event.getIfNotHandled()?.let { badges ->
-                bannerQueue.addAll(badges)
-                showNextBanner()
-            }
         }
     }
 
     override fun onDestroyView() {
-        binding.swipeBanner.root.removeCallbacks(hideBannerRunnable)
-        binding.swipeBanner.root.animate().cancel()
-        bannerQueue.clear()
-        bannerShowing = false
         super.onDestroyView()
         _binding = null
     }
@@ -287,13 +264,12 @@ class SwipeFragment : Fragment() {
         }
     }
 
-    /** One of the four end-of-deck screens (see logic notes in view_swipe_end.xml). */
+    /** End-of-round screen after 10 movies. */
     private fun showEndOfDeck(ready: SwipeScreenState.Ready) {
         val end = binding.swipeEnd
         end.root.isVisible = ready.isFinished
         if (!ready.isFinished) return
 
-        // More cards are on their way: say so, and keep the buttons quiet until they arrive
         if (ready.isLoadingMore) {
             end.swipeEndIcon.setImageResource(R.drawable.ic_search)
             end.swipeEndTitle.setText(R.string.swipe_end_loading_title)
@@ -305,42 +281,31 @@ class SwipeFragment : Fragment() {
         }
         end.swipeEndPrimary.isEnabled = true
         end.swipeEndSecondary.isEnabled = true
-        end.swipeEndTertiary.isVisible = false // only the "nothing liked" screen below shows it
+        end.swipeEndTertiary.isVisible = false
 
         val liked = ready.likedCount > 0
         when {
-            // There is nothing new left to show: be honest about it
-            !ready.hasMore -> {
-                end.swipeEndIcon.setImageResource(R.drawable.ic_check)
-                end.swipeEndTitle.setText(R.string.swipe_end_exhausted_title)
-                if (liked) {
-                    end.swipeEndMessage.text = resources.getQuantityString(
-                        R.plurals.swipe_end_exhausted_liked, ready.likedCount, ready.likedCount
-                    )
-                    setEndButtons(R.string.swipe_end_show_picks, ::openPicks, R.string.swipe_end_change_mood, ::changeMood)
-                } else {
-                    end.swipeEndMessage.setText(R.string.swipe_end_exhausted_none)
-                    setEndButtons(
-                        R.string.swipe_end_change_mood, ::changeMood,
-                        R.string.swipe_end_change_preferences, ::changePreferences
-                    )
-                }
-            }
             liked -> {
                 end.swipeEndIcon.setImageResource(R.drawable.ic_check)
-                end.swipeEndTitle.setText(R.string.swipe_end_title)
-                end.swipeEndMessage.text =
-                    resources.getQuantityString(R.plurals.swipe_end_liked, ready.likedCount, ready.likedCount)
-                setEndButtons(R.string.swipe_end_show_picks, ::openPicks, R.string.swipe_end_keep_swiping, viewModel::keepSwiping)
+                end.swipeEndTitle.setText(R.string.swipe_end_liked_title)
+                end.swipeEndMessage.setText(R.string.swipe_end_liked_message)
+                setEndButtons(
+                    R.string.swipe_end_see_recommendations,
+                    ::openPicks,
+                    R.string.swipe_end_discover_more,
+                    viewModel::discoverMore
+                )
             }
             else -> {
                 end.swipeEndIcon.setImageResource(R.drawable.ic_search)
                 end.swipeEndTitle.setText(R.string.swipe_end_zero_title)
                 end.swipeEndMessage.setText(R.string.swipe_end_zero_message)
-                setEndButtons(R.string.swipe_end_try_new_cards, viewModel::keepSwiping, R.string.swipe_end_change_mood, ::changeMood)
-                // Nothing was liked, but Your Picks can still be built from the mood and the passes
-                end.swipeEndTertiary.isVisible = true
-                end.swipeEndTertiary.setOnClickListener { openPicks() }
+                setEndButtons(
+                    R.string.swipe_end_discover_more,
+                    viewModel::discoverMore,
+                    R.string.swipe_end_change_mood,
+                    ::changeMood
+                )
             }
         }
     }
@@ -369,52 +334,6 @@ class SwipeFragment : Fragment() {
         }.start()
     }
 
-    // ---------- Achievement banner ----------
-
-    /** Shows the next earned badge (one at a time). It slides in, waits a moment and leaves by itself. */
-    private fun showNextBanner() {
-        if (bannerShowing) return
-        val badge = bannerQueue.removeFirstOrNull() ?: return
-        bannerShowing = true
-
-        val banner = binding.swipeBanner
-        banner.achievementBannerIcon.setImageResource(badge.icon)
-        banner.achievementBannerName.setText(badge.name)
-        val text = getString(R.string.ach_banner_title) + ". " + getString(badge.name)
-        banner.root.contentDescription = text
-        banner.root.announceForAccessibility(text)
-        banner.root.setOnClickListener { hideBanner() }
-        banner.root.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-
-        val slide = resources.getDimension(R.dimen.banner_slide)
-        banner.root.animate().cancel()
-        banner.root.alpha = 0f
-        banner.root.translationY = -slide
-        banner.root.scaleX = BANNER_START_SCALE
-        banner.root.scaleY = BANNER_START_SCALE
-        banner.root.isVisible = true
-        banner.root.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
-            .setDuration(BANNER_IN_MS).setInterpolator(OvershootInterpolator(BANNER_OVERSHOOT))
-            .withEndAction { _binding?.swipeBanner?.root?.postDelayed(hideBannerRunnable, BANNER_HOLD_MS) }
-            .start()
-    }
-
-    private fun hideBanner() {
-        val banner = _binding?.swipeBanner?.root ?: return
-        if (!bannerShowing) return
-        banner.removeCallbacks(hideBannerRunnable)
-        banner.animate().cancel()
-        val slide = resources.getDimension(R.dimen.banner_slide)
-        banner.animate().alpha(0f).translationY(-slide).setDuration(BANNER_OUT_MS)
-            .setInterpolator(AccelerateInterpolator())
-            .withEndAction {
-                banner.isVisible = false
-                bannerShowing = false
-                _binding?.let { showNextBanner() } // the next badge, if two were earned at once
-            }
-            .start()
-    }
-
     private companion object {
         const val DISABLED_ALPHA = 0.38f
         const val GLOW_STRENGTH = 0.9f
@@ -422,10 +341,5 @@ class SwipeFragment : Fragment() {
         const val BUTTON_POP_IN_MS = 110L
         const val BUTTON_POP_OUT_MS = 280L
         const val BUTTON_POP_OVERSHOOT = 3f
-        const val BANNER_START_SCALE = 0.92f
-        const val BANNER_IN_MS = 420L
-        const val BANNER_OUT_MS = 260L
-        const val BANNER_HOLD_MS = 2800L
-        const val BANNER_OVERSHOOT = 1.1f
     }
 }

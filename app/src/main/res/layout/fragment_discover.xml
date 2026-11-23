@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- DISCOVER (a tab): a minimal, cinematic search page. A big title, a glass search pill, two rows of chips
-     (the lists: Popular / Trending / Top rated, and the genres) and a three-column poster grid that keeps loading
-     as you scroll. Loading, empty and error take the place of the grid, so the search field stays usable.
-     The grid keeps room at its bottom for the floating tab bar (paddingBottom + clipToPadding="false"). -->
+<!-- DISCOVER: Redesigned with a single horizontal scrollable filter row,
+     clearly separated movie categories (Popular, Trending, Top Rated) and genre browsing sections
+     with horizontally browsable movie posters. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -19,7 +18,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- ===== Title and the search pill ===== -->
+        <!-- ===== Title and Search Pill ===== -->
         <LinearLayout
             android:id="@+id/discoverHeader"
             android:layout_width="match_parent"
@@ -83,9 +82,9 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ===== Chips: the list (Popular, Trending, Top rated) and the genre ===== -->
+        <!-- ===== Single Horizontal Scrollable Filter Row ===== -->
         <HorizontalScrollView
-            android:id="@+id/categoryScroll"
+            android:id="@+id/filterScroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_12"
@@ -95,7 +94,7 @@
             android:scrollbars="none">
 
             <com.google.android.material.chip.ChipGroup
-                android:id="@+id/categoryChips"
+                android:id="@+id/filterChips"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:selectionRequired="true"
@@ -103,25 +102,7 @@
                 app:singleSelection="true" />
         </HorizontalScrollView>
 
-        <HorizontalScrollView
-            android:id="@+id/genreScroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:paddingStart="@dimen/screen_margin"
-            android:paddingEnd="@dimen/screen_margin"
-            android:scrollbars="none">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/genreChips"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:selectionRequired="false"
-                app:singleLine="true"
-                app:singleSelection="true" />
-        </HorizontalScrollView>
-
-        <!-- Shown only while a search is active -->
+        <!-- Shown only while a search query is active -->
         <TextView
             android:id="@+id/searchNote"
             android:layout_width="match_parent"
@@ -133,13 +114,455 @@
             android:textAppearance="@style/TextAppearance.CineFiles.Caption"
             android:visibility="gone" />
 
-        <!-- ===== The grid, or the state that replaces it ===== -->
+        <!-- ===== Discover Content ===== -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="@dimen/space_8"
             android:layout_weight="1">
 
+            <!-- Structured Sections View: Popular, Trending, Top Rated, and Genres -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/sectionsScroll"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/bottom_nav_height"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- POPULAR SECTION (Featured Category) -->
+                    <LinearLayout
+                        android:id="@+id/sectionPopular"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_12"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:text="@string/discover_featured_category"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                            android:textColor="@color/accent_soft" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_12"
+                            android:text="@string/discover_popular_title"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/popularList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- TRENDING SECTION (Featured Category) -->
+                    <LinearLayout
+                        android:id="@+id/sectionTrending"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:text="@string/discover_featured_category"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                            android:textColor="@color/accent_soft" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_12"
+                            android:text="@string/discover_trending_title"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/trendingList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- TOP RATED SECTION (Featured Category) -->
+                    <LinearLayout
+                        android:id="@+id/sectionTopRated"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:text="@string/discover_featured_category"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                            android:textColor="@color/accent_soft" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_12"
+                            android:text="@string/discover_top_rated_title"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/topRatedList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- Subtle Divider separating Categories from Genres -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="@dimen/screen_margin"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:layout_marginEnd="@dimen/screen_margin"
+                        android:layout_marginBottom="@dimen/space_20"
+                        android:background="@color/glass_stroke"
+                        android:importantForAccessibility="no" />
+
+                    <!-- BROWSE GENRES HEADER -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/screen_margin"
+                        android:layout_marginEnd="@dimen/screen_margin"
+                        android:layout_marginBottom="@dimen/space_12"
+                        android:text="@string/discover_browse_genres"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+
+                    <!-- ACTION GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionAction"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Action"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/actionList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- ADVENTURE GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionAdventure"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Adventure"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/adventureList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- ANIMATION GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionAnimation"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Animation"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/animationList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- COMEDY GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionComedy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Comedy"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/comedyList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- DRAMA GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionDrama"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Drama"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/dramaList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- HORROR GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionHorror"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Horror"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/horrorList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- ROMANCE GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionRomance"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Romance"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/romanceList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- SCI-FI GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionScifi"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Sci-Fi"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/scifiList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                    <!-- THRILLER GENRE -->
+                    <LinearLayout
+                        android:id="@+id/sectionThriller"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_24"
+                        android:layout_marginBottom="@dimen/space_24"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/screen_margin"
+                            android:layout_marginEnd="@dimen/screen_margin"
+                            android:layout_marginBottom="@dimen/space_8"
+                            android:text="Thriller"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/thrillerList"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/poster_row_height"
+                            android:clipToPadding="false"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/screen_margin"
+                            android:paddingEnd="@dimen/screen_margin"
+                            android:scrollbars="none"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:listitem="@layout/item_poster_row" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- Search Results Grid: 3 columns, visible only when a search is typed -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/discoverGrid"
                 android:layout_width="match_parent"
@@ -149,11 +572,12 @@
                 android:paddingEnd="@dimen/space_16"
                 android:paddingBottom="@dimen/bottom_nav_height"
                 android:scrollbars="none"
+                android:visibility="gone"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                 app:spanCount="3"
                 tools:listitem="@layout/item_poster_grid" />
 
-            <!-- A thin bar above the tab bar while the next page loads -->
+            <!-- A thin bar above the tab bar while the next page of search loads -->
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/loadMoreBar"
                 android:layout_width="match_parent"

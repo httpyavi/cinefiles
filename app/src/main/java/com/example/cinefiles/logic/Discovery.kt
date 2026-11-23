@@ -88,11 +88,11 @@ data class Pick(val movie: Movie, val source: DiscoverySource)
 
 object Discovery {
 
-    /** A new deck has this many cards at most... */
-    const val DECK_SIZE = 20
+    /** A new discovery round has exactly 10 cards at most (or fewer only if exhausted). */
+    const val DECK_SIZE = 10
 
     /** ...and if fewer than this many fit the mood and preferences, the search is loosened to add more. */
-    const val MIN_DECK_SIZE = 12
+    const val MIN_DECK_SIZE = 6
 
     /** How many times the search can be loosened (0 = exactly what the user asked for). */
     const val MAX_RELAX = 5

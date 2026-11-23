@@ -38,7 +38,11 @@ fun Movie.withStateOf(saved: Movie?): Movie =
         inWatchlist = saved.inWatchlist,
         watchlistAddedAt = saved.watchlistAddedAt,
         isWatched = saved.isWatched,
-        watchedAt = saved.watchedAt
+        watchedAt = saved.watchedAt,
+        personalRating = saved.personalRating,
+        ratedAt = saved.ratedAt,
+        isFavorite = saved.isFavorite,
+        favoritedAt = saved.favoritedAt
     )
 
 /** The three tabs of My Collection. Each tab is the list of movies that have its status. */

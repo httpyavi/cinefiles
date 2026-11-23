@@ -55,6 +55,14 @@ class DetailViewModel(app: Application, handle: SavedStateHandle) : AndroidViewM
     /** The user tried to like a movie that is on the watchlist (shown once: see [Event]). */
     val likeBlocked: LiveData<Event<Unit>> = _likeBlocked
 
+    private val _favoriteBlocked = MutableLiveData<Event<Unit>>()
+
+    /** The user tried to add a favorite when all 4 slots are occupied. */
+    val favoriteBlocked: LiveData<Event<Unit>> = _favoriteBlocked
+
+    val diaryEntries: LiveData<List<com.example.cinefiles.data.DiaryEntry>> =
+        repository.observeDiaryForMovie(movieId)?.asLiveData() ?: MutableLiveData(emptyList())
+
     init {
         load()
     }
@@ -110,6 +118,28 @@ class DetailViewModel(app: Application, handle: SavedStateHandle) : AndroidViewM
 
     fun toggleWatched() = withMovie { movie ->
         if (movie.isWatched) repository.unmarkWatched(movie.id) else repository.markWatched(movie)
+    }
+
+    /** Toggles Favorite (Max 4 favorites allowed). */
+    fun toggleFavorite() = withMovie { movie ->
+        val success = repository.toggleFavorite(movie)
+        if (!success) {
+            _favoriteBlocked.postValue(Event(Unit))
+        }
+    }
+
+    /** Sets or updates the personal rating (0.5 to 5.0 stars in half-star increments). */
+    fun setPersonalRating(rating: Float?) = withMovie { movie ->
+        repository.setPersonalRating(movie, rating)
+    }
+
+    /** Saves a private diary entry for this movie. */
+    fun saveDiaryEntry(notes: String, rating: Float?, dateWatched: Long, isRewatch: Boolean) = withMovie { movie ->
+        repository.saveDiaryEntry(movie, notes, rating, dateWatched, isRewatch)
+    }
+
+    fun deleteDiaryEntry(id: Long) = viewModelScope.launch {
+        repository.deleteDiaryEntry(id)
     }
 
     /** Runs [action] on the movie as it is shown right now (nothing happens before there is a movie to act on). */

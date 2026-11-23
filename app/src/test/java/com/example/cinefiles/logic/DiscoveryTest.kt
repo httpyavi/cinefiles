@@ -196,7 +196,7 @@ class DiscoveryTest {
     fun aGoodDeckIsNotPaddedWithMoviesThatDoNotFit() = runBlocking {
         val catalog = (1..15).map { movie(it, genres = listOf(comedy)) } + (100..130).map { movie(it, genres = listOf(drama)) }
         val deck = Discovery.buildDeck(listOf(comedy), Preferences(), emptySet(), sourceOf(catalog))
-        assertEquals(15, deck.size)
+        assertEquals(Discovery.DECK_SIZE, deck.size)
         assertTrue(deck.all { comedy in it.movie.genreIds })
     }
 
@@ -219,7 +219,7 @@ class DiscoveryTest {
             (50..60).map { movie(it, genres = listOf(comedy), year = 2005) }
         val prefs = Preferences(releasePeriod = ReleasePeriod.FROM_2015)
         val deck = Discovery.buildDeck(listOf(comedy), prefs, emptySet(), sourceOf(catalog))
-        assertEquals(14, deck.size)
+        assertEquals(Discovery.DECK_SIZE, deck.size)
         assertTrue(deck.all { (it.movie.releaseYear ?: 0) >= 2015 })
     }
 
