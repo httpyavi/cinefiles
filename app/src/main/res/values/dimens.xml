@@ -11,7 +11,6 @@
     <dimen name="space_24">24dp</dimen>
     <dimen name="space_32">32dp</dimen>
     <dimen name="space_40">40dp</dimen>
-    <dimen name="space_48">48dp</dimen>
 
     <!-- Every screen has 20 dp left/right margins -->
     <dimen name="screen_margin">20dp</dimen>
@@ -30,7 +29,7 @@
     <dimen name="button_height">52dp</dimen>
     <dimen name="chip_height">40dp</dimen>       <!-- Material adds invisible padding up to 48 dp for touch -->
     <dimen name="round_button_size">56dp</dimen>
-    <dimen name="round_button_small_size">44dp</dimen>
+    <dimen name="round_button_small_size">48dp</dimen>   <!-- back / close / search: the smallest tap area (touch_target) -->
     <dimen name="glass_stroke_width">1dp</dimen>   <!-- the light edge of every glass surface -->
     <dimen name="glow_elevation">10dp</dimen>      <!-- gives a red button its soft red glow (API 28+) -->
     <dimen name="glow_elevation_pressed">4dp</dimen>
@@ -61,6 +60,13 @@
     <dimen name="hero_height">420dp</dimen>
     <dimen name="hero_scrim_height">300dp</dimen>
     <dimen name="hero_top_scrim_height">140dp</dimen>
+    <!-- Your Picks -->
+    <dimen name="picks_top_match_height">280dp</dimen>      <!-- the backdrop of the Top Match card -->
+    <dimen name="picks_top_match_scrim_height">200dp</dimen>
+    <dimen name="picks_progress_width">220dp</dimen>        <!-- the thin bar of the "building your picks" moment -->
+
+    <!-- Movie Details: the backdrop picture at the top, a little shorter than Home's hero -->
+    <dimen name="detail_hero_height">340dp</dimen>
     <!-- Poster rows: 112 dp wide, so on most phones three posters fit and a bit of the 4th peeks in,
          which tells you the row scrolls. The height is 1.5 x the width (posters are 2:3). -->
     <dimen name="poster_row_width">112dp</dimen>

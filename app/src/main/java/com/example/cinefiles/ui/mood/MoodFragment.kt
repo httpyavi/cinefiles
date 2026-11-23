@@ -87,7 +87,7 @@ class MoodFragment : Fragment(), MoodSliderView.Listener {
         }
         // Continue: on to the Preferences screen
         binding.continueButton.setOnClickListener {
-            findNavController().openScreen(R.id.preferencesFragment)
+            findNavController().openScreen(R.id.preferencesFragment, slide = true)
         }
         // The face and the pill do the same thing: add (or take out) the mood that is showing
         binding.moodFace.setOnClickListener { toggleCurrentMood() }

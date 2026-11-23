@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- One option chip on the Preferences screen. PreferencesFragment creates these from the option lists in logic/Preferences.kt. -->
-<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.CineFiles.Chip"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content" />

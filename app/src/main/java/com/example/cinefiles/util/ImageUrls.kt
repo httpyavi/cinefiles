@@ -5,13 +5,14 @@ package com.example.cinefiles.util
  *
  * The size is part of the address. We pick a size close to what the screen needs,
  * not the biggest one, so images download fast and use little memory.
+ * The "original" size is never used: it can be several megabytes.
  */
 object ImageUrls {
     private const val BASE = "https://image.tmdb.org/t/p/"
 
-    private const val POSTER_SIZE = "w342"       // good for posters up to about 130 dp wide
-    private const val BIG_POSTER_SIZE = "w780"   // good for a poster as wide as a phone screen (swipe cards)
-    private const val BACKDROP_SIZE = "w780"     // good for a card as wide as a phone screen
+    private const val POSTER_SIZE = "w342"       // rows and grids: posters up to about 130 dp wide
+    private const val BIG_POSTER_SIZE = "w500"   // the swipe card (a poster as wide as a phone screen)
+    private const val BACKDROP_SIZE = "w780"     // the Home hero and the Details backdrop
 
     fun poster(path: String?): String? = path?.let { BASE + POSTER_SIZE + it }
 

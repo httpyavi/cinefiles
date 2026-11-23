@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One pick in the three-column "More for you" grid (used by PicksAdapter): a poster, its match percent at the
+     bottom left, and a round bookmark button at the top right that puts it on the watchlist.
+     The 4 dp margin plus the grid's 16 dp padding gives the usual 20 dp screen margin and 8 dp gaps (the same cell
+     as the poster grids of My Collection and Discover). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/space_4">
+
+    <com.example.cinefiles.ui.components.PosterView
+        android:id="@+id/pickPoster"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/pickMatch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="@dimen/space_8"
+        android:background="@drawable/bg_match_pill"
+        android:paddingStart="@dimen/space_8"
+        android:paddingTop="@dimen/space_4"
+        android:paddingEnd="@dimen/space_8"
+        android:paddingBottom="@dimen/space_4"
+        android:textAppearance="@style/TextAppearance.CineFiles.Pill"
+        android:textColor="@color/on_accent"
+        tools:text="87%" />
+
+    <!-- The tap area is 48 dp; the dark round backing you see is 32 dp (bg_bookmark_touch), so the button stays
+         readable on bright posters and small on a three-column grid -->
+    <ImageButton
+        android:id="@+id/pickBookmark"
+        android:layout_width="@dimen/touch_target"
+        android:layout_height="@dimen/touch_target"
+        android:layout_gravity="top|end"
+        android:background="@drawable/bg_bookmark_touch"
+        android:padding="@dimen/space_12"
+        android:src="@drawable/ic_bookmark"
+        app:tint="@color/text_primary"
+        tools:ignore="ContentDescription" />
+
+</FrameLayout>

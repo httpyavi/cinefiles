@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The longest display name: the Edit dialog's text field stops here, and UserSettings cuts to it too -->
+    <integer name="name_max_length">20</integer>
+</resources>

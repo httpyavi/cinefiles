@@ -1,19 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: what is copied by cloud backup and when moving to a new phone.
+     Nothing is excluded: the app's own files are the user's saved movies (the database) and their name and
+     achievements (small settings files), which they would want back. No secret is stored on the phone's disk
+     (the TMDB token is only inside the app itself). Pictures are cached in the cache folder, which is never backed up. -->
 <data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-    </cloud-backup>
-    <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
-    -->
+    <cloud-backup />
+    <device-transfer />
 </data-extraction-rules>

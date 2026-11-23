@@ -8,7 +8,7 @@ plugins {
 
 // Read the TMDB token from local.properties. That file is git-ignored, so the secret
 // never ends up in a tracked file. If the file or the key is missing we use "" and the
-// app still builds and starts (network calls will simply fail with an "unauthorized" error).
+// app still builds and starts (the screens then show a friendly "TMDB key missing" message).
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) {
@@ -94,7 +94,9 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson) // brings in Gson
     implementation(libs.okhttp)
-    debugImplementation(libs.okhttp.logging.interceptor) // debug builds only
+    // The debug log line (one per call, never the token). It is only switched on when BuildConfig.DEBUG is true,
+    // see TmdbApi.create. It must be "implementation", not "debugImplementation", or the release build cannot compile TmdbApi.
+    implementation(libs.okhttp.logging.interceptor)
 
     // Images (no annotation processor on purpose)
     implementation(libs.glide)
@@ -103,4 +105,9 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+// The project compiles with Java 8 language rules; newer JDKs print an "obsolete option" notice on every build. Switch it off.
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:-options")
 }

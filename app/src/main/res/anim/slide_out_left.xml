@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The step that is left slides a little to the left while the next one comes in (250 ms). -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="250"
+    android:fromXDelta="0"
+    android:interpolator="@android:anim/decelerate_interpolator"
+    android:toXDelta="-12%p" />

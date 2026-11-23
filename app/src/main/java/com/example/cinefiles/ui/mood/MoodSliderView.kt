@@ -10,7 +10,6 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
 import android.os.Bundle
-import android.provider.Settings
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
@@ -22,7 +21,9 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import com.example.cinefiles.R
+import com.example.cinefiles.util.animationsEnabled
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -237,8 +238,8 @@ class MoodSliderView @JvmOverloads constructor(
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
         super.onInitializeAccessibilityNodeInfo(info)
         info.className = "android.widget.SeekBar"
-        info.rangeInfo = AccessibilityNodeInfo.RangeInfo.obtain(
-            AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT, 0f, (count - 1).toFloat(), index.toFloat()
+        AccessibilityNodeInfoCompat.wrap(info).rangeInfo = AccessibilityNodeInfoCompat.RangeInfoCompat.obtain(
+            AccessibilityNodeInfoCompat.RangeInfoCompat.RANGE_TYPE_INT, 0f, (count - 1).toFloat(), index.toFloat()
         )
         info.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD)
         info.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD)
@@ -306,7 +307,7 @@ class MoodSliderView @JvmOverloads constructor(
     // =====================================================================================
 
     private val idleMotionOn: Boolean
-        get() = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+        get() = context.animationsEnabled()
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()

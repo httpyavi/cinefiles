@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- END OF THE DECK: an icon, a title, a line of text and two buttons.
+<!-- END OF THE DECK: an icon, a title, a line of text and two buttons (three when nothing was liked).
      SwipeFragment fills in the texts, icon and clicks for the two cases:
        - you liked something: "You've seen them all"  [Show my picks] [Keep swiping]
-       - no likes:            "Nothing caught your eye?" [Try new cards] [Change mood] -->
+       - no likes:            "Nothing caught your eye?" [Try new cards] [Change mood] [Show picks anyway] -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -61,5 +61,15 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_12"
         tools:text="Keep swiping" />
+
+    <!-- Only when nothing was liked: Your Picks can still be built from the mood alone -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/swipeEndTertiary"
+        style="@style/Widget.CineFiles.Button.Text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:text="@string/swipe_end_show_picks_anyway"
+        android:visibility="gone" />
 
 </LinearLayout>

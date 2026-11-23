@@ -4,15 +4,22 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
+import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
-import com.example.cinefiles.data.SampleData
+import com.example.cinefiles.data.CollectionCounts
+import com.example.cinefiles.data.friendlyError
 import com.example.cinefiles.logic.DayPart
 import com.example.cinefiles.logic.dayPartForHour
-import com.example.cinefiles.util.TestMode
-import java.util.Calendar
+import com.example.cinefiles.logic.initialOf
+import com.example.cinefiles.logic.pickFeatured
+import com.example.cinefiles.util.currentDayOfYear
+import com.example.cinefiles.util.currentHour
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -21,6 +28,9 @@ import kotlinx.coroutines.launch
  */
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
+    private val repository = (app as CineFilesApp).movieRepository
+    private val settings = (app as CineFilesApp).userSettings
+
     private val _state = MutableLiveData<HomeState>(HomeState.Loading)
     val state: LiveData<HomeState> = _state
 
@@ -28,20 +38,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _greeting = MutableLiveData<Int>()
     val greeting: LiveData<Int> = _greeting
 
-    // TEMP: always 0 until the personal lists exist. Becomes live data from Room in Batch 6.
-    private val _counts = MutableLiveData(CollectionCounts(liked = 0, watchlist = 0, watched = 0))
-    val counts: LiveData<CollectionCounts> = _counts
+    // The three numbers at the bottom of Home. They come live from the database: when you like a movie, or
+    // change your watchlist anywhere in the app, the numbers change by themselves. They work offline.
+    val counts: LiveData<CollectionCounts> = repository.observeCounts().asLiveData()
 
-    // The user has no account yet, so everyone is "Movie Lover".
-    val userName: String = app.getString(R.string.home_user_name)
-    val avatarInitial: String = userName.take(1).uppercase()
+    // The name from the Profile screen ("Movie Lover" until the user edits it), and its first letter for the avatar
+    val userName: LiveData<String> = settings.name
+    val avatarInitial: LiveData<String> = settings.name.map { initialOf(it) }
 
     private var loadJob: Job? = null
-
-    // TEMP: see TestMode. testMode is the mode picked by long-press; failNextLoad makes
-    // the FAIL_ONCE mode fail exactly one load, so that Retry can then succeed.
-    private var testMode = TestMode.NORMAL
-    private var failNextLoad = false
 
     init {
         refreshGreeting()
@@ -50,54 +55,45 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Work out "Good morning / afternoon / evening" from the current time. */
     fun refreshGreeting() {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        _greeting.value = when (dayPartForHour(hour)) {
+        _greeting.value = when (dayPartForHour(currentHour())) {
             DayPart.MORNING -> R.string.home_greeting_morning
             DayPart.AFTERNOON -> R.string.home_greeting_afternoon
             DayPart.EVENING -> R.string.home_greeting_evening
         }
     }
 
-    /** Loads (or reloads) the movies. The Retry buttons call this too. */
+    /** Loads (or reloads) the movies from TMDB. The Retry buttons call this too. */
     fun load() {
         loadJob?.cancel() // never run two loads at once
         _state.value = HomeState.Loading
 
         loadJob = viewModelScope.launch {
-            // TEMP: pretend to wait for the network, then use the sample movies.
-            // Batch 5 replaces this block with a call to MovieRepository.
-            delay(SAMPLE_LOAD_TIME_MS)
-            val content = HomeState.Content(
-                featured = SampleData.featured,
-                trending = SampleData.trending,
-                popular = SampleData.popular
-            )
-            when (testMode) {
-                TestMode.NORMAL -> _state.value = content
-                TestMode.LOADING_FOREVER -> Unit // stay on Loading
-                TestMode.FAIL_ONCE -> {
-                    if (failNextLoad) {
-                        failNextLoad = false
-                        _state.value = HomeState.Error
-                    } else {
-                        _state.value = content // this is what Retry gets
-                    }
-                }
-                TestMode.EMPTY -> _state.value = HomeState.Empty
+            // Both lists are asked for at the same time
+            val (trending, popular) = coroutineScope {
+                val trendingAnswer = async { repository.trending() }
+                val popularAnswer = async { repository.popular() }
+                trendingAnswer.await() to popularAnswer.await()
             }
+
+            // If either list failed, Home shows the error (with Retry): half a Home would be confusing
+            val failure = trending.exceptionOrNull() ?: popular.exceptionOrNull()
+            if (failure != null) {
+                _state.value = HomeState.Error(friendlyError(failure))
+                return@launch
+            }
+
+            val trendingMovies = trending.getOrThrow()
+            val popularMovies = popular.getOrThrow()
+            if (trendingMovies.isEmpty() && popularMovies.isEmpty()) {
+                _state.value = HomeState.Empty
+                return@launch
+            }
+
+            _state.value = HomeState.Content(
+                featured = pickFeatured(trendingMovies, currentDayOfYear()),
+                trending = trendingMovies,
+                popular = popularMovies
+            )
         }
-    }
-
-    // TEMP: step to the next test mode, reload, and say which mode is now active.
-    fun nextTestMode(): TestMode {
-        val modes = TestMode.values()
-        testMode = modes[(testMode.ordinal + 1) % modes.size]
-        failNextLoad = testMode == TestMode.FAIL_ONCE
-        load()
-        return testMode
-    }
-
-    private companion object {
-        const val SAMPLE_LOAD_TIME_MS = 700L // TEMP
     }
 }

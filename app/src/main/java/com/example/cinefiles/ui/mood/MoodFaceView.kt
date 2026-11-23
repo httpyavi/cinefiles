@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.provider.Settings
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -14,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.example.cinefiles.R
 import com.example.cinefiles.logic.MoodShapes
+import com.example.cinefiles.util.animationsEnabled
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.floor
@@ -459,7 +459,7 @@ class MoodFaceView @JvmOverloads constructor(
     // =====================================================================================
 
     private val idleMotionOn: Boolean
-        get() = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+        get() = context.animationsEnabled()
 
     private val blinkRunnable = object : Runnable {
         override fun run() {

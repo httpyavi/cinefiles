@@ -65,6 +65,11 @@
     <color name="mood_tint_excited">#FF7A3D</color>      <!-- hot orange -->
     <color name="mood_tint_surprise">#C9A7FF</color>     <!-- lilac -->
 
+    <!-- The TMDB credit badge on the Profile screen (TMDB's own brand colors) -->
+    <color name="tmdb_green">#90CEA1</color>
+    <color name="tmdb_blue">#01B4E4</color>
+    <color name="tmdb_dark">#0D253F</color>
+
     <!-- The animated face on the Mood screen -->
     <color name="face_ink">#1B1216</color>      <!-- eyes, brows, mouth -->
     <color name="face_white">#FFFFFF</color>    <!-- the whites of wide eyes -->

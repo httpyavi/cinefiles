@@ -4,14 +4,33 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.example.cinefiles.CineFilesApp
+import com.example.cinefiles.R
+import com.example.cinefiles.data.Movie
+import com.example.cinefiles.data.friendlyError
 import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Mood
 import com.example.cinefiles.logic.MoodSelection
+import com.example.cinefiles.logic.Moods
+import com.example.cinefiles.logic.MovieStatus
 import com.example.cinefiles.logic.Preferences
+import com.example.cinefiles.logic.RecommendationEngine
 import com.example.cinefiles.logic.ReleasePeriod
 import com.example.cinefiles.logic.ToggleResult
+import com.example.cinefiles.logic.hasStatus
+import com.example.cinefiles.ui.picks.PicksState
+import com.example.cinefiles.util.Event
+import com.example.cinefiles.util.UndoInfo
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Remembers what the user chose while they walk through "Watch something":
@@ -22,9 +41,15 @@ import com.example.cinefiles.logic.ToggleResult
  * Home calls [reset] when a new flow starts.
  *
  * The rules for picking moods live in logic/MoodSelection.kt; this class only holds the result.
- * (The old grid of mood cards and its TEMP photo map are gone: the Mood screen is a slider now.)
+ *
+ * It also holds YOUR PICKS while the flow is open (Swipe -> Your Picks): the swipe screen hands it the liked and
+ * passed movies with [buildPicks], logic/RecommendationEngine.kt scores the candidates that MovieRepository fetches,
+ * and Your Picks shows [picks]. Picks are not saved: they are forgotten when a new flow starts ([reset]).
  */
 class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val repository = (app as CineFilesApp).movieRepository
+    private val engine = RecommendationEngine()
 
     private var currentSelection = MoodSelection()
     private val _selection = MutableLiveData(currentSelection)
@@ -80,9 +105,140 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
         _selection.value = currentSelection
         preferences = Preferences()
         moodSliderIndex = DEFAULT_MOOD_INDEX
+        picksJob?.cancel()
+        picksLiked = emptyList()
+        picksPassed = emptyList()
+        _picks.value = PicksState.Idle
+    }
+
+    // ====================================================================================
+    //  Your Picks
+    // ====================================================================================
+
+    private val _picks = MutableLiveData<PicksState>(PicksState.Idle)
+
+    /** What Your Picks shows. */
+    val picks: LiveData<PicksState> = _picks
+
+    private var picksJob: Job? = null
+    private var picksLiked = emptyList<Movie>()
+    private var picksPassed = emptyList<Movie>()
+    private var picksAnimate = true
+
+    /** How many movies were liked in the sitting the picks are built from (0 = the picks come from the mood alone). */
+    val picksLikedCount: Int get() = picksLiked.size
+
+    /** The names of the chosen moods, for example "Happy + Romantic" (for the "building your picks" line). */
+    fun moodNames(separator: String): String =
+        chosenMoods().joinToString(separator) { getApplication<Application>().getString(it.shortLabel) }
+
+    /**
+     * The swipe screen calls this just before it opens Your Picks. [liked] and [passed] are the movies of this sitting.
+     * If they are the same as the last time (the user went back and forth), the picks already built are kept;
+     * after more swiping they are built again. [animate] false (the phone's animations are off) skips the short
+     * "building" moment.
+     */
+    fun buildPicks(liked: List<Movie>, passed: List<Movie>, animate: Boolean) {
+        val unchanged = liked.map { it.id } == picksLiked.map { it.id } && passed.map { it.id } == picksPassed.map { it.id }
+        val current = _picks.value
+        if (unchanged && (current is PicksState.Ready || current is PicksState.Building)) return
+
+        picksLiked = liked
+        picksPassed = passed
+        picksAnimate = animate
+        startPicks()
+    }
+
+    /** The Retry button of Your Picks. */
+    fun retryPicks() = startPicks()
+
+    private fun startPicks() {
+        picksJob?.cancel()
+        _picks.value = PicksState.Building
+        picksJob = viewModelScope.launch {
+            // The "building your picks" moment is never shorter than BUILDING_MS (it is a small reward), but it
+            // also never makes a slow answer slower: the two run side by side and we wait for the longer one.
+            val shownFor = if (picksAnimate) BUILDING_MS else 0L
+            val result = coroutineScope {
+                val moment = async { delay(shownFor) }
+                val work = async { choosePicks() }
+                moment.await()
+                work.await()
+            }
+            _picks.value = result
+        }
+    }
+
+    /** Asks TMDB for candidates and lets the engine choose (the rules are in logic/RecommendationEngine.kt). */
+    private suspend fun choosePicks(): PicksState {
+        val moods = chosenMoods()
+        val profile = engine.genreProfile(moods, picksLiked, picksPassed)
+        val candidates = repository.picksCandidates(engine.topGenres(profile), preferences)
+            .getOrElse { return PicksState.Error(friendlyError(it)) }
+
+        val picks = engine.recommend(candidates, moods, picksLiked, picksPassed)
+        if (picks.isEmpty()) return PicksState.Empty
+        return PicksState.Ready(
+            summary = summaryLine(moods, picks.size),
+            top = picks.first(),
+            more = picks.drop(1),
+            liked = picksLiked
+        )
+    }
+
+    /** "Happy · Romantic · 7 liked · 12 passed · 10 new picks" */
+    private fun summaryLine(moods: List<Mood>, pickCount: Int): String {
+        val app = getApplication<Application>()
+        val parts = moods.map { app.getString(it.shortLabel) } + listOf(
+            app.getString(R.string.picks_summary_liked, picksLiked.size),
+            app.getString(R.string.picks_summary_passed, picksPassed.size),
+            app.resources.getQuantityString(R.plurals.picks_summary_new, pickCount, pickCount)
+        )
+        return parts.joinToString(" · ")
+    }
+
+    private fun chosenMoods(): List<Mood> = Moods.all.filter { it.id in currentSelection.ids }
+
+    // ---------- What the user can do with a pick (the grid, the Top Match card and the quick view) ----------
+
+    /** The ids of the movies on the watchlist, live: the bookmark of a pick is filled when it is on the list. */
+    val watchlistIds: LiveData<Set<Int>> = repository.observeWatchlist().map { list -> list.map { it.id }.toSet() }.asLiveData()
+
+    private val _undo = MutableLiveData<Event<UndoInfo>>()
+
+    /** The last change, so the screen can say "Added to your watchlist. Undo" (once: see [Event]). */
+    val undo: LiveData<Event<UndoInfo>> = _undo
+
+    /** The bookmark: puts the movie on the watchlist, or takes it off when it is already there. */
+    fun toggleWatchlist(movie: Movie) {
+        viewModelScope.launch {
+            val before = repository.savedMovie(movie.id) ?: movie
+            if (before.hasStatus(MovieStatus.WATCHLIST)) {
+                repository.removeFromWatchlist(movie.id)
+                _undo.value = Event(UndoInfo(R.string.msg_removed_watchlist, before))
+            } else {
+                repository.addToWatchlist(movie)
+                _undo.value = Event(UndoInfo(R.string.msg_added_watchlist, before))
+            }
+        }
+    }
+
+    /** "Mark as watched" in the quick view. It also takes the movie off the watchlist. */
+    fun markWatched(movie: Movie) {
+        viewModelScope.launch {
+            val before = repository.savedMovie(movie.id) ?: movie
+            repository.markWatched(movie)
+            _undo.value = Event(UndoInfo(R.string.msg_marked_watched, before))
+        }
+    }
+
+    /** Undo: puts the movie's state back exactly as it was. */
+    fun undo(before: Movie) {
+        viewModelScope.launch { repository.restoreState(before) }
     }
 
     private companion object {
         const val DEFAULT_MOOD_INDEX = 1 // the slider starts on the second mood, Happy
+        const val BUILDING_MS = 1_000L   // the "building your picks" moment: between 0.7 and 1.2 seconds
     }
 }

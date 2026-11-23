@@ -5,14 +5,13 @@
     <string name="state_loading">Loading</string>
     <string name="state_empty_title">Nothing here yet</string>
     <string name="state_empty_message">When there is something to show, you will find it here.</string>
-    <string name="state_error_title">Something went wrong</string>
-    <string name="state_error_message">We could not load this. Check your connection and try again.</string>
     <string name="state_retry">Retry</string>
 
-    <!-- Poster status badges (read out by screen readers) -->
-    <string name="badge_liked">Liked</string>
+    <!-- The three statuses of a movie. One wording everywhere: tab tiles, the Details buttons, the Profile numbers, and what
+         a screen reader says about a poster badge. -->
+    <string name="status_liked">Liked</string>
+    <string name="status_watched">Watched</string>
     <string name="badge_watchlist">On your watchlist</string>
-    <string name="badge_watched">Watched</string>
 
     <string name="action_back">Back</string>
 
@@ -23,12 +22,11 @@
     <string name="nav_profile">Profile</string>
 
     <!-- Home: header -->
-    <string name="home_user_name">Movie Lover</string>
+    <string name="default_user_name">Movie Lover</string>
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>
     <string name="home_greeting_evening">Good evening</string>
     <string name="home_search_description">Search</string>
-    <string name="home_profile_description">Profile</string>
 
     <!-- Home: hero and sections -->
     <string name="home_featured_label">Featured today</string>
@@ -36,9 +34,7 @@
     <string name="home_trending_title">Trending This Week</string>
     <string name="home_popular_title">Popular Now</string>
     <string name="home_collection_title">Your collection</string>
-    <string name="home_collection_liked">Liked</string>
     <string name="home_collection_watchlist">Watchlist</string>
-    <string name="home_collection_watched">Watched</string>
 
     <!-- Home: empty state -->
     <string name="home_empty_title">Nothing to show yet</string>
@@ -135,10 +131,7 @@
     <!-- Swipe screen -->
     <string name="swipe_progress">%1$d of %2$d</string>
     <string name="swipe_picks_pill">Picks (%1$d)</string>
-    <string name="swipe_undo">Undo</string>
     <string name="swipe_pass">Pass</string>
-    <string name="swipe_like">Like</string>
-    <string name="swipe_info">Movie details</string>
     <string name="swipe_rating_description">Rated %1$s out of 10</string>
 
     <!-- Swipe screen: end of the deck -->
@@ -163,6 +156,26 @@
     <string name="swipe_end_exhausted_none">You have seen every movie we have for this mix. A different mood or other preferences will find more.</string>
     <string name="swipe_end_change_preferences">Change preferences</string>
 
+    <!-- Swipe screen: end of the deck, while more cards are being fetched -->
+    <string name="swipe_end_loading_title">Finding more movies</string>
+    <string name="swipe_end_loading_message">Just a moment.</string>
+
+    <!-- What went wrong with TMDB: a short title and a friendly message (see data/ApiError.kt) -->
+    <string name="error_no_internet_title">You\'re offline</string>
+    <string name="error_no_internet_message">We could not reach TMDB. Check your internet connection and try again.</string>
+    <string name="error_timeout_title">Taking too long</string>
+    <string name="error_timeout_message">TMDB is slow to answer right now. Try again in a moment.</string>
+    <string name="error_token_missing_title">TMDB key missing</string>
+    <string name="error_token_missing_message">Add your TMDB read access token to local.properties as TMDB_READ_TOKEN, then rebuild the app.</string>
+    <string name="error_token_invalid_title">TMDB key not accepted</string>
+    <string name="error_token_invalid_message">TMDB did not accept the token. Check that TMDB_READ_TOKEN in local.properties is the API Read Access Token, then rebuild the app.</string>
+    <string name="error_server_title">TMDB is having trouble</string>
+    <string name="error_server_message">The movie service has a problem on its side. Try again in a moment.</string>
+    <string name="error_too_many_title">Slow down a moment</string>
+    <string name="error_too_many_message">There were too many requests. Wait a few seconds and try again.</string>
+    <string name="error_unknown_title">Something went wrong</string>
+    <string name="error_unknown_message">Something unexpected happened. Try again.</string>
+
     <!-- Swipe screen: the small line above a title that says why this movie is here -->
     <string name="discovery_mood_match">For your mood</string>
     <string name="discovery_top_rated">Top rated</string>
@@ -174,7 +187,6 @@
     <!-- Swipe screen: nothing to swipe -->
     <string name="swipe_empty_title">No movies for this mix</string>
     <string name="swipe_empty_message">Try a different mood or other preferences.</string>
-    <string name="swipe_empty_action">Change mood</string>
 
     <!-- Achievements -->
     <string name="ach_banner_title">Achievement unlocked</string>
@@ -199,11 +211,34 @@
 
     <!-- Profile -->
     <string name="profile_member">CineFiles member</string>
+    <string name="profile_edit">Edit</string>
+    <string name="profile_edit_description">Edit your name</string>
+    <string name="profile_edit_title">Your name</string>
+    <string name="profile_edit_hint">Name</string>
+    <string name="profile_edit_save">Save</string>
+    <string name="profile_edit_error">Please type a name</string>
+    <string name="profile_cancel">Cancel</string>
+    <string name="profile_taste_title">Your taste</string>
+    <string name="profile_taste_none">—</string>
+    <string name="profile_taste_value">%1$s · %2$s</string>
+    <plurals name="profile_taste_liked">
+        <item quantity="one">%1$d liked movie</item>
+        <item quantity="other">%1$d liked movies</item>
+    </plurals>
+    <string name="profile_about_title">About CineFiles</string>
+    <string name="profile_about_version">Version %1$s</string>
+    <string name="profile_tmdb_badge">TMDB</string>
+    <string name="profile_tmdb_notice">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
+    <string name="profile_clear">Clear my data</string>
+    <string name="profile_clear_title">Clear all your data?</string>
+    <string name="profile_clear_message">This deletes your liked, watchlist and watched movies, your achievements and your name. It cannot be undone.</string>
+    <string name="profile_clear_confirm">Clear</string>
+    <string name="profile_cleared">Your data was cleared</string>
     <string name="profile_stat_swiped">Discovered</string>
-    <string name="profile_stat_liked">Liked</string>
     <string name="profile_stat_passed">Passed</string>
     <string name="profile_achievements_title">Achievements</string>
-    <string name="profile_achievements_count">%1$d of %2$d unlocked</string>
+    <!-- "3 of 9 unlocked" reads the same for any number, so no plural form is needed -->
+    <string name="profile_achievements_count" tools:ignore="PluralsCandidate">%1$d of %2$d unlocked</string>
     <string name="profile_next_up">Next up</string>
     <string name="profile_selected">Selected</string>
     <string name="profile_all_done">All unlocked</string>
@@ -211,4 +246,96 @@
     <string name="profile_badge_unlocked">%1$s, unlocked</string>
     <string name="profile_badge_locked">%1$s, locked, %2$d of %3$d</string>
     <string name="profile_unlocked_label">Unlocked</string>
+
+    <!-- My Collection: title, the three tabs (with their numbers) and the empty states -->
+    <string name="collection_title">My Collection</string>
+    <string name="collection_tab_liked">Liked %1$d</string>
+    <string name="collection_tab_watchlist">Watchlist %1$d</string>
+    <string name="collection_tab_watched">Watched %1$d</string>
+    <string name="collection_empty_liked_title">No liked movies yet</string>
+    <string name="collection_empty_liked_message">Swipe right on a movie you like, or tap Like on its page, and it will wait for you here.</string>
+    <string name="collection_empty_watchlist_title">Your watchlist is empty</string>
+    <string name="collection_empty_watchlist_message">Save the movies you want to watch later and they will show up here.</string>
+    <string name="collection_empty_watchlist_action">Browse movies</string>
+    <string name="collection_empty_watched_title">Nothing watched yet</string>
+    <string name="collection_empty_watched_message">Mark a movie as watched and it will be kept here.</string>
+
+    <!-- The long-press menu of a poster (menu text), and the line of the Snackbar that follows it -->
+    <string name="action_undo">Undo</string>
+    <string name="action_add_watchlist">Add to Watchlist</string>
+    <string name="action_remove_watchlist">Remove from Watchlist</string>
+    <string name="action_mark_watched">Mark as watched</string>
+    <string name="action_unmark_watched">Remove from Watched</string>
+    <string name="action_move_back_watchlist">Move back to Watchlist</string>
+    <string name="action_like">Like</string>
+    <string name="action_unlike">Unlike</string>
+    <string name="msg_added_watchlist">Added to your watchlist</string>
+    <string name="msg_removed_watchlist">Removed from your watchlist</string>
+    <string name="msg_marked_watched">Marked as watched</string>
+    <string name="msg_unmarked_watched">Removed from Watched</string>
+    <string name="msg_moved_back_watchlist">Moved back to your watchlist</string>
+    <string name="msg_liked">Added to Liked</string>
+    <string name="msg_unliked">Removed from Liked</string>
+
+    <!-- Movie Details -->
+    <string name="detail_label">Movie details</string>
+    <string name="detail_in_watchlist">In Watchlist</string>
+    <string name="detail_mark_watched">Mark watched</string>
+    <string name="detail_watch_trailer">Watch trailer</string>
+    <string name="detail_more">More</string>
+    <string name="detail_less">Less</string>
+    <string name="detail_similar_title">Similar movies</string>
+    <string name="detail_runtime_hours_minutes">%1$dh %2$dm</string>
+    <string name="detail_runtime_hours">%1$dh</string>
+    <string name="detail_runtime_minutes">%1$dm</string>
+    <string name="detail_trailer_error">No app on this phone can open the trailer.</string>
+
+    <!-- THE LIKE RULE: a movie on the watchlist cannot be liked -->
+    <string name="like_blocked_message">Remove from watchlist or mark as watched before liking</string>
+    <string name="swipe_like_blocked">%1$s is on your watchlist, so it was not liked.</string>
+    <string name="swipe_end_show_picks_anyway">Show picks anyway</string>
+
+    <!-- Your Picks -->
+    <string name="picks_title">Your Picks</string>
+    <string name="picks_done">Done</string>
+    <!-- Parts of one summary line ("7 liked · 12 passed"): they read the same for any number -->
+    <string name="picks_summary_liked" tools:ignore="PluralsCandidate">%1$d liked</string>
+    <string name="picks_summary_passed" tools:ignore="PluralsCandidate">%1$d passed</string>
+    <plurals name="picks_summary_new">
+        <item quantity="one">%1$d new pick</item>
+        <item quantity="other">%1$d new picks</item>
+    </plurals>
+    <string name="picks_top_match">Top Match</string>
+    <string name="picks_match_percent">%1$d%% match</string>
+    <string name="picks_match_short">%1$d%%</string>
+    <string name="picks_details">Details</string>
+    <string name="picks_liked_title">You liked</string>
+    <string name="picks_more_title">More for you</string>
+    <string name="picks_reason_similar">Similar to %1$s</string>
+    <string name="picks_reason_mood">Matches your %1$s mood</string>
+    <string name="picks_reason_generic">Picked for you</string>
+    <string name="picks_bookmark_add">Add %1$s to your watchlist</string>
+    <string name="picks_bookmark_remove">Remove %1$s from your watchlist</string>
+    <string name="picks_quick_view_description">Quick view of %1$s</string>
+    <!-- The "building your picks" moment: one of these lines at a time -->
+    <string name="picks_building_likes">Matching your likes with %1$s…</string>
+    <string name="picks_building_mood">Matching your mood with %1$s…</string>
+    <string name="picks_building_passed">Leaving out what you passed on…</string>
+    <string name="picks_building_top">Choosing your Top Match…</string>
+    <string name="picks_building_description">Building your picks</string>
+    <string name="picks_empty_title">No new picks right now</string>
+    <string name="picks_empty_message">Everything that fits has already been seen. Keep swiping, or try a different mood.</string>
+
+    <!-- Discover -->
+    <string name="discover_title">Discover</string>
+    <string name="discover_search_hint">Search movies</string>
+    <string name="discover_search_clear">Clear search</string>
+    <string name="discover_popular">Popular</string>
+    <string name="discover_trending">Trending</string>
+    <string name="discover_top_rated">Top rated</string>
+    <string name="discover_search_note">Searching all movies. The genre chips only filter what has loaded.</string>
+    <string name="discover_empty_title">No movies found</string>
+    <string name="discover_empty_message">Try different words, or fewer filters.</string>
+    <string name="discover_clear_filters">Clear filters</string>
+    <string name="discover_load_more_failed">Could not load more movies.</string>
 </resources>

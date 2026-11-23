@@ -7,7 +7,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.cinefiles.MainActivity
-import com.example.cinefiles.data.SampleData
+import com.example.cinefiles.R
+import com.example.cinefiles.data.Movie
 import com.example.cinefiles.logic.SwipeDirection
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -31,8 +32,8 @@ class SwipeDeckViewTest {
 
     private val swipes = ArrayList<SwipeDirection>()
     private var taps = 0
-    // Sixteen different sample movies (Home's two rows)
-    private val movies = SampleData.trending + SampleData.popular
+    // Sixteen different made-up movies (no poster: these tests are about fingers, not pictures)
+    private val movies = (1..16).map { Movie(id = it, title = "Test movie $it", posterPath = null, backdropPath = null) }
 
     @Before
     fun setUp() {
@@ -171,6 +172,42 @@ class SwipeDeckViewTest {
         }
         waitUntil { seen.size == wanted.size }
         assertEquals(wanted, seen)
+    }
+
+    // ---------- screen readers ----------
+
+    @Test
+    fun theDeckReadsOutTheMovieOnTop() {
+        var spoken: CharSequence? = null
+        onMain { spoken = deck.contentDescription }
+        assertEquals("Test movie 1", spoken)
+    }
+
+    @Test
+    fun likeAndPassAreOfferedAsAccessibilityActionsAndSwipeTheTopCard() {
+        // TalkBack lists these in its actions menu, so a card can be swiped without a finger gesture
+        var likeId = 0
+        var passId = 0
+        onMain {
+            val actions = deck.createAccessibilityNodeInfo().actionList
+            val like = deck.context.getString(R.string.action_like)
+            val pass = deck.context.getString(R.string.swipe_pass)
+            likeId = actions.first { it.label == like }.id
+            passId = actions.first { it.label == pass }.id
+        }
+
+        var accepted = false
+        onMain { accepted = deck.performAccessibilityAction(likeId, null) }
+        assertTrue("the Like action must be accepted", accepted)
+        waitUntil { swipes.size == 1 }
+
+        onMain { deck.setCards(movies[1], movies[2], movies[3]) } // the screen shows the next cards after a swipe
+        waitUntil { !deck.isBusy }
+        onMain { accepted = deck.performAccessibilityAction(passId, null) }
+        assertTrue("the Pass action must be accepted", accepted)
+        waitUntil { swipes.size == 2 }
+
+        assertEquals(listOf(SwipeDirection.LIKE, SwipeDirection.PASS), swipes)
     }
 
     // ---------- helpers ----------

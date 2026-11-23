@@ -18,11 +18,14 @@
         android:theme="@style/Theme.CineFiles"
         tools:targetApi="31">
 
-        <!-- The only activity. The app is portrait only. The "Starting" theme shows the splash screen. -->
+        <!-- The only activity. The app is portrait only ON PURPOSE: the swipe deck, the mood slider and the tall poster
+             layouts are designed for a tall screen (so lint's "locked orientation" warning is switched off here).
+             The "Starting" theme shows the splash screen. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
             android:theme="@style/Theme.CineFiles.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

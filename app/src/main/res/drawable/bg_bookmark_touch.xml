@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dark, see-through round plate behind a pick's bookmark button. The button itself is 48 dp (the smallest tap
+     area); this draws the plate 8 dp smaller on every side (32 dp), so it stays small on a three-column grid and the
+     icon stays readable on bright or white posters. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/bg_badge_circle"
+    android:inset="@dimen/space_8" />

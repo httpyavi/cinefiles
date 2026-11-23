@@ -53,4 +53,13 @@
         android:layout_marginTop="@dimen/space_24"
         android:visibility="gone" />
 
+    <!-- An optional second, quieter button (Your Picks: "Keep swiping" / "Change mood"). Hidden unless a screen shows it. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/emptySecondaryAction"
+        style="@style/Widget.CineFiles.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:visibility="gone" />
+
 </LinearLayout>

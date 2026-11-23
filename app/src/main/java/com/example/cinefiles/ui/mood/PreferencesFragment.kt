@@ -13,9 +13,9 @@ import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.ReleasePeriod
+import com.example.cinefiles.util.addChoiceChip
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openScreen
-import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 
 /**
@@ -65,7 +65,7 @@ class PreferencesFragment : Fragment() {
     }
 
     private fun startSwiping() {
-        findNavController().openScreen(R.id.swipeFragment)
+        findNavController().openScreen(R.id.swipeFragment, slide = true)
     }
 
     /** Fills the four chip groups from the option lists in logic/Preferences.kt. */
@@ -97,10 +97,7 @@ class PreferencesFragment : Fragment() {
         val optionOfChip = HashMap<Int, T>() // chip id -> its option
 
         for (option in options) {
-            val chip = layoutInflater.inflate(R.layout.item_preference_chip, group, false) as Chip
-            chip.id = View.generateViewId()
-            chip.setText(labelOf(option))
-            group.addView(chip)
+            val chip = group.addChoiceChip(getString(labelOf(option)))
             optionOfChip[chip.id] = option
             if (option == selected) group.check(chip.id)
         }

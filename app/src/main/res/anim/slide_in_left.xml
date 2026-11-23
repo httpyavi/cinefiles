@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Going Back in the flow: the previous step slides in from the left (250 ms). -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="250"
+    android:fromXDelta="-12%p"
+    android:interpolator="@android:anim/decelerate_interpolator"
+    android:toXDelta="0" />

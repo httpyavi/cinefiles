@@ -48,11 +48,11 @@
                     android:layout_height="@dimen/round_button_small_size"
                     android:background="@drawable/bg_glass_circle"
                     android:contentDescription="@string/action_close"
-                    android:padding="@dimen/space_10"
+                    android:padding="@dimen/space_12"
                     android:src="@drawable/ic_close"
                     app:tint="@color/text_primary" />
 
-                <!-- "7 of 20" and the chosen moods. Long-press the moods line to test loading / error / empty (TEMP). -->
+                <!-- "7 of 20" and the chosen moods. -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -183,7 +183,7 @@
                         style="@style/Widget.CineFiles.RoundActionButton"
                         android:layout_width="@dimen/round_button_size"
                         android:layout_height="@dimen/round_button_size"
-                        android:contentDescription="@string/swipe_undo"
+                        android:contentDescription="@string/action_undo"
                         app:icon="@drawable/ic_undo" />
 
                     <com.google.android.material.button.MaterialButton
@@ -201,7 +201,7 @@
                         android:layout_width="@dimen/round_button_large_size"
                         android:layout_height="@dimen/round_button_large_size"
                         android:layout_marginStart="@dimen/space_16"
-                        android:contentDescription="@string/swipe_like"
+                        android:contentDescription="@string/action_like"
                         app:icon="@drawable/ic_heart_filled" />
 
                     <com.google.android.material.button.MaterialButton
@@ -210,7 +210,7 @@
                         android:layout_width="@dimen/round_button_size"
                         android:layout_height="@dimen/round_button_size"
                         android:layout_marginStart="@dimen/space_16"
-                        android:contentDescription="@string/swipe_info"
+                        android:contentDescription="@string/detail_label"
                         app:icon="@drawable/ic_info" />
 
                 </LinearLayout>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One poster in a horizontal row (used by PosterRowAdapter). The 12 dp on the right is the gap to the next poster. -->
+<!-- One poster in a horizontal row (PosterAdapter, PosterStyle.ROW). The 12 dp on the right is the gap to the next poster. -->
 <com.example.cinefiles.ui.components.PosterView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="@dimen/poster_row_width"
     android:layout_height="wrap_content"

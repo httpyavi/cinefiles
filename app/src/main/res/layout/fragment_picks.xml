@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YOUR PICKS: the reward at the end of the journey. A calm page on a soft glow of light:
+       - the title with the red "Done" button, and one summary line
+       - the TOP MATCH: a big backdrop card with a red match pill, the story and two stacked glass buttons
+       - "You liked": the movies you liked in this sitting (the same poster row as Home)
+       - "More for you": the other picks in two columns, each with its match percent and a bookmark
+     While the picks are being built, a short "building" moment covers the page; the empty and error states do too. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/picksGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- ===== The picks ===== -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/picksScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/space_24"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/picksContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Title, Done, summary -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_16"
+                android:paddingEnd="@dimen/screen_margin">
+
+                <TextView
+                    android:id="@+id/picksTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:accessibilityHeading="true"
+                    android:text="@string/picks_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                    tools:targetApi="28" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/picksDone"
+                    style="@style/Widget.CineFiles.Button.Primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/picks_done" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/picksSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/screen_margin"
+                android:layout_marginTop="@dimen/space_8"
+                android:layout_marginEnd="@dimen/screen_margin"
+                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                tools:text="Happy · Romantic · 7 liked · 12 passed · 10 new picks" />
+
+            <!-- The Top Match card: a big backdrop, the red match pill, the story and two stacked glass buttons -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/topMatchCard"
+                style="@style/Widget.CineFiles.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/screen_margin"
+                android:layout_marginTop="@dimen/space_24"
+                android:layout_marginEnd="@dimen/screen_margin"
+                app:cardCornerRadius="@dimen/radius_xlarge">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/picks_top_match_height">
+
+                        <ImageView
+                            android:id="@+id/topBackdrop"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:importantForAccessibility="no"
+                            android:scaleType="centerCrop" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/picks_top_match_scrim_height"
+                            android:layout_gravity="bottom"
+                            android:background="@drawable/scrim_bottom"
+                            android:importantForAccessibility="no" />
+
+                        <TextView
+                            android:id="@+id/topMatchPill"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|start"
+                            android:layout_margin="@dimen/space_16"
+                            android:background="@drawable/bg_match_pill"
+                            android:paddingStart="@dimen/space_12"
+                            android:paddingTop="@dimen/space_4"
+                            android:paddingEnd="@dimen/space_12"
+                            android:paddingBottom="@dimen/space_4"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                            android:textColor="@color/on_accent"
+                            tools:text="92% match" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom"
+                            android:orientation="vertical"
+                            android:paddingStart="@dimen/space_16"
+                            android:paddingEnd="@dimen/space_16"
+                            android:paddingBottom="@dimen/space_12">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/picks_top_match"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                                android:textColor="@color/accent_soft" />
+
+                            <TextView
+                                android:id="@+id/topTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_4"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                                tools:text="Blade Runner 2049" />
+
+                            <TextView
+                                android:id="@+id/topMeta"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_4"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                                tools:text="★ 7.6 · 2017 · Science Fiction, Drama" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/topDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_marginTop="@dimen/space_12"
+                        android:layout_marginEnd="@dimen/space_16"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Body"
+                        tools:text="Thirty years after the events of the first film, a new blade runner unearths a long-buried secret." />
+
+                    <!-- Stacked, full width: "Add to Watchlist" does not fit next to "Details" on a small screen or
+                         with large text (the quick-view sheet stacks its buttons the same way) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/space_16"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/topAddWatchlist"
+                            style="@style/Widget.CineFiles.Button.Tonal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:icon="@drawable/ic_bookmark"
+                            app:iconGravity="textStart"
+                            tools:text="Add to Watchlist" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/topDetails"
+                            style="@style/Widget.CineFiles.Button.Tonal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_8"
+                            android:text="@string/picks_details" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- You liked -->
+            <LinearLayout
+                android:id="@+id/likedSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginTop="@dimen/space_32"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_12"
+                    android:accessibilityHeading="true"
+                    android:text="@string/picks_liked_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/likedList"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/poster_row_height"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/screen_margin"
+                    android:paddingEnd="@dimen/space_8"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </LinearLayout>
+
+            <!-- More for you -->
+            <LinearLayout
+                android:id="@+id/moreSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginTop="@dimen/space_32"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_8"
+                    android:accessibilityHeading="true"
+                    android:text="@string/picks_more_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <!-- Inside the page's own scrolling, so this list does not scroll by itself -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/moreGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingStart="@dimen/space_16"
+                    android:paddingEnd="@dimen/space_16"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    app:spanCount="3"
+                    tools:listitem="@layout/item_pick" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ===== The "building your picks" moment, and the states that replace the page ===== -->
+
+    <!-- The page has its own title and Done at the top of its scrolling content. The empty and error states have
+         none, so this small copy keeps a way out on screen. (Shown by PicksFragment for those two states only.) -->
+    <LinearLayout
+        android:id="@+id/picksStateHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_16"
+        android:paddingEnd="@dimen/screen_margin"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/picks_title"
+            android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/picksStateDone"
+            style="@style/Widget.CineFiles.Button.Primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/picks_done" />
+    </LinearLayout>
+
+    <include
+        android:id="@+id/picksBuilding"
+        layout="@layout/view_picks_building"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <include
+        android:id="@+id/stateEmpty"
+        layout="@layout/view_state_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/stateError"
+        layout="@layout/view_state_error"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</FrameLayout>

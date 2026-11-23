@@ -15,8 +15,10 @@ import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.databinding.ViewSwipeCardBinding
 import com.example.cinefiles.util.ImageUrls
+import com.example.cinefiles.util.genresText
 import com.example.cinefiles.util.loadImage
-import java.text.NumberFormat
+import com.example.cinefiles.util.ratingText
+import com.example.cinefiles.util.yearAndGenres
 
 /**
  * ONE movie card: a big rounded poster with the title, rating, year and genres. While it is dragged, a see-through veil and a big heart (like) or X (pass) show on it.
@@ -31,12 +33,6 @@ class SwipeCardView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private val binding = ViewSwipeCardBinding.inflate(LayoutInflater.from(context), this)
-
-    // Writes 8.5 instead of 8.4999 (and 8,5 on phones set to a language that uses the comma)
-    private val ratingFormat = NumberFormat.getNumberInstance().apply {
-        minimumFractionDigits = 1
-        maximumFractionDigits = 1
-    }
 
     /** The id of the movie on this card, or null when the card is empty. */
     var movieId: Int? = null
@@ -74,13 +70,12 @@ class SwipeCardView @JvmOverloads constructor(
         binding.cardTitle.text = movie.title
         binding.cardPoster.loadImage(ImageUrls.bigPoster(movie.posterPath))
 
-        val ratingText = movie.voteAverage?.let { ratingFormat.format(it) }
-        binding.cardRatingPill.isVisible = ratingText != null
-        binding.cardRating.text = ratingText
+        val rating = movie.ratingText()
+        binding.cardRatingPill.isVisible = rating != null
+        binding.cardRating.text = rating
 
         // "1994 · Drama, Crime" (the year and up to two genres; anything unknown is left out)
-        val genres = movie.genreNames.take(MAX_GENRES_SHOWN).joinToString(", ").ifEmpty { null }
-        val meta = listOfNotNull(movie.releaseYear?.toString(), genres).joinToString(" · ")
+        val meta = movie.yearAndGenres(MAX_GENRES_SHOWN)
         binding.cardMeta.text = meta
         binding.cardMeta.isVisible = meta.isNotEmpty()
 
@@ -88,8 +83,8 @@ class SwipeCardView @JvmOverloads constructor(
         contentDescription = listOfNotNull(
             movie.title,
             movie.releaseYear?.toString(),
-            ratingText?.let { context.getString(R.string.swipe_rating_description, it) },
-            genres
+            rating?.let { context.getString(R.string.swipe_rating_description, it) },
+            movie.genresText(MAX_GENRES_SHOWN).ifEmpty { null }
         ).joinToString(", ")
     }
 

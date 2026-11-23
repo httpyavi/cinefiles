@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DISCOVER (a tab): a minimal, cinematic search page. A big title, a glass search pill, two rows of chips
+     (the lists: Popular / Trending / Top rated, and the genres) and a three-column poster grid that keeps loading
+     as you scroll. Loading, empty and error take the place of the grid, so the search field stays usable.
+     The grid keeps room at its bottom for the floating tab bar (paddingBottom + clipToPadding="false"). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/discoverGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ===== Title and the search pill ===== -->
+        <LinearLayout
+            android:id="@+id/discoverHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_16"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <TextView
+                android:id="@+id/discoverTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/discover_title"
+                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                tools:targetApi="28" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_glass_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/space_16"
+                android:paddingEnd="@dimen/space_4">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size"
+                    android:layout_height="@dimen/icon_size"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/text_secondary" />
+
+                <EditText
+                    android:id="@+id/searchInput"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/touch_target"
+                    android:layout_marginStart="@dimen/space_12"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="@string/discover_search_hint"
+                    android:imeOptions="actionSearch"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Body"
+                    android:textColorHint="@color/text_secondary" />
+
+                <ImageButton
+                    android:id="@+id/searchClear"
+                    android:layout_width="@dimen/touch_target"
+                    android:layout_height="@dimen/touch_target"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/discover_search_clear"
+                    android:padding="@dimen/space_12"
+                    android:src="@drawable/ic_close"
+                    android:visibility="gone"
+                    app:tint="@color/text_secondary" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===== Chips: the list (Popular, Trending, Top rated) and the genre ===== -->
+        <HorizontalScrollView
+            android:id="@+id/categoryScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/categoryChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true" />
+        </HorizontalScrollView>
+
+        <HorizontalScrollView
+            android:id="@+id/genreScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/genreChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="false"
+                app:singleLine="true"
+                app:singleSelection="true" />
+        </HorizontalScrollView>
+
+        <!-- Shown only while a search is active -->
+        <TextView
+            android:id="@+id/searchNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginTop="@dimen/space_4"
+            android:layout_marginEnd="@dimen/screen_margin"
+            android:text="@string/discover_search_note"
+            android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+            android:visibility="gone" />
+
+        <!-- ===== The grid, or the state that replaces it ===== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/discoverGrid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="@dimen/space_16"
+                android:paddingEnd="@dimen/space_16"
+                android:paddingBottom="@dimen/bottom_nav_height"
+                android:scrollbars="none"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="3"
+                tools:listitem="@layout/item_poster_grid" />
+
+            <!-- A thin bar above the tab bar while the next page loads -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/loadMoreBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="@dimen/screen_margin"
+                android:layout_marginEnd="@dimen/screen_margin"
+                android:layout_marginBottom="@dimen/bottom_nav_height"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/accent"
+                app:trackColor="@color/glass_fill_strong"
+                app:trackCornerRadius="@dimen/radius_pill"
+                app:trackThickness="@dimen/swipe_progress_height" />
+
+            <include
+                android:id="@+id/stateLoading"
+                layout="@layout/view_state_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateEmpty"
+                layout="@layout/view_state_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/bottom_nav_height"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateError"
+                layout="@layout/view_state_error"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/bottom_nav_height"
+                android:visibility="gone" />
+
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

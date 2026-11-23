@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The next step of the "watch something" flow slides in from the right (250 ms). -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="250"
+    android:fromXDelta="12%p"
+    android:interpolator="@android:anim/decelerate_interpolator"
+    android:toXDelta="0" />

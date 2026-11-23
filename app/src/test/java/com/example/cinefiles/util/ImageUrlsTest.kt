@@ -12,8 +12,8 @@ class ImageUrlsTest {
     }
 
     @Test
-    fun bigPosterUrlUsesTheLargeSize() {
-        assertEquals("https://image.tmdb.org/t/p/w780/abc.jpg", ImageUrls.bigPoster("/abc.jpg"))
+    fun bigPosterUrlUsesTheSwipeCardSize() {
+        assertEquals("https://image.tmdb.org/t/p/w500/abc.jpg", ImageUrls.bigPoster("/abc.jpg"))
     }
 
     @Test

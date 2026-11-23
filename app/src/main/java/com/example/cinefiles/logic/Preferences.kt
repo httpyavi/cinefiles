@@ -5,7 +5,7 @@ import com.example.cinefiles.R
 
 // The choices on the "Make it yours" screen. Every group starts at ANY ("no preference").
 // Each enum is also the list of chips shown for that group, in this order.
-// Batch 4 turns these choices into filters when it builds the swipe deck.
+// logic/Discovery.kt turns these choices into filters when it builds the swipe deck.
 
 enum class ReleasePeriod(@StringRes val label: Int) {
     ANY(R.string.pref_any),

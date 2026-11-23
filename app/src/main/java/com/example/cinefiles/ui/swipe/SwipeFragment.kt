@@ -20,11 +20,14 @@ import com.example.cinefiles.databinding.FragmentSwipeBinding
 import com.example.cinefiles.logic.Achievement
 import com.example.cinefiles.logic.SwipeDirection
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
+import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.PosterTint
+import com.example.cinefiles.util.animationsEnabled
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.openScreen
-import com.google.android.material.snackbar.Snackbar
+import com.example.cinefiles.util.show
+import com.example.cinefiles.util.showMessage
 
 /**
  * Step 3 of the journey: swiping through the movie cards.
@@ -48,6 +51,7 @@ class SwipeFragment : Fragment() {
 
     private var shownTopId: Int? = null                 // the movie whose color the light shows
     private var latest: SwipeScreenState.Ready? = null  // the newest deck state, to know the NEXT card
+    private var inDeckCallback = false                  // true while the deck reports a finished swipe or undo
 
     private val bannerQueue = ArrayDeque<Achievement>()
     private var bannerShowing = false
@@ -81,6 +85,16 @@ class SwipeFragment : Fragment() {
         setUpStateScreens()
 
         viewModel.screen.observe(viewLifecycleOwner) { render(it) }
+        viewModel.likeBlocked.observe(viewLifecycleOwner) { event ->
+            // THE LIKE RULE: the card was swiped right but its movie is on the watchlist, so it was not liked
+            event.getIfNotHandled()?.let { movie ->
+                showMessage(getString(R.string.swipe_like_blocked, movie.title))
+            }
+        }
+        viewModel.message.observe(viewLifecycleOwner) { event ->
+            // "Keep swiping" could not get more cards (offline...): say why, the buttons stay as they were
+            event.getIfNotHandled()?.let { showMessage(it.message) }
+        }
         viewModel.earned.observe(viewLifecycleOwner) { event ->
             event.getIfNotHandled()?.let { badges ->
                 bannerQueue.addAll(badges)
@@ -106,13 +120,6 @@ class SwipeFragment : Fragment() {
             findNavController().popBackStack(R.id.homeFragment, false)
         }
         binding.swipePicksPill.setOnClickListener { openPicks() }
-
-        // TEMP: long-press the moods line to step through the test modes (normal, loading, error, empty)
-        binding.swipeCaption.setOnLongClickListener {
-            val mode = viewModel.nextTestMode()
-            Snackbar.make(binding.root, mode.label, Snackbar.LENGTH_SHORT).show()
-            true
-        }
     }
 
     private fun setUpDeck() {
@@ -124,7 +131,9 @@ class SwipeFragment : Fragment() {
         // These callbacks only talk to the ViewModel and to the light behind the cards
         binding.swipeDeck.listener = object : SwipeDeckView.Listener {
             override fun onSwiped(direction: SwipeDirection) {
+                inDeckCallback = true // the screen update this causes is the one the deck is waiting for
                 viewModel.onSwiped(direction)
+                inDeckCallback = false
                 popButton(direction)
             }
 
@@ -154,14 +163,12 @@ class SwipeFragment : Fragment() {
     }
 
     private fun setUpStateScreens() {
-        with(binding.stateEmpty) {
-            emptyIcon.setImageResource(R.drawable.ic_search)
-            emptyTitle.setText(R.string.swipe_empty_title)
-            emptyMessage.setText(R.string.swipe_empty_message)
-            emptyAction.setText(R.string.swipe_empty_action)
-            emptyAction.isVisible = true
-            emptyAction.setOnClickListener { changeMood() }
-        }
+        binding.stateEmpty.show(
+            icon = R.drawable.ic_search,
+            title = R.string.swipe_empty_title,
+            message = R.string.swipe_empty_message,
+            action = EmptyAction(R.string.swipe_end_change_mood) { changeMood() }
+        )
         binding.stateError.errorRetry.setOnClickListener { viewModel.load() }
     }
 
@@ -174,7 +181,11 @@ class SwipeFragment : Fragment() {
         val endScreenWasShowing = binding.swipeEnd.root.isVisible
         if (endScreenWasShowing) binding.swipeEnd.root.isVisible = false
 
-        val started = binding.swipeDeck.bringBack(last.movie, last.direction) { viewModel.onUndone() }
+        val started = binding.swipeDeck.bringBack(last.movie, last.direction) {
+            inDeckCallback = true
+            viewModel.onUndone()
+            inDeckCallback = false
+        }
         if (!started && endScreenWasShowing) binding.swipeEnd.root.isVisible = true
     }
 
@@ -183,8 +194,13 @@ class SwipeFragment : Fragment() {
         findNavController().openMovieDetails(movie.id)
     }
 
+    /**
+     * Opens Your Picks. The movies liked and passed in this sitting are handed to the shared WatchFlowViewModel first,
+     * which builds the picks from them (the same swipes as last time keep the picks already built).
+     */
     private fun openPicks() {
-        findNavController().openScreen(R.id.picksFragment)
+        watchFlow.buildPicks(viewModel.sessionLiked, viewModel.sessionPassed, requireContext().animationsEnabled())
+        findNavController().openScreen(R.id.picksFragment, slide = true)
     }
 
     private fun changeMood() {
@@ -198,6 +214,11 @@ class SwipeFragment : Fragment() {
     // ---------- Drawing what the ViewModel says ----------
 
     private fun render(state: SwipeScreenState) {
+        // A card is being dragged or is flying, and this update did not come from that swipe (for example
+        // more cards arrived from TMDB): drawing now would snap the card back. The swipe's own update, which
+        // comes right after it lands, draws the newest state anyway.
+        if (state is SwipeScreenState.Ready && binding.swipeDeck.isBusy && !inDeckCallback) return
+
         val ready = state as? SwipeScreenState.Ready
         latest = ready
 
@@ -207,6 +228,7 @@ class SwipeFragment : Fragment() {
         binding.swipeDeck.isVisible = ready != null
         binding.stateError.root.isVisible = state is SwipeScreenState.Error
         binding.stateEmpty.root.isVisible = state is SwipeScreenState.Empty
+        if (state is SwipeScreenState.Error) binding.stateError.show(state.error)
 
         // The progress only makes sense with a deck (invisible, not gone, so the top bar keeps its height)
         binding.swipeProgressText.isInvisible = ready == null
@@ -271,6 +293,20 @@ class SwipeFragment : Fragment() {
         end.root.isVisible = ready.isFinished
         if (!ready.isFinished) return
 
+        // More cards are on their way: say so, and keep the buttons quiet until they arrive
+        if (ready.isLoadingMore) {
+            end.swipeEndIcon.setImageResource(R.drawable.ic_search)
+            end.swipeEndTitle.setText(R.string.swipe_end_loading_title)
+            end.swipeEndMessage.setText(R.string.swipe_end_loading_message)
+            end.swipeEndPrimary.isEnabled = false
+            end.swipeEndSecondary.isEnabled = false
+            end.swipeEndTertiary.isVisible = false
+            return
+        }
+        end.swipeEndPrimary.isEnabled = true
+        end.swipeEndSecondary.isEnabled = true
+        end.swipeEndTertiary.isVisible = false // only the "nothing liked" screen below shows it
+
         val liked = ready.likedCount > 0
         when {
             // There is nothing new left to show: be honest about it
@@ -302,6 +338,9 @@ class SwipeFragment : Fragment() {
                 end.swipeEndTitle.setText(R.string.swipe_end_zero_title)
                 end.swipeEndMessage.setText(R.string.swipe_end_zero_message)
                 setEndButtons(R.string.swipe_end_try_new_cards, viewModel::keepSwiping, R.string.swipe_end_change_mood, ::changeMood)
+                // Nothing was liked, but Your Picks can still be built from the mood and the passes
+                end.swipeEndTertiary.isVisible = true
+                end.swipeEndTertiary.setOnClickListener { openPicks() }
             }
         }
     }

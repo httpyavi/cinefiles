@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_16"
         android:gravity="center"
-        android:text="@string/state_error_title"
+        android:text="@string/error_unknown_title"
         android:textAppearance="@style/TextAppearance.CineFiles.Title" />
 
     <TextView
@@ -40,7 +40,7 @@
         android:layout_marginTop="@dimen/space_8"
         android:gravity="center"
         android:maxWidth="@dimen/state_text_max_width"
-        android:text="@string/state_error_message"
+        android:text="@string/error_unknown_message"
         android:textAppearance="@style/TextAppearance.CineFiles.Callout" />
 
     <com.google.android.material.button.MaterialButton

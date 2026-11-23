@@ -206,7 +206,7 @@
                         android:layout_height="@dimen/round_button_small_size"
                         android:background="@drawable/bg_glass_circle"
                         android:contentDescription="@string/home_search_description"
-                        android:padding="@dimen/space_10"
+                        android:padding="@dimen/space_12"
                         android:src="@drawable/ic_search"
                         app:tint="@color/text_primary" />
 
@@ -218,7 +218,7 @@
                         android:layout_marginStart="@dimen/space_4"
                         android:background="@drawable/bg_avatar"
                         android:clickable="true"
-                        android:contentDescription="@string/home_profile_description"
+                        android:contentDescription="@string/nav_profile"
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
@@ -358,7 +358,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/home_collection_liked"
+                        android:text="@string/status_liked"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
 
                 </LinearLayout>
@@ -430,7 +430,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/home_collection_watched"
+                        android:text="@string/status_watched"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
 
                 </LinearLayout>

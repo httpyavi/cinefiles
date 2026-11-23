@@ -35,7 +35,7 @@
                 android:layout_gravity="start|center_vertical"
                 android:background="@drawable/bg_glass_circle"
                 android:contentDescription="@string/action_close"
-                android:padding="@dimen/space_10"
+                android:padding="@dimen/space_12"
                 android:src="@drawable/ic_close"
                 app:tint="@color/text_primary" />
 

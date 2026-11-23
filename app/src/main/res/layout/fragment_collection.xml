@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MY COLLECTION (a tab). A quiet title, a segmented control (Liked / Watchlist / Watched, each with its
+     number), and a three-column poster grid. A soft glow of light sits behind it, like on Profile.
+     Loading, empty and error states take the place of the grid, so the tabs stay usable on an empty tab.
+     The grid keeps room at its bottom for the floating tab bar (paddingBottom + clipToPadding="false"):
+     posters scroll under the bar, but the last row can always be lifted above it. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/collectionGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ===== Title and the segmented control ===== -->
+        <LinearLayout
+            android:id="@+id/collectionHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_16"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8">
+
+            <TextView
+                android:id="@+id/collectionTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/collection_title"
+                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                tools:targetApi="28" />
+
+            <!-- saveEnabled="false": the selected tab is kept by CollectionViewModel, not by these buttons. If they saved
+                 their own selection, Android would put it back after the screen is rebuilt and overrule Home's tiles. -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/collectionTabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:saveEnabled="false"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tabLiked"
+                    style="@style/Widget.CineFiles.Button.Segment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:saveEnabled="false"
+                    tools:text="Liked 12" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tabWatchlist"
+                    style="@style/Widget.CineFiles.Button.Segment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:saveEnabled="false"
+                    tools:text="Watchlist 3" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tabWatched"
+                    style="@style/Widget.CineFiles.Button.Segment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:saveEnabled="false"
+                    tools:text="Watched 5" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </LinearLayout>
+
+        <!-- ===== The grid, or the state that replaces it ===== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/collectionGrid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="@dimen/space_16"
+                android:paddingTop="@dimen/space_8"
+                android:paddingEnd="@dimen/space_16"
+                android:paddingBottom="@dimen/bottom_nav_height"
+                android:scrollbars="none"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="3"
+                tools:listitem="@layout/item_poster_grid" />
+
+            <include
+                android:id="@+id/stateLoading"
+                layout="@layout/view_state_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateEmpty"
+                layout="@layout/view_state_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/bottom_nav_height"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateError"
+                layout="@layout/view_state_error"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/bottom_nav_height"
+                android:visibility="gone" />
+
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

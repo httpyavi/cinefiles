@@ -4,6 +4,9 @@ import androidx.annotation.StringRes
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import kotlin.math.max
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /*
  * HOW THE SWIPE DECK IS CHOSEN
@@ -21,8 +24,8 @@ import kotlin.math.max
  *
  * This file is plain Kotlin and knows nothing about TMDB. It only describes WHAT to look for
  * ([DiscoveryRequest]) and how to mix the answers ([mix], [buildDeck]).
- * Today the answers come from the sample movies; in Batch 5 the same requests are sent to TMDB
- * (as /discover, /trending and /movie/popular queries) and the rest of this file does not change.
+ * The answers come from TMDB: SwipeViewModel sends every request to MovieRepository.moviesFor
+ * (a /discover, /trending or /movie/popular call, see data/DiscoverQuery.kt for the translation).
  */
 
 /** The kind of movie a card is, shown as a small line above its title. */
@@ -168,8 +171,9 @@ object Discovery {
      * If too few movies fit, it asks again with the search loosened, and adds those after the first ones.
      * Movies in [exclude] are never returned. An empty result means there is nothing new to show.
      *
-     * [fetch] is the ONLY place that knows where movies come from: the sample data today,
-     * the MovieRepository (TMDB) from Batch 5 on.
+     * [fetch] is the ONLY place that knows where movies come from: the MovieRepository (TMDB).
+     * The five questions of one step are asked at the same time (not one after the other), so a deck
+     * costs one round trip to TMDB instead of five. If [fetch] throws, the whole call throws.
      */
     suspend fun buildDeck(
         moodGenreIds: List<Int>,
@@ -184,7 +188,12 @@ object Discovery {
 
         for (relax in 0..MAX_RELAX) {
             if (deck.size >= wanted) break
-            val batches = plan(moodGenreIds, preferences, relax).map { it.source to fetch(it) }
+            // awaitAll keeps the order of the questions, so the mix is the same as when they were asked one by one
+            val batches = coroutineScope {
+                plan(moodGenreIds, preferences, relax)
+                    .map { request -> async { request.source to fetch(request) } }
+                    .awaitAll()
+            }
             val more = mix(batches, used, limit - deck.size)
             deck.addAll(more)
             used.addAll(more.map { it.movie.id })

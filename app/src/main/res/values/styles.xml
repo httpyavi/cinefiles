@@ -69,6 +69,11 @@
         <item name="android:textColor">@color/text_secondary</item>
     </style>
 
+    <!-- The small red "87%" match pill on a pick: small enough for a three-column grid -->
+    <style name="TextAppearance.CineFiles.Pill" parent="TextAppearance.CineFiles.Medium">
+        <item name="android:textSize">12sp</item>
+    </style>
+
     <!-- The label of the big Home button: a little larger and bolder than a normal button -->
     <style name="TextAppearance.CineFiles.Cta" parent="TextAppearance.CineFiles.Medium">
         <item name="android:textSize">18sp</item>
@@ -220,6 +225,27 @@
         <item name="checkedIconVisible">false</item>
         <item name="chipIconVisible">false</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- One part of a segmented control (inside a MaterialButtonToggleGroup, for example the tabs of My Collection).
+         It uses the same colors as the chip: glass, and a red edge with a red wash when selected. The text shrinks
+         a little if it does not fit (a long number next to "Watchlist"). -->
+    <style name="Widget.CineFiles.Button.Segment" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/round_button_small_size</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">@dimen/space_8</item>
+        <item name="android:paddingEnd">@dimen/space_8</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
+        <item name="android:textColor">@color/chip_text</item>
+        <item name="backgroundTint">@color/chip_background</item>
+        <item name="strokeColor">@color/chip_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">11sp</item>
+        <item name="autoSizeMaxTextSize">14sp</item>
+        <item name="autoSizeStepGranularity">1sp</item>
     </style>
 
     <!-- A removable chip for a chosen mood (the edge color is set from code, in the mood's own color) -->

@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOVIE DETAILS. The same cinematic opening as Home: a full-width backdrop under the status bar with scrims and the
+     title on top of it. Below it: the three actions (a red "Add to Watchlist" button, and Like / Watched), the story
+     (three lines, "More" opens the rest), the trailer button and a row of similar movies.
+     The round back button floats above everything. Loading and error take the place of the page. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- ===== The page ===== -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/detailScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/space_24"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Block 1: the hero -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/detail_hero_height"
+                android:background="@color/surface">
+
+                <ImageView
+                    android:id="@+id/detailBackdrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop" />
+
+                <!-- a soft shade at the top for the back button, a deep one at the bottom for the title -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/hero_top_scrim_height"
+                    android:layout_gravity="top"
+                    android:background="@drawable/scrim_top"
+                    android:importantForAccessibility="no" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/hero_scrim_height"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/scrim_bottom"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/screen_margin"
+                    android:paddingEnd="@dimen/screen_margin"
+                    android:paddingBottom="@dimen/space_16">
+
+                    <TextView
+                        android:id="@+id/detailTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:accessibilityHeading="true"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                        tools:targetApi="28"
+                        tools:text="Interstellar" />
+
+                    <!-- star · rating · year · length (the star is a compound drawable: TextView.showRatingStar) -->
+                    <TextView
+                        android:id="@+id/detailMeta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:ellipsize="end"
+                        android:gravity="center_vertical"
+                        android:maxLines="1"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        tools:text="8.4 · 2014 · 2h 49m" />
+
+                    <TextView
+                        android:id="@+id/detailGenres"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        tools:text="Adventure, Drama, Science Fiction" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Block 2: the actions, the story, the trailer -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_20"
+                android:paddingEnd="@dimen/screen_margin">
+
+                <!-- The one red button of the screen -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/watchlistButton"
+                    style="@style/Widget.CineFiles.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_bookmark"
+                    app:iconGravity="textStart"
+                    tools:text="Add to Watchlist" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/likeButton"
+                        style="@style/Widget.CineFiles.Button.Tonal"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:layout_weight="1"
+                        app:icon="@drawable/ic_heart"
+                        app:iconGravity="textStart"
+                        tools:text="Like" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/watchedButton"
+                        style="@style/Widget.CineFiles.Button.Tonal"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:layout_weight="1"
+                        app:icon="@drawable/ic_check"
+                        app:iconGravity="textStart"
+                        tools:text="Mark watched" />
+                </LinearLayout>
+
+                <!-- The story: three lines, then "More" -->
+                <TextView
+                    android:id="@+id/detailOverview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_24"
+                    android:ellipsize="end"
+                    android:maxLines="3"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Body"
+                    tools:text="A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival." />
+
+                <TextView
+                    android:id="@+id/overviewToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/touch_target"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/detail_more"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                    android:textColor="@color/accent_soft"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/trailerButton"
+                    style="@style/Widget.CineFiles.Button.Tonal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:text="@string/detail_watch_trailer"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_play"
+                    app:iconGravity="textStart" />
+
+                <!-- Shown when TMDB could not be reached but we still show what is saved or already known -->
+                <LinearLayout
+                    android:id="@+id/detailLoadError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@drawable/bg_glass_panel"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/space_16"
+                    android:paddingTop="@dimen/space_8"
+                    android:paddingEnd="@dimen/space_8"
+                    android:paddingBottom="@dimen/space_8"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/loadErrorText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        tools:text="We could not reach TMDB. Check your internet connection and try again." />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/loadErrorRetry"
+                        style="@style/Widget.CineFiles.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/state_retry" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Block 3: similar movies -->
+            <LinearLayout
+                android:id="@+id/similarSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginTop="@dimen/space_32"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_12"
+                    android:accessibilityHeading="true"
+                    android:text="@string/detail_similar_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/poster_row_height">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/similarList"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal"
+                        android:paddingStart="@dimen/screen_margin"
+                        android:paddingEnd="@dimen/space_8"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                    <include
+                        android:id="@+id/similarLoading"
+                        layout="@layout/view_row_loading"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </FrameLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ===== Loading and error take the place of the page. The top padding keeps them clear of the back button. ===== -->
+    <FrameLayout
+        android:id="@+id/detailStates"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="@dimen/touch_target"
+        android:visibility="gone">
+
+        <include
+            android:id="@+id/stateLoading"
+            layout="@layout/view_state_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/stateError"
+            layout="@layout/view_state_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- ===== The round back button, on top of everything ===== -->
+    <FrameLayout
+        android:id="@+id/detailTopBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start">
+
+        <ImageButton
+            android:id="@+id/detailBack"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:layout_marginStart="@dimen/space_12"
+            android:layout_marginTop="@dimen/space_8"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/action_back"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text_primary" />
+    </FrameLayout>
+
+</FrameLayout>

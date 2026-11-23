@@ -2,9 +2,13 @@ package com.example.cinefiles.util
 
 import android.animation.ObjectAnimator
 import android.view.View
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.widget.TextViewCompat
+import com.example.cinefiles.R
 
 /**
  * The app draws edge-to-edge (behind the status and navigation bars).
@@ -36,6 +40,13 @@ fun View.shake() {
     ObjectAnimator.ofFloat(this, View.TRANSLATION_X, 0f, -distance, distance, -distance, distance, 0f)
         .setDuration(SHAKE_DURATION_MS)
         .start()
+}
+
+/** Puts a small gold star in front of this text (the rating of a movie), or takes it away. */
+fun TextView.showRatingStar(show: Boolean) {
+    setCompoundDrawablesRelativeWithIntrinsicBounds(if (show) R.drawable.ic_star_meta else 0, 0, 0, 0)
+    TextViewCompat.setCompoundDrawableTintList(this, ContextCompat.getColorStateList(context, R.color.star))
+    compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.space_4)
 }
 
 private const val SHAKE_DISTANCE_DP = 8f

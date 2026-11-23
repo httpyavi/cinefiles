@@ -15,13 +15,31 @@ import com.example.cinefiles.R
 /** The key under which a movie id travels to the Details screen. Must match nav_graph.xml. */
 const val ARG_MOVIE_ID = "movieId"
 
-/** The short "fade through" animation (old screen fades out, new one fades in). */
-private fun NavOptionsBuilder.fadeThrough() {
+/**
+ * How a screen change moves. FADE_THROUGH (old screen fades out, new one fades in and grows a little) is for tabs,
+ * Details and every other change. SLIDE (the next step comes in from the right, Back goes the other way) is only for
+ * the steps of the "watch something" flow: Mood, Preferences, Swipe, Your Picks.
+ */
+private enum class Motion { FADE_THROUGH, SLIDE }
+
+/** Sets the motion of a screen change. With the phone's "Remove animations" on, there is none: the screen just changes. */
+private fun NavOptionsBuilder.motion(controller: NavController, motion: Motion) {
+    if (!controller.context.animationsEnabled()) return
     anim {
-        enter = R.anim.fade_through_enter
-        exit = R.anim.fade_through_exit
-        popEnter = R.anim.fade_through_enter
-        popExit = R.anim.fade_through_exit
+        when (motion) {
+            Motion.FADE_THROUGH -> {
+                enter = R.anim.fade_through_enter
+                exit = R.anim.fade_through_exit
+                popEnter = R.anim.fade_through_enter
+                popExit = R.anim.fade_through_exit
+            }
+            Motion.SLIDE -> {
+                enter = R.anim.slide_in_right
+                exit = R.anim.slide_out_left
+                popEnter = R.anim.slide_in_left
+                popExit = R.anim.slide_out_right
+            }
+        }
     }
 }
 
@@ -39,22 +57,37 @@ fun NavController.openTab(destinationId: Int) {
         restoreState = true
         // Go back to Home first, and remember (save) the tab we are leaving
         popUpTo(graph.startDestinationId) { saveState = true }
-        fadeThrough()
+        motion(this@openTab, Motion.FADE_THROUGH)
     })
 }
 
 /**
  * Opens a normal screen on top of the current one (Mood, Details...). Back returns to the previous screen.
- * launchSingleTop means a double tap cannot open the same screen twice.
+ * launchSingleTop (the default) means a double tap cannot open the same screen twice. But it also means a screen
+ * that is already on top is REPLACED instead of stacked, so a screen that must stack on itself passes singleTop = false.
+ * The steps of the "watch something" flow pass slide = true to slide in instead of fading.
  */
-fun NavController.openScreen(destinationId: Int, args: Bundle? = null) {
+fun NavController.openScreen(
+    destinationId: Int,
+    args: Bundle? = null,
+    singleTop: Boolean = true,
+    slide: Boolean = false
+) {
     navigate(destinationId, args, navOptions {
-        launchSingleTop = true
-        fadeThrough()
+        launchSingleTop = singleTop
+        motion(this@openScreen, if (slide) Motion.SLIDE else Motion.FADE_THROUGH)
     })
 }
 
-/** Opens the Details screen for one movie. */
+/**
+ * Opens the Details screen for one movie.
+ * A different movie opens ON TOP of the one you are looking at (tap a similar movie, then Back returns to the
+ * first one). Tapping the SAME movie again while its Details is already open does nothing, so a double tap
+ * cannot open it twice.
+ */
 fun NavController.openMovieDetails(movieId: Int) {
-    openScreen(R.id.detailsFragment, bundleOf(ARG_MOVIE_ID to movieId))
+    val alreadyOpen = currentDestination?.id == R.id.detailsFragment &&
+        currentBackStackEntry?.arguments?.getInt(ARG_MOVIE_ID) == movieId
+    if (alreadyOpen) return
+    openScreen(R.id.detailsFragment, bundleOf(ARG_MOVIE_ID to movieId), singleTop = false)
 }

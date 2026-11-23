@@ -19,15 +19,22 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.databinding.FragmentHomeBinding
+import com.example.cinefiles.logic.CollectionTab
+import com.example.cinefiles.ui.collection.CollectionViewModel
+import com.example.cinefiles.ui.components.PosterAdapter
+import com.example.cinefiles.ui.components.PosterStyle
+import com.example.cinefiles.ui.discover.DiscoverViewModel
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
+import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.ImageUrls
 import com.example.cinefiles.util.applySystemBarsPadding
+import com.example.cinefiles.util.formatted
 import com.example.cinefiles.util.loadImage
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.openScreen
 import com.example.cinefiles.util.openTab
-import com.google.android.material.snackbar.Snackbar
-import java.text.NumberFormat
+import com.example.cinefiles.util.show
+import com.example.cinefiles.util.yearAndGenres
 
 /**
  * The Home tab. This class only draws what HomeViewModel says and forwards taps.
@@ -44,6 +51,12 @@ class HomeFragment : Fragment() {
     // Shared with the Mood, Preferences and Swipe screens. Home only starts a fresh flow with it.
     private val watchFlow: WatchFlowViewModel by activityViewModels()
 
+    // Shared with My Collection: the three tiles below choose which of its tabs opens
+    private val collection: CollectionViewModel by activityViewModels()
+
+    // Shared with Discover: the search icon asks it to put the cursor in the search field
+    private val discover: DiscoverViewModel by activityViewModels()
+
     // A small invitation: the arrow on the big button slides forward and springs back, then waits a few seconds
     private val nudgeArrow = object : Runnable {
         override fun run() {
@@ -58,8 +71,8 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private lateinit var trendingAdapter: PosterRowAdapter
-    private lateinit var popularAdapter: PosterRowAdapter
+    private lateinit var trendingAdapter: PosterAdapter
+    private lateinit var popularAdapter: PosterAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -109,19 +122,12 @@ class HomeFragment : Fragment() {
     // ---------- Setup: wire up taps ----------
 
     private fun setUpHeader() {
-        binding.userNameText.text = viewModel.userName
-        binding.avatarButton.text = viewModel.avatarInitial
-
-        // The search icon and the avatar jump to the matching tab
-        binding.searchButton.setOnClickListener { findNavController().openTab(R.id.discoverFragment) }
-        binding.avatarButton.setOnClickListener { findNavController().openTab(R.id.profileFragment) }
-
-        // TEMP: long-press the name to step through the test modes (normal, loading, error, empty)
-        binding.userNameText.setOnLongClickListener {
-            val mode = viewModel.nextTestMode()
-            Snackbar.make(binding.root, mode.label, Snackbar.LENGTH_SHORT).show()
-            true
+        // The search icon and the avatar jump to the matching tab (search: with the keyboard ready)
+        binding.searchButton.setOnClickListener {
+            discover.requestSearch()
+            findNavController().openTab(R.id.discoverFragment)
         }
+        binding.avatarButton.setOnClickListener { findNavController().openTab(R.id.profileFragment) }
     }
 
     private fun setUpHero() {
@@ -143,8 +149,8 @@ class HomeFragment : Fragment() {
     private fun setUpPosterRows() {
         val openDetails = { movie: Movie -> findNavController().openMovieDetails(movie.id) }
 
-        trendingAdapter = PosterRowAdapter(openDetails)
-        popularAdapter = PosterRowAdapter(openDetails)
+        trendingAdapter = PosterAdapter(PosterStyle.ROW, openDetails)
+        popularAdapter = PosterAdapter(PosterStyle.ROW, openDetails)
 
         for ((list, adapter) in listOf(
             binding.trendingList to trendingAdapter,
@@ -156,22 +162,23 @@ class HomeFragment : Fragment() {
     }
 
     private fun setUpCollectionTiles() {
-        // Every tile opens the Collection tab
-        val openCollection = View.OnClickListener { findNavController().openTab(R.id.collectionFragment) }
-        binding.tileLiked.setOnClickListener(openCollection)
-        binding.tileWatchlist.setOnClickListener(openCollection)
-        binding.tileWatched.setOnClickListener(openCollection)
+        // Every tile opens the Collection tab, on the list it shows the number of
+        val openCollection = { tab: CollectionTab ->
+            collection.selectTab(tab)
+            findNavController().openTab(R.id.collectionFragment)
+        }
+        binding.tileLiked.setOnClickListener { openCollection(CollectionTab.LIKED) }
+        binding.tileWatchlist.setOnClickListener { openCollection(CollectionTab.WATCHLIST) }
+        binding.tileWatched.setOnClickListener { openCollection(CollectionTab.WATCHED) }
     }
 
     private fun setUpStateButtons() {
-        with(binding.stateEmpty) {
-            emptyIcon.setImageResource(R.drawable.ic_discover)
-            emptyTitle.setText(R.string.home_empty_title)
-            emptyMessage.setText(R.string.home_empty_message)
-            emptyAction.setText(R.string.home_empty_action)
-            emptyAction.isVisible = true
-            emptyAction.setOnClickListener { viewModel.load() }
-        }
+        binding.stateEmpty.show(
+            icon = R.drawable.ic_discover,
+            title = R.string.home_empty_title,
+            message = R.string.home_empty_message,
+            action = EmptyAction(R.string.home_empty_action) { viewModel.load() }
+        )
         binding.stateError.errorRetry.setOnClickListener { viewModel.load() }
     }
 
@@ -180,12 +187,13 @@ class HomeFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
         viewModel.greeting.observe(viewLifecycleOwner) { binding.greetingText.setText(it) }
+        viewModel.userName.observe(viewLifecycleOwner) { binding.userNameText.text = it }
+        viewModel.avatarInitial.observe(viewLifecycleOwner) { binding.avatarButton.text = it }
         viewModel.counts.observe(viewLifecycleOwner) { counts ->
-            // Write the numbers the way the phone's language does
-            val numbers = NumberFormat.getIntegerInstance()
-            binding.likedCount.text = numbers.format(counts.liked)
-            binding.watchlistCount.text = numbers.format(counts.watchlist)
-            binding.watchedCount.text = numbers.format(counts.watched)
+            // Written the way the phone's language does
+            binding.likedCount.text = counts.liked.formatted()
+            binding.watchlistCount.text = counts.watchlist.formatted()
+            binding.watchedCount.text = counts.watched.formatted()
         }
     }
 
@@ -197,6 +205,7 @@ class HomeFragment : Fragment() {
         binding.homeScroll.isVisible = isLoading || content != null
         binding.stateEmpty.root.isVisible = state is HomeState.Empty
         binding.stateError.root.isVisible = state is HomeState.Error
+        if (state is HomeState.Error) binding.stateError.show(state.error)
 
         // Hero: while loading you only see the empty tonal card
         val featured = content?.featured
@@ -204,9 +213,7 @@ class HomeFragment : Fragment() {
         binding.heroFilled.isVisible = featured != null
         if (featured != null) {
             binding.heroTitle.text = featured.title
-            // "2017 · Science Fiction, Drama"
-            val genres = featured.genreNames.take(2).joinToString(", ").ifEmpty { null }
-            binding.heroMeta.text = listOfNotNull(featured.releaseYear?.toString(), genres).joinToString(" · ")
+            binding.heroMeta.text = featured.yearAndGenres() // "2017 · Science Fiction, Drama"
             binding.heroMeta.isVisible = binding.heroMeta.text.isNotEmpty()
             binding.heroImage.loadImage(ImageUrls.backdrop(featured.backdropPath))
         }
@@ -222,7 +229,7 @@ class HomeFragment : Fragment() {
         section: View,
         list: RecyclerView,
         loadingPlaceholders: View,
-        adapter: PosterRowAdapter,
+        adapter: PosterAdapter,
         isLoading: Boolean,
         movies: List<Movie>?
     ) {

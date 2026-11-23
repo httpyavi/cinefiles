@@ -11,10 +11,11 @@ import com.example.cinefiles.data.Movie
  * No points, no coins, no streaks: just a handful of badges, each with a goal and a progress bar.
  * Everything here is plain Kotlin and works from one small summary of what the user has done
  * ([AchievementStats]), so it is easy to test and does not care where that summary is stored.
- * (Today it is kept in the phone's small key-value storage, see data/AchievementTracker.kt.
- * Batch 6 can move it into Room without touching this file.)
+ * (It is kept in the phone's small key-value storage, see data/AchievementTracker.kt. Moving it somewhere else
+ * would not change this file.)
  *
- * Not here yet: "Double Feature" (add two movies to your watchlist). There is no watchlist until Batch 6/7.
+ * There is no "Double Feature" badge (add two movies to your watchlist) on purpose: the nine badges are about
+ * discovering movies by swiping. To add one, give it an id and a goal in [Achievements.all] and a counter in [AchievementStats].
  */
 
 enum class AchievementId {

@@ -1,5 +1,6 @@
 package com.example.cinefiles.ui.swipe
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
@@ -11,6 +12,7 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.logic.SwipeDirection
@@ -113,6 +115,12 @@ class SwipeDeckView @JvmOverloads constructor(
             cards.add(card)
         }
         for (role in 0 until CARD_COUNT) placeAtRest(cards[role], role)
+
+        // Screen readers: the deck reads out the movie on top and offers "Like" and "Pass" as actions, so swiping
+        // is possible without a finger gesture (the same animated swipe as the buttons)
+        isFocusable = true
+        ViewCompat.addAccessibilityAction(this, context.getString(R.string.action_like)) { _, _ -> swipeTop(SwipeDirection.LIKE) }
+        ViewCompat.addAccessibilityAction(this, context.getString(R.string.swipe_pass)) { _, _ -> swipeTop(SwipeDirection.PASS) }
     }
 
     // =====================================================================================
@@ -144,6 +152,7 @@ class SwipeDeckView @JvmOverloads constructor(
             order[role] = card
         }
         applyOrder(order.requireNoNulls().asList())
+        contentDescription = cards[TOP].contentDescription // what a screen reader says about the card on top
     }
 
     /** The buttons use this: flies the top card away exactly like a swipe. False if it could not start. */
@@ -210,6 +219,8 @@ class SwipeDeckView @JvmOverloads constructor(
     //  The finger
     // =====================================================================================
 
+    // performClick() is called from finishTracking when the touch turns out to be a tap, not from here
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> return startTracking(event)

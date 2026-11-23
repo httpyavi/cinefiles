@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Press" feel: while a view is pressed it shrinks slightly to 97%, then eases back.
+<!-- "Press" feel: while a view is pressed it shrinks slightly to 97% (150 ms), then eases back (200 ms).
      Used by buttons, chips, round buttons and posters. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:state_pressed="true">
         <set>
             <objectAnimator
-                android:duration="100"
+                android:duration="150"
                 android:interpolator="@android:interpolator/fast_out_slow_in"
                 android:propertyName="scaleX"
                 android:valueTo="0.97"
                 android:valueType="floatType" />
             <objectAnimator
-                android:duration="100"
+                android:duration="150"
                 android:interpolator="@android:interpolator/fast_out_slow_in"
                 android:propertyName="scaleY"
                 android:valueTo="0.97"
@@ -23,13 +23,13 @@
     <item>
         <set>
             <objectAnimator
-                android:duration="150"
+                android:duration="200"
                 android:interpolator="@android:interpolator/fast_out_slow_in"
                 android:propertyName="scaleX"
                 android:valueTo="1"
                 android:valueType="floatType" />
             <objectAnimator
-                android:duration="150"
+                android:duration="200"
                 android:interpolator="@android:interpolator/fast_out_slow_in"
                 android:propertyName="scaleY"
                 android:valueTo="1"

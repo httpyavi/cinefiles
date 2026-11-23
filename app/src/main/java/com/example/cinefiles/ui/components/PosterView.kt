@@ -21,9 +21,9 @@ enum class PosterBadge(
     @ColorRes val tint: Int,
     @StringRes val description: Int
 ) {
-    LIKED(R.drawable.ic_heart_filled, R.color.like, R.string.badge_liked),
+    LIKED(R.drawable.ic_heart_filled, R.color.like, R.string.status_liked),
     WATCHLIST(R.drawable.ic_bookmark_filled, R.color.accent_soft, R.string.badge_watchlist),
-    WATCHED(R.drawable.ic_check_filled, R.color.text_primary, R.string.badge_watched)
+    WATCHED(R.drawable.ic_check_filled, R.color.text_primary, R.string.status_watched)
 }
 
 /**

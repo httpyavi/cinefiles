@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "BUILDING YOUR PICKS": the short moment (about a second) between "Show my picks" and the results.
+     One line of text at a time (PicksFragment rotates it) and a thin progress bar. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:contentDescription="@string/picks_building_description"
+    android:gravity="center"
+    android:importantForAccessibility="yes"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingEnd="@dimen/screen_margin">
+
+    <ImageView
+        android:layout_width="@dimen/end_icon_plate_size"
+        android:layout_height="@dimen/end_icon_plate_size"
+        android:background="@drawable/bg_glass_circle"
+        android:importantForAccessibility="no"
+        android:padding="@dimen/space_20"
+        android:src="@drawable/ic_sparkle"
+        app:tint="@color/accent_soft" />
+
+    <TextView
+        android:id="@+id/buildingLine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_24"
+        android:gravity="center"
+        android:maxWidth="@dimen/state_text_max_width"
+        android:minLines="2"
+        android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+        tools:text="Matching your likes with Happy + Romantic…" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/buildingProgress"
+        android:layout_width="@dimen/picks_progress_width"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_24"
+        android:max="100"
+        app:indicatorColor="@color/accent"
+        app:trackColor="@color/glass_fill_strong"
+        app:trackCornerRadius="@dimen/radius_pill"
+        app:trackStopIndicatorSize="0dp"
+        app:trackThickness="@dimen/swipe_progress_height"
+        tools:progress="60" />
+
+</LinearLayout>

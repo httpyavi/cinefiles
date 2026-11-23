@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One poster in the three-column grids of My Collection and Discover (PosterAdapter, PosterStyle.GRID).
+     The 4 dp margin on every side plus the grid's 16 dp padding gives the usual 20 dp screen margin
+     and 8 dp gaps between posters. -->
+<com.example.cinefiles.ui.components.PosterView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/space_4" />

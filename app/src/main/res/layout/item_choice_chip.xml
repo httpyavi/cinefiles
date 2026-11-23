@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One selectable option chip. ChipGroup.addChoiceChip (util/ChipExtensions.kt) creates these: the Preferences screen
+     builds its chips from the option lists in logic/Preferences.kt, and Discover from the genres in logic/Genres.kt. -->
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.CineFiles.Chip"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />

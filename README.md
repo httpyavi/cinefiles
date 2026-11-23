@@ -1,123 +1,232 @@
 # CineFiles
 
 A premium movie-discovery app for Android (student project).
-Journey: Home → Mood Selection → Preferences → Swipe Movies → Your Picks → My Collection.
+The signature journey: **Home → Mood → Preferences → Swipe movies → Your Picks → My Collection.**
 
-**Stack:** Kotlin, XML layouts + ViewBinding, single Activity + Navigation Component, TMDB API with Retrofit/Gson/OkHttp, Glide, Room (KSP), ViewModel + LiveData. No Compose, no DI framework.
+**Stack:** Kotlin, XML layouts + ViewBinding, one Activity + the Navigation Component, TMDB through Retrofit / Gson / OkHttp,
+Glide for pictures, Room (with KSP) for saved movies, ViewModel + LiveData for screen state.
+**Not used on purpose:** Jetpack Compose, dependency injection, Paging 3, RxJava, Firebase, Lottie, image-color or swipe-card libraries,
+any AI/ML, any backend, TMDB's `/recommendations` endpoint. `minSdk` is 24, so `java.time` is not used.
 
 ## Run it
 
-1. Open the project in Android Studio and press Run, or use `./gradlew assembleDebug`.
-2. To load real movie data later, add your TMDB **read access token** to `local.properties` (next to `sdk.dir`):
+1. Open the project in Android Studio and press Run, or use `./gradlew assembleDebug`. It needs a JDK 17 or newer
+   (Android Studio's bundled JDK is fine) and an Android SDK; Android Studio writes `sdk.dir` into `local.properties` for you.
+2. The app loads real movies from TMDB, so it needs your TMDB **API Read Access Token**: the long one that starts with `eyJ`,
+   from your TMDB account's API settings (NOT the short "API Key"). Add it to `local.properties`, next to `sdk.dir`:
 
    ```
    TMDB_READ_TOKEN=your_token_here
    ```
 
-   `local.properties` is git-ignored, so the token is never committed. It is read in `app/build.gradle.kts` and available in code as `BuildConfig.TMDB_READ_TOKEN`. If it is missing the app still starts (it is just an empty string). Note that the token is packed inside the APK, so do not share your debug APK publicly.
-
-(Batch 2's Home screen uses sample movies, so it works without a token. The sample posters are downloaded from TMDB's public image server, so the phone needs internet to show them.)
+   `local.properties` is git-ignored, so the token is never committed. `app/build.gradle.kts` reads it and makes it available
+   in code as `BuildConfig.TMDB_READ_TOKEN`. Without it the app still starts: screens show a friendly "TMDB key missing"
+   message with a Retry button. After changing the token, rebuild. The token is packed inside the APK, so do not share your
+   debug APK publicly.
+3. The phone needs internet for movie lists. Without it the screens say you are offline and Retry works once you are back online.
+   My Collection, Details of a saved movie and the Profile work offline (they only read the database).
 
 ## Project layout
 
 ```
 app/src/main/java/com/example/cinefiles/
-  CineFilesApp.kt      Application class (creates the database + API once, in later batches)
-  MainActivity.kt      The only Activity; hosts the Navigation Component and the bottom tab bar
-  ui/                  Screens (Fragments) and reusable views
-    home/              HomeFragment, HomeViewModel, HomeState, PosterRowAdapter
-    mood/              MoodFragment, MoodFaceView (the animated face), MoodSliderView, MoodSpectrum, PreferencesFragment, WatchFlowViewModel (the shared flow state)
+  CineFilesApp.kt      Application class: makes the ONE database, repository, achievements and settings (on a background
+                       thread at start); turns StrictMode on in debug builds
+  MainActivity.kt      The only Activity: hosts the Navigation Component, the floating tab bar and the launch splash
+  ui/                  Screens (Fragments + their ViewModels) and reusable views
+    home/              HomeFragment, HomeViewModel, HomeState
+    discover/          DiscoverFragment, DiscoverViewModel, DiscoverState (search, lists, genre chips, endless grid)
+    collection/        CollectionFragment, CollectionViewModel (Liked / Watchlist / Watched)
+    profile/           ProfileFragment, ProfileViewModel, AchievementAdapter (name, taste, achievements, About, Clear my data)
+    mood/              MoodFragment, MoodFaceView, MoodSliderView, MoodSpectrum, PreferencesFragment, WatchFlowViewModel
     swipe/             SwipeFragment, SwipeViewModel, SwipeDeckView (touch + animation), SwipeCardView (one card)
-    profile/           ProfileFragment, ProfileViewModel, AchievementAdapter
-    components/        PosterView, StepIndicatorView, AmbientGlowView (the colored light behind a screen), AchievementBadgeView
-    temp/              TEMP stand-in screens
-    gallery/           TEMP design gallery
-  data/                Movie, AchievementTracker, MovieRepository, Retrofit API, Room database (later batches); TEMP SampleData
-  logic/               Plain Kotlin rules (Greeting, Moods, MoodSelection, Preferences, SwipeDeck, SwipeGesture, Discovery, Achievements, PosterColor). Only resource ids, no screens.
-  util/                Small helpers: ViewExtensions, NavigationExtensions, ImageExtensions, ImageUrls, PosterTint, Event, TestMode (TEMP)
+    picks/             PicksFragment, PicksAdapter, QuickViewSheet, PicksState, PickTexts (Your Picks)
+    detail/            DetailFragment, DetailViewModel, DetailState (Movie Details)
+    components/        PosterAdapter (every poster row and grid), PosterView, StepIndicatorView, AmbientGlowView, AchievementBadgeView
+  data/                Movie (also the Room table), MovieDao, AppDatabase, Converters, CollectionCounts, MovieRepository, MoviePage,
+                       TmdbApi (Retrofit), DiscoverQuery, ApiError, MovieDetails, dto/ (TMDB's JSON shapes),
+                       AchievementTracker and UserSettings (small SharedPreferences files)
+  logic/               Plain Kotlin rules, no screens: Moods, MoodSelection, MoodShapes, Preferences, Discovery, SwipeDeck, SwipeGesture,
+                       RecommendationEngine, CollectionRules, DiscoverRules, Profile, Achievements, Genres, Featured, Greeting,
+                       PageCounter, Pagination, PosterColor
+  util/                Small shared helpers: NavigationExtensions, ViewExtensions, StateViews, SnackbarExtensions, ChipExtensions,
+                       MovieTexts, CurrentTime, AnimationSettings, ImageExtensions, ImageUrls, PosterTint, PaginationScrollListener, Event
 app/src/main/res/
-  values/              colors, dimens, styles, themes, strings
-  drawable/            icons (ic_*), scrim, shapes
-  layout/              screens and reusable layouts (view_*, item_*)
+  values/              colors, dimens, styles, themes, strings, integers
+  drawable/            icons (ic_*), scrims and glass shapes (bg_*, scrim_*), the logo
+  layout/              screens (fragment_*), list items (item_*), shared pieces (view_*), sheet_quick_view, dialog_edit_name
   menu/                bottom_nav.xml (the four tabs)
   navigation/          nav_graph.xml (the map of all screens)
-  anim/ animator/      the fade-through screen change, and the "press" shrink
+  anim/ animator/      screen changes (fade-through, slide) and the "press" shrink
+app/src/test/          Unit tests that run on the computer (rules, ViewModel state builders, the network stack against a pretend TMDB)
+app/src/androidTest/   Tests that need an emulator or phone (the real database, real touch gestures on the swipe deck)
 ```
 
-Fragments only show the UI and forward clicks. ViewModels hold screen state. One `MovieRepository` talks to TMDB and Room.
+Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, so no factories) hold screen state. One
+`MovieRepository` talks to TMDB and Room. Rules live in plain Kotlin files in `logic/` and are unit-tested.
 
 ## How navigation works
 
 - `res/navigation/nav_graph.xml` lists every screen. Home is the start.
-- Four screens are **tabs**: `homeFragment`, `discoverFragment`, `collectionFragment`, `profileFragment`. Their ids must match the items in `res/menu/bottom_nav.xml`, and the list `TAB_SCREEN_IDS` in `MainActivity`. The bar slides away on every other screen.
+- Four screens are **tabs**: `homeFragment`, `discoverFragment`, `collectionFragment`, `profileFragment`. Their ids must match the
+  items in `res/menu/bottom_nav.xml` and the set `TAB_SCREEN_IDS` in `MainActivity`. The bar slides away on every other screen.
 - Never call `navigate(...)` directly. Use the helpers in `util/NavigationExtensions.kt`:
-  - `findNavController().openTab(R.id.discoverFragment)` to jump to a tab (each tab keeps its state)
-  - `findNavController().openScreen(R.id.moodFragment)` to open a normal screen on top (Back returns)
-  - `findNavController().openMovieDetails(movieId)` to open Details
-- To add a new screen: add a `<fragment>` to `nav_graph.xml`. To add a tab: also add a menu item and its id to `TAB_SCREEN_IDS`.
-- A tab screen reserves room for the floating bar: `android:paddingBottom="@dimen/bottom_nav_height"` on its scrolling area (plus `clipToPadding="false"`).
+  - `openTab(R.id.discoverFragment)`: jump to a tab (each tab keeps its state).
+  - `openScreen(R.id.moodFragment)`: open a screen on top (Back returns). The steps of the watch flow pass `slide = true`.
+  - `openMovieDetails(movieId)`: open Details. A different movie stacks on top of the current Details; the same movie twice is ignored.
+- Motion: tabs and Details fade through, Mood → Preferences → Swipe → Picks slide (250 ms). With the phone's "Remove animations"
+  on, every screen change is instant. Press animations (buttons, chips, posters) take 150 ms in and 200 ms out.
+- A tab screen reserves room for the floating bar: `android:paddingBottom="@dimen/bottom_nav_height"` on its scrolling area
+  plus `clipToPadding="false"`.
 
-## The "watch something" flow (Home → Mood → Preferences → Swipe → Picks)
+## The "watch something" flow
 
-- **One shared state:** every screen of the flow gets the same `WatchFlowViewModel` with `private val watchFlow: WatchFlowViewModel by activityViewModels()`. It holds the picked moods (`selection`), the `preferences` and where the mood slider is. Home calls `watchFlow.reset()` when the red button starts a new flow.
-- **Moods live in one file:** `logic/Moods.kt` has the nine moods, their TMDB genre ids and colors. Never copy genre ids anywhere else; call `Moods.genreIdsFor(selection.ids)`. `Moods.spectrum` is the order on the Mood screen's slider. To add or change a mood, edit that file, its strings (`mood_<id>`, `_short`, `_hint`, `_line`), its color (`mood_tint_<id>`), its body shape (`logic/MoodShapes.kt`) and its face pose (`MoodFaceView.poses`).
-- **The Mood screen:** drag the slider (`MoodSliderView`) and the face (`MoodFaceView`) changes with it; the light behind (`AmbientGlowView`) takes the mood's color. Tap the face, or the pill under the name, to add the mood to your mix. The character is drawn with flat, solid Canvas shapes (no outlines): each mood has its own body silhouette (`MoodShapes`: 72 points) and one list of face numbers (a "pose": eye shape, brows, mouth, blush, tears...). Both are blended between two moods while you drag, so the body flows from one shape into the next and nothing is swapped.
-- **Selection rules** (max three, "Surprise Me" stands alone) are in `logic/MoodSelection.kt` and are unit-tested. The ViewModel only calls them.
-- **Preferences** are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
+- **One shared state:** every screen of the flow gets the same `WatchFlowViewModel` (`by activityViewModels()`). It holds the picked moods,
+  the preferences, the slider position and the built picks. Home calls `reset()` when the red button starts a new flow.
+- **Moods** live in one file, `logic/Moods.kt`: nine moods, their TMDB genre ids and colors. Never copy genre ids elsewhere. The
+  Mood screen is an animated face and a slider (`MoodFaceView`, `MoodSliderView`, shapes in `logic/MoodShapes.kt`); choosing rules
+  (up to three, "Surprise Me" alone) are in `logic/MoodSelection.kt`.
+- **Preferences** (release period, minimum rating, length, language) are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
+- **The swipe deck** is a MIX (`logic/Discovery.kt`): what fits your mood, top rated, hidden gems, trending, popular, taken in turns, each
+  movie once, skipping every movie you already have a state for. If mood + preferences fit too few movies the search is loosened step by step
+  (language, length, release period, rating, then genres) and those cards say "Something different". `SwipeViewModel` sends the questions to
+  `MovieRepository.moviesFor` (TMDB `/discover`, `/trending`, `/popular`); `data/DiscoverQuery.kt` turns them into TMDB parameters. When 5 cards
+  are left, more are fetched quietly. `logic/SwipeDeck.kt` is the plain-Kotlin deck (position, liked list and Undo are worked out from one
+  history); `logic/SwipeGesture.kt` decides what counts as a swipe (35% of the width, or a flick faster than 600 dp/s). `SwipeDeckView` does the
+  touch and animation with only `MotionEvent` and `ViewPropertyAnimator`. Like and Pass are also offered as **accessibility actions** on the deck.
+- **Saved at once:** every like and pass is written to Room; Undo takes it back.
 
-## The swipe deck (Batch 4, and the design pass)
+## The rules of liking and the watchlist
 
-- **Who does what:** `SwipeFragment` only shows things and forwards clicks. `SwipeViewModel` holds the state (a `SwipeDeck`). `logic/SwipeDeck.kt` is the plain-Kotlin deck: cards plus a history of swipes, and the position, the liked list and Undo are all worked out from that history, so they can never disagree. `logic/SwipeGesture.kt` is the rule for "does this drag count as a swipe?" (past 35% of the card width, or a flick faster than 600 dp/s). Both are unit-tested.
-- **Which movies come up:** `logic/Discovery.kt`. The deck is a MIX of five kinds (what fits your mood, top rated, hidden gems, trending, popular), taken in turns, each movie once, skipping movies already swiped. If your mood and preferences fit too few movies, the search is loosened one step at a time (language, length, release period, rating, genres) and those cards are labelled "Something different". Today the questions are answered by `SampleData.discover`; in Batch 5 `SwipeViewModel.nextPicks` sends the same `DiscoveryRequest`s to `MovieRepository`.
-- **`SwipeDeckView`** owns three reusable `SwipeCardView`s (top, next, and one hidden behind them) and does the touch handling and the animations with only `MotionEvent`, `VelocityTracker` and `ViewPropertyAnimator`. It never knows the movies: the screen calls `setCards(top, second, third)` after every change.
-- **The light behind the cards:** `AmbientGlowView` takes the color of the poster on top (`util/PosterTint.kt` + `logic/PosterColor.kt`: a tiny copy of the poster is loaded through Glide and its pixels are averaged; no library), leans red while a card is dragged toward "like" and cool slate toward "pass".
-- **Like / pass feedback:** while a card is dragged, `SwipeCardView.setFeedback(like, pass)` fades in a see-through red (right) or slate (left) veil and grows a heart or X in the middle, both following the distance; at rest the poster is completely clear.
-- **The buttons and the finger do the same thing:** `swipeTop(direction)` flies the top card away; when it lands the deck calls `listener.onSwiped(...)`, the ViewModel updates, and the screen calls `setCards` again. Undo is `bringBack(...)`.
-- **While a card is moving, touches and taps are ignored** (`isBusy`), so quick tapping can never skip or double-count a card.
-- **Tuning the feel:** the numbers (scale of the card behind, flight time, overshoot, rotation) are constants at the bottom of `SwipeDeckView.kt`; the fling speed and card offset are in `dimens.xml` (`swipe_*`).
-- **Testing gestures:** `SwipeDeckViewTest` (in `androidTest`) sends real `MotionEvent`s with exact timestamps. `adb shell input swipe` cannot be used for flicks: on emulators it gives too few samples for a speed.
+- A movie can be liked, on the watchlist, and watched. **A movie is on the watchlist OR watched, never both** (marking watched takes it off
+  the watchlist; adding it to the watchlist un-watches it). Liked is independent of both, **except for one rule:**
+- **THE LIKE RULE: a movie that is on the watchlist cannot be liked.** Remove it from the watchlist, or mark it watched, and liking works
+  again. A movie liked BEFORE it joined the watchlist keeps its like. The rule is `canLike` in `logic/CollectionRules.kt`;
+  `MovieRepository.like(movie)` enforces it (it checks the SAVED copy) and returns `false` when it refuses. Details dims Like, shakes it and says why;
+  the Watchlist tab's menu has no Like; a card swiped right on a watchlisted movie is not liked (a Snackbar says why) and is not counted in "Picks (n)".
 
-## Achievements
+## Your Picks (the recommendation rules)
 
-- **The rules** are in `logic/Achievements.kt` (nine badges, each with a goal) and work from one summary, `AchievementStats`. `data/AchievementTracker.kt` updates it after every swipe (and every Undo, so liking, undoing and liking again does not count twice), remembers which badges are earned (they are never taken back) and says which ones a swipe just earned. There is one tracker for the app: `(application as CineFilesApp).achievements`.
-- **Where you see them:** a slim glass banner slides in on the swipe screen for a moment when a badge is earned (tap it to send it away), and the Profile tab shows all badges with progress rings, a "Next up" panel, and a shine animation the first time you look at a newly earned badge.
-- **Adding a badge:** add an id and a goal in `Achievements.all`, a counter in `AchievementStats` if it needs one (and in `AchievementTracker.read/write`), its name and description strings, and an icon in `res/drawable`.
+No AI, no server: three small rules in `logic/RecommendationEngine.kt`, which knows nothing about TMDB or screens.
+
+1. **Genre profile:** every genre of a chosen mood +1, of a liked movie +1.5, of a passed movie −0.5. Negative totals count as 0, then everything is
+   divided by the biggest.
+2. **Score** of a candidate = 0.6 × genre match + 0.3 × (rating / 10) + 0.1 × era match (how close its year is to the average year of your likes;
+   0.5 when you liked nothing).
+3. **The list:** best scores first, top 10, at most 4 whose first genre is the same. Match percent = score × 100. Equal scores are settled by
+   rating, then movie id, so the order never changes by chance. Each pick says why: "Similar to <liked movie>" or "Matches your <mood> mood".
+
+**Candidates** (`MovieRepository.picksCandidates`): TMDB `/discover` with the three best genres of the profile joined with `|`, your preferences and at
+least 100 votes (pages 1 and 2). Movies that already have a state in Room and movies without a poster are never candidates. If fewer than 10 are
+found, it asks once more WITHOUT the preferences. `WatchFlowViewModel.buildPicks` runs it, with a short "building your picks" moment (about 1 s,
+skipped when animations are off). The page: Top Match card, "You liked", "More for you" (three columns, each poster with its match percent and a
+bookmark), and a quick-view sheet (story, reason, Details / Add to Watchlist / Mark as watched). Picks live only while the flow is open.
+
+## Discover
+
+Search (2+ letters, 400 ms after the last key, `/search/movie`), the Popular / Trending / Top rated chips and the genre chips (`logic/Genres.kt`),
+over a three-column poster grid with live status badges. One request runs at a time; a new search or chip cancels the old one; the next page loads
+near the end of the list (`PaginationScrollListener`) until the last page, without repeats. With a genre and no search, `/discover` answers; while
+searching, a genre chip only filters what has loaded (a small line says so). Rules: `logic/DiscoverRules.kt` and `ui/discover/DiscoverState.kt`.
+Home's search icon opens the tab with the keyboard ready.
+
+## My Collection and Movie Details
+
+- **One table, `movies`** (Room): `data/Movie.kt` is both the class every screen uses and the table row. The user's state sits in the same row:
+  `reaction`, `reactedAt`, `inWatchlist`, `watchlistAddedAt`, `isWatched`, `watchedAt`.
+- **THE rule of the DAO:** a movie is saved with `OnConflictStrategy.IGNORE`, never `REPLACE` (replacing a row would wipe the user's state). After
+  that only small targeted `UPDATE` queries change the state. "Undo" everywhere is `restoreState`.
+- **Collection:** `Liked · Watchlist · Watched` with live counts over a three-column grid. A poster wears a badge (`badgeStatusFor`). Tap = Details,
+  long-press = a menu that depends on the tab (`actionsFor`), and every action offers **Undo**.
+- **Details:** backdrop, rating · year · length, genres, **Add to Watchlist**, Like and Watched toggles, story, trailer (opens YouTube) and Similar
+  movies. It shows what is known at once and works offline for a saved movie (`ui/detail/DetailState.kt`).
+
+## Profile
+
+The name, the numbers, your taste, the achievements, About and Clear my data.
+- **Name:** the avatar shows its first letter. **Edit** opens a small dialog; the name is saved in SharedPreferences (`data/UserSettings.kt`, rules in
+  `logic/Profile.kt`: trimmed, one space between words, at most 20 letters, never blank) and shows in Home's greeting.
+- **Your taste:** the genre most of your liked movies have and how many movies you like, read live from Room ("—" while nothing is liked).
+  The three numbers above it (Discovered / Liked / Passed) are lifetime swipe counts from the achievements, so they can be bigger than the list.
+- **Achievements:** nine badges (`logic/Achievements.kt`) kept by `data/AchievementTracker.kt`. A badge earned once stays earned.
+- **About CineFiles:** the app version and the TMDB credit with the sentence TMDB's terms ask for.
+- **Clear my data** (red, asks first): deletes every saved movie and state (Room), the achievements and the name (both SharedPreferences files),
+  ends any journey in progress and goes Home.
+
+## Performance, memory and accessibility
+
+- Pictures: only `w342` (rows and grids), `w500` (swipe card) and `w780` (backdrops), never `original` (`util/ImageUrls.kt`). Glide loads them; recycled
+  list views cancel their old download.
+- Every list uses `DiffUtil` (`ListAdapter`). Every Fragment clears its ViewBinding in `onDestroyView`.
+- Room, TMDB and the settings files are never touched on the main thread: queries are `suspend`/`Flow`, and `CineFilesApp` makes the shared objects on a
+  background thread at start. **StrictMode** is on in debug builds and writes to Logcat (tag `StrictMode`) for disk or network use on the main thread
+  and for leaked cursors or Activities; search Logcat for it while using the app.
+- Accessibility: every icon button and poster has a content description, tap targets are at least 48 dp, text uses `sp` and the layouts were checked at
+  130% font size on a 360 × 640 dp screen, the swipe deck reads out the movie on top and offers "Like" and "Pass" as actions, the mood slider is a
+  proper range control, and animations are skipped when the phone's "Remove animations" is on.
 
 ## Design system cheat sheet
 
-Always reuse these. Never type a color, size or text directly in a layout.
+Always reuse these. Never type a color, size or text directly in a layout. Dark theme only; red means "primary action, selected or liked".
 
 | Need | Use |
 |---|---|
-| Colors | `@color/background`, `surface`, `elevated`, `gold`, `on_gold`, `text_primary`, `text_secondary`, `like_green`, `pass_red` (see `values/colors.xml`) |
-| Spacing | `@dimen/space_4 … space_48` (4 dp grid), screen sides: `@dimen/screen_margin` (20 dp) |
-| Corner radius | `@dimen/radius_small/medium/large/xlarge/pill` = 8 / 12 / 16 / 24 dp / pill. Images: `app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Medium"` (or `.Large`, `.Small`) |
-| Text | `@style/TextAppearance.CineFiles.Display` (40), `.LargeTitle` (32), `.Title` (24), `.Headline` (18), `.Body` (16), `.Callout` (14, gray), `.Caption` (12, gray), `.Eyebrow` (11, spaced capitals: put it above a title). Controls: `.Button` (16), `.Label` (14) |
-| Buttons | `@style/Widget.CineFiles.Button.Primary` (red with a soft glow, one per screen), `.Tonal` (glass), `.Text`. Do not set `cornerRadius`: Material buttons are already pills, and an absolute radius turns the glow into a rectangle. A container of a glowing button needs `clipToPadding="false"`. |
-| Round icon button | `@style/Widget.CineFiles.RoundActionButton` (glass) + `layout_width/height=@dimen/round_button_size`, `app:icon`, `app:iconTint`, **and a `contentDescription`**. Variants: `.Large.Like` (red), `.Large.Pass` (slate icon) |
-| Chip | `@style/Widget.CineFiles.Chip` (inside a `ChipGroup`): glass, with a red edge when selected |
-| Card / tile | `@style/Widget.CineFiles.Card` (a quiet surface block, use sparingly); `.Card.Glass`. Change the corner with `app:cardCornerRadius`. |
-| Step indicator | `<com.example.cinefiles.ui.components.StepIndicatorView app:currentStep="1" />` |
-| "No" wiggle | `view.shake()` (from `util/ViewExtensions.kt`) |
-| Poster | `<com.example.cinefiles.ui.components.PosterView>` ; set `badge = PosterBadge.LIKED / WATCHLIST / WATCHED` or `null`. In a horizontal row use `PosterRowAdapter` (`item_poster_row.xml`). |
-| Loading a picture | `imageView.loadImage(ImageUrls.poster(path))` (or `ImageUrls.backdrop(path)`): placeholder, fade-in and size are handled |
-| Image scrim | `@drawable/scrim_bottom` in a view stacked above the image (same corner shape) |
-| Icons | `@drawable/ic_home`, `ic_discover`, `ic_bookmark`, `ic_profile`, `ic_heart`, `ic_check`, `ic_star` (+ `_filled` versions for selected states), `ic_search`, `ic_close`, `ic_back`, `ic_add`, `ic_undo`, `ic_info`, `ic_play`, `ic_filter`, and the badge icons `ic_film`, `ic_moon`, `ic_layers`, `ic_sparkle`, `ic_drop`, `ic_heart_broken`. Tint with `app:tint`. |
-| Screen states | `view_state_empty` (change icon / texts / button from code), `view_state_error` (set what Retry does), `view_state_loading` (full-screen placeholders), `view_row_loading` (placeholders for a poster row) |
-| Press animation | `android:stateListAnimator="@animator/press_scale"` (already built into buttons, chips, tiles and `PosterView`) |
-| Edge-to-edge | call `rootView.applySystemBarsPadding()` (from `util/ViewExtensions.kt`) on a screen's root |
-
-Red means "primary action, selected or liked": use it for the one thing that matters on a screen. Depth comes from pictures, light (`AmbientGlowView`) and glass, not from borders and boxes.
+| Colors | `@color/background`, `surface`, `elevated`, `accent`, `accent_soft`, `accent_deep`, `on_accent`, `star`, `text_primary`, `text_secondary`, `like`, `pass`, and the glass fills `glass_fill`, `glass_fill_strong`, `glass_stroke` (see `values/colors.xml`) |
+| Spacing | `@dimen/space_4 … space_40` (4 dp grid); screen sides `@dimen/screen_margin` (20 dp); smallest tap area `@dimen/touch_target` (48 dp) |
+| Corner radius | `@dimen/radius_small/medium/large/xlarge/pill`. Images: `app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Medium"` |
+| Text | `@style/TextAppearance.CineFiles.Display`, `.LargeTitle`, `.Title`, `.Headline`, `.Body`, `.Callout`, `.Caption`, `.Eyebrow`, `.Label`, `.Button`, `.Pill` |
+| Buttons | `Widget.CineFiles.Button.Primary` (red, one per screen), `.Tonal` (glass), `.Text`. Do not set `cornerRadius`. |
+| Round icon button | `Widget.CineFiles.RoundActionButton` (+ `.Large`, `.Large.Like`) with `@dimen/round_button_size`, an `app:icon` and a `contentDescription` |
+| Chip | `ChipGroup.addChoiceChip("label")` (util/ChipExtensions.kt) |
+| Segmented control | `MaterialButtonToggleGroup` with `Widget.CineFiles.Button.Segment`; `android:saveEnabled="false"` when a ViewModel keeps the selection |
+| Card | `Widget.CineFiles.Card`, `.Card.Glass` |
+| Posters | `PosterView`; every row or grid uses `PosterAdapter(PosterStyle.ROW or GRID, …)` |
+| Pictures | `imageView.loadImage(ImageUrls.poster(path))` |
+| Screen states | `view_state_loading`, and `view_state_empty` / `view_state_error` filled with `binding.stateEmpty.show(...)` / `binding.stateError.show(error)` (util/StateViews.kt) |
+| Messages | `showMessage`, `showUndo` (util/SnackbarExtensions.kt): same look everywhere, above the tab bar on tab screens |
+| Texts about a movie | `movie.ratingText()`, `genresText()`, `yearAndGenres()`, `Int.formatted()` (util/MovieTexts.kt) |
+| Edge-to-edge | `view.applySystemBarsPadding(top, bottom)` |
 
 ### Changing the font
 
-The font is named in only two styles in `values/styles.xml`: `TextAppearance.CineFiles.Regular` and `.Medium`. Today they use Android's built-in Roboto. To use Inter: put the Inter files in `res/font/` and change the two `android:fontFamily` lines to point at them (for example `@font/inter_regular`, `@font/inter_medium`).
+The font is named in only two styles in `values/styles.xml`: `TextAppearance.CineFiles.Regular` and `.Medium`. Today they use Android's Roboto. To
+use another font (Inter, for example): put the font files in `res/font/` and change the two `android:fontFamily` lines to point at them.
+
+### Logo and icons
+
+- The CineFiles logo is `res/drawable/cinefiles_logo.xml`. It is used in the Home header and on the red launch screen; `ic_logo.xml` wraps it for the
+  system splash screen and the adaptive launcher icon (`res/mipmap-anydpi-v26/`). Android 7.x (API 24-25) still shows the older
+  `res/mipmap-*/ic_launcher*.webp` files: replace those to change the icon there.
+- TMDB: the Profile's About section shows a small badge in TMDB's colors (`bg_tmdb_badge.xml`) next to the sentence TMDB's terms ask for. To show
+  TMDB's official logo instead, download it from TMDB's brand page, save it as `res/drawable/tmdb_logo.xml` (or a PNG) and replace the `tmdbBadge`
+  TextView in `layout/fragment_profile.xml` with an ImageView that uses it.
+
+## Tests
+
+- Unit tests (rules, state builders, ViewModel helpers, the whole network stack against a pretend TMDB made from a plain `ServerSocket`):
+  `./gradlew testDebugUnitTest`. No emulator needed.
+- Lint: `./gradlew lint` (report in `app/build/reports/lint-results-debug.html`).
+- On an emulator or phone: `app/src/androidTest/` tests the REAL database (`MovieDaoTest`, in memory, never touches your saved movies) and sends real
+  touch gestures and accessibility actions to the swipe deck (`SwipeDeckViewTest`). `./gradlew connectedDebugAndroidTest` runs them, but Gradle
+  uninstalls the app afterwards, which also deletes its saved data. To keep the data, build with `./gradlew assembleDebug assembleDebugAndroidTest`, install
+  both APKs with `adb install -t -r`, and run
+  `adb shell am instrument -w -e class com.example.cinefiles.data.MovieDaoTest com.example.cinefiles.test/androidx.test.runner.AndroidJUnitRunner`.
+
+## Good to know / postponed
+
+- **Cast on Details** is not shown yet. The data is already loaded (`MovieDetails.cast`, `directors`).
+- **No "Double Feature" badge:** the nine badges are about swiping; adding one needs an id and goal in `Achievements.all` and a counter in `AchievementStats`.
+- **Database changes:** the table is at version 1. If `Movie` ever changes, raise `version` in `AppDatabase` and add a real Migration; without one Room starts
+  over with an empty table (`fallbackToDestructiveMigration`), which deletes the saved movies.
+- **Your Picks are not saved:** they live in `WatchFlowViewModel` while the flow is open. The movies you act on (watchlist, watched) are saved as always.
+- **"Trending" with a genre** means released since last year, most popular first (TMDB's trending list cannot be filtered by genre).
+- **Portrait only** on purpose (the swipe deck, the mood slider and the tall posters are designed for a tall screen).
+- **The token is inside the APK** (`BuildConfig`): use a throw-away token for any APK you hand out.
+- **Library versions are not upgraded:** lint lists newer versions of AndroidX, Room, Material and the Android Gradle plugin. They were left alone on purpose
+  to keep a tested set; upgrade them together and re-run the tests.
+- **TMDB credit:** keep the About section's sentence if you ever show the app to anyone outside the project.
 
 ## Status
 
-- **Batch 1 (done, approved):** project setup, design system, design gallery (temporary).
-- **Batch 2 (done, approved):** bottom navigation, Home screen, stand-in screens.
-- **Batch 3 (done, approved):** Mood screen, Preferences screen, shared `WatchFlowViewModel`.
-- **Batch 4 (done, committed):** Tinder-style swipe deck (gestures, buttons, Undo, end-of-deck states) on sample cards.
-- **Design pass (built, waiting for review):** new look (red accent, glass, light), animated mood face + slider, discovery mix, poster-colored light, achievements and a real Profile. Batch 5 (TMDB) has not started.
-- See `TEMP.md` for everything that is temporary.
+All eight batches are done: design system, tabs and Home, Mood and Preferences, the swipe deck, TMDB, Room + Collection + Details, the Like rule +
+Your Picks + Discover, and the Profile, three-column grids, cleanup and polish of this last batch.

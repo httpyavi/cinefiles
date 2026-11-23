@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PROFILE (a tab). A light glow behind a big avatar, three numbers, and the achievements:
-     a panel that says what to do next, and a grid of medals. Everything scrolls. -->
+<!-- PROFILE (a tab). A light glow behind a big avatar and the name (with Edit), three numbers, "Your taste", the
+     achievements (a panel that says what to do next, and a grid of medals), About CineFiles with the TMDB credit,
+     and Clear my data. Everything scrolls. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -41,16 +42,37 @@
                 android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
                 tools:text="M" />
 
-            <TextView
-                android:id="@+id/profileName"
+            <!-- The name, with a small Edit button next to it -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_16"
-                android:accessibilityHeading="true"
-    tools:targetApi="28"
-                android:gravity="center"
-                android:textAppearance="@style/TextAppearance.CineFiles.Title"
-                tools:text="Movie Lover" />
+                android:layout_marginTop="@dimen/space_8"
+                android:gravity="center_vertical|center_horizontal"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/profileName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28"
+                    tools:text="Movie Lover" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/profileEdit"
+                    style="@style/Widget.CineFiles.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_8"
+                    android:contentDescription="@string/profile_edit_description"
+                    android:minWidth="@dimen/touch_target"
+                    android:text="@string/profile_edit"
+                    app:icon="@drawable/ic_edit"
+                    app:iconTint="@color/accent" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -115,7 +137,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_liked"
+                        android:text="@string/status_liked"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
                 </LinearLayout>
 
@@ -147,6 +169,31 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- ===== Your taste: the genre you like most, and how many movies you like in all ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_glass_panel"
+                android:orientation="vertical"
+                android:padding="@dimen/space_20">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_taste_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                    android:textColor="@color/accent_soft" />
+
+                <TextView
+                    android:id="@+id/profileTaste"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                    tools:text="Drama · 9 liked movies" />
+            </LinearLayout>
+
             <!-- ===== Achievements ===== -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -161,7 +208,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:accessibilityHeading="true"
-    tools:targetApi="28"
+                    tools:targetApi="28"
                     android:text="@string/profile_achievements_title"
                     android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
 
@@ -250,16 +297,75 @@
                 tools:itemCount="9"
                 tools:listitem="@layout/item_achievement" />
 
-            <!-- TEMP: keeps the Batch 1 design gallery reachable. Removed in Batch 8 with the gallery. -->
+            <!-- ===== About CineFiles: the version and the TMDB credit ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_32"
+                android:background="@drawable/bg_glass_panel"
+                android:orientation="vertical"
+                android:padding="@dimen/space_20">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/profile_about_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                    tools:targetApi="28" />
+
+                <TextView
+                    android:id="@+id/aboutVersion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                    tools:text="Version 1.0" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- TMDB's credit: its colors as a small badge, then the sentence its terms ask for -->
+                    <TextView
+                        android:id="@+id/tmdbBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_tmdb_badge"
+                        android:importantForAccessibility="no"
+                        android:paddingStart="@dimen/space_12"
+                        android:paddingTop="@dimen/space_8"
+                        android:paddingEnd="@dimen/space_12"
+                        android:paddingBottom="@dimen/space_8"
+                        android:text="@string/profile_tmdb_badge"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Label"
+                        android:textColor="@color/tmdb_dark" />
+
+                    <TextView
+                        android:id="@+id/tmdbNotice"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:layout_weight="1"
+                        android:text="@string/profile_tmdb_notice"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ===== Clear my data (red: it cannot be undone) ===== -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/openGallery"
+                android:id="@+id/clearData"
                 style="@style/Widget.CineFiles.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/space_16"
                 android:layout_marginBottom="@dimen/space_24"
-                android:text="@string/temp_open_gallery" />
+                android:text="@string/profile_clear"
+                android:textColor="@color/accent" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

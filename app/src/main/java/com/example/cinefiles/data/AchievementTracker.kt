@@ -8,7 +8,7 @@ import com.example.cinefiles.logic.AchievementId
 import com.example.cinefiles.logic.AchievementStats
 import com.example.cinefiles.logic.Achievements
 import com.example.cinefiles.logic.SwipeDirection
-import java.util.Calendar
+import com.example.cinefiles.util.currentHour
 
 /** What the Profile screen needs: the numbers, which badges are earned, and which have been "celebrated". */
 data class AchievementState(
@@ -24,9 +24,8 @@ data class AchievementState(
  * There is ONE of these for the whole app (CineFilesApp.achievements). The rules themselves are in
  * logic/Achievements.kt; this class only adds storing and the "what is new" bookkeeping.
  *
- * TEMP: the numbers are stored in the phone's small key-value storage (SharedPreferences), because the
- * Room database does not exist yet. Batch 6 can move them into Room: only [read] and [write] below change.
- * (See TEMP.md.)
+ * The numbers are stored in the phone's small key-value storage (SharedPreferences): they are a handful of
+ * counters about the user, not movies, so they do not need the Room database.
  */
 class AchievementTracker(context: Context) {
 
@@ -67,14 +66,18 @@ class AchievementTracker(context: Context) {
         publish(current.copy(celebrated = current.celebrated + ids))
     }
 
-    private fun currentHour(): Int = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    /** Clear my data: every number and every badge is forgotten, as if the app was just installed. */
+    fun reset() {
+        prefs.edit().clear().apply()
+        _state.value = AchievementState()
+    }
 
     private fun publish(state: AchievementState) {
         _state.value = state
         write(state)
     }
 
-    // ---------- Storing (TEMP: replaced by Room in Batch 6) ----------
+    // ---------- Storing ----------
 
     private fun read(): AchievementState {
         val stats = AchievementStats(
