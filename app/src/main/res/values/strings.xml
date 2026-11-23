@@ -46,7 +46,11 @@
     <string name="action_close">Close</string>
 
     <!-- Mood screen -->
+    <string name="mood_eyebrow">YOUR MOOD</string>
     <string name="mood_title">What are you feeling today?</string>
+    <string name="mood_swipe_instruction">Swipe left or right to explore moods</string>
+    <string name="mood_prev_description">Previous mood</string>
+    <string name="mood_next_description">Next mood</string>
     <string name="mood_hint">Tap the face to add a mood. Up to three.</string>
     <string name="mood_add">Add to my mix</string>
     <string name="mood_added">In my mix</string>
@@ -97,10 +101,23 @@
     <string name="pref_hint">All optional. Skip anything you like.</string>
     <string name="pref_skip">Skip</string>
     <string name="pref_start">Start swiping</string>
-    <string name="pref_section_period">Release period</string>
-    <string name="pref_section_rating">Minimum rating</string>
-    <string name="pref_section_length">Length</string>
+    <string name="pref_section_period">Release Period</string>
+    <string name="pref_section_period_sub">Filter by cinematic era</string>
+    <string name="pref_section_rating">Minimum Rating</string>
+    <string name="pref_section_rating_sub">Community rating threshold</string>
+    <string name="pref_section_length">Runtime</string>
+    <string name="pref_section_length_sub">How much time do you have tonight?</string>
     <string name="pref_section_language">Language</string>
+    <string name="pref_section_language_sub">Original audio language</string>
+    <string name="pref_period_any_era">Any Era</string>
+    <string name="pref_period_classic">Before 2000 · Classic</string>
+    <string name="pref_period_modern">2000–2014 · Modern</string>
+    <string name="pref_period_recent">2015+ · Contemporary</string>
+    <string name="pref_length_any">Any Length</string>
+    <string name="pref_length_quick">&lt; 90 min · Quick Watch</string>
+    <string name="pref_length_standard">&lt; 2 hrs · Standard</string>
+    <string name="pref_length_epic">2 hrs+ · Epic</string>
+    <string name="pref_language_any">Any Language</string>
 
     <string name="pref_any">Any</string>
     <string name="pref_period_before_2000">Before 2000</string>

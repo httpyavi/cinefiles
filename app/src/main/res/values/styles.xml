@@ -171,6 +171,17 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
+    <!-- Preference selection button/card: rounded glass card with press scale feedback -->
+    <style name="Widget.CineFiles.Button.PreferenceCard" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">50dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
+        <item name="cornerRadius">@dimen/radius_medium</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:stateListAnimator">@animator/press_scale</item>
+        <item name="iconSize">@dimen/icon_size_small</item>
+    </style>
+
     <!-- Round action button: a glass circle with an icon (undo, info, close, back...).
          Give it layout_width/height = @dimen/round_button_size, an app:icon and a contentDescription.
          Change the icon color with app:iconTint. -->
