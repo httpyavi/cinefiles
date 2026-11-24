@@ -214,6 +214,6 @@ class PreferencesFragment : Fragment() {
 
     private companion object {
         const val GLOW_STRENGTH = 0.45f
-        const val ACTIVE_FILL_ALPHA = 42 // ~16% red wash for active option
+        const val ACTIVE_FILL_ALPHA = 52 // ~20% red wash for active option
     }
 }

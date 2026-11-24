@@ -94,8 +94,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_4"
-                    android:text="@string/pref_hint"
+                    android:text="@string/pref_subtitle"
                     android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                    android:textColor="@color/text_secondary" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/pref_hint"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                     android:textColor="@color/text_secondary" />
 
                 <!-- ============================================== -->
@@ -107,16 +115,33 @@
                     android:layout_marginTop="@dimen/space_24"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/pref_section_period"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_film"
+                            app:tint="@color/accent" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_8"
+                            android:text="@string/pref_section_period"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:layout_marginStart="28dp"
                         android:text="@string/pref_section_period_sub"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                         android:textColor="@color/text_secondary" />
@@ -182,16 +207,33 @@
                     android:layout_marginTop="@dimen/space_24"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/pref_section_rating"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_star_filled"
+                            app:tint="@color/accent" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_8"
+                            android:text="@string/pref_section_rating"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:layout_marginStart="28dp"
                         android:text="@string/pref_section_rating_sub"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                         android:textColor="@color/text_secondary" />
@@ -252,16 +294,33 @@
                     android:layout_marginTop="@dimen/space_24"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/pref_section_length"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_clock"
+                            app:tint="@color/accent" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_8"
+                            android:text="@string/pref_section_length"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:layout_marginStart="28dp"
                         android:text="@string/pref_section_length_sub"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                         android:textColor="@color/text_secondary" />
@@ -327,16 +386,33 @@
                     android:layout_marginTop="@dimen/space_24"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/pref_section_language"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_globe"
+                            app:tint="@color/accent" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_8"
+                            android:text="@string/pref_section_language"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:layout_marginStart="28dp"
                         android:text="@string/pref_section_language_sub"
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                         android:textColor="@color/text_secondary" />

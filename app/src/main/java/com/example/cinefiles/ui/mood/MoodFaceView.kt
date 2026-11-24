@@ -135,8 +135,8 @@ class MoodFaceView @JvmOverloads constructor(
 
     private fun recalculateBounds(w: Int, h: Int) {
         if (w <= 0 || h <= 0) return
-        val availableW = w * 0.78f
-        val availableH = h * 0.78f
+        val availableW = w * 0.88f
+        val availableH = h * 0.88f
 
         drawables.forEachIndexed { index, drawable ->
             val intrinsicW = max(1, drawable.intrinsicWidth)

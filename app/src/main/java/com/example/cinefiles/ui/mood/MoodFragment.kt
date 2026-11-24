@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
@@ -306,11 +307,39 @@ class MoodFragment : Fragment() {
         when (result) {
             ToggleResult.SELECTED -> {
                 binding.moodFace.pop()
+                binding.moodToggle.animate()
+                    .scaleX(1.08f)
+                    .scaleY(1.08f)
+                    .setDuration(110L)
+                    .withEndAction {
+                        binding.moodToggle.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(130L)
+                            .setInterpolator(OvershootInterpolator(1.8f))
+                            .start()
+                    }
+                    .start()
                 confirmHaptic()
             }
-            ToggleResult.DESELECTED -> binding.moodFace.pop()
+            ToggleResult.DESELECTED -> {
+                binding.moodFace.pop()
+                binding.moodToggle.animate()
+                    .scaleX(0.95f)
+                    .scaleY(0.95f)
+                    .setDuration(90L)
+                    .withEndAction {
+                        binding.moodToggle.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(110L)
+                            .start()
+                    }
+                    .start()
+            }
             ToggleResult.LIMIT_REACHED -> {
                 binding.moodFace.shake()
+                binding.moodToggle.shake()
                 binding.moodFace.announceForAccessibility(getString(R.string.mood_limit_reached))
             }
         }
@@ -389,8 +418,8 @@ class MoodFragment : Fragment() {
         const val TILT_PER_STEP = 18f
         const val MAX_TILT = 8f
         const val TILT_RESET_MS = 250L
-        const val GLOW_STRENGTH = 0.45f
-        const val GLOW_FOCUS_Y = 0.38f
+        const val GLOW_STRENGTH = 0.40f
+        const val GLOW_FOCUS_Y = 0.36f
         const val CHOSEN_FILL_ALPHA = 64
     }
 }

@@ -67,33 +67,22 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:paddingBottom="@dimen/space_8">
 
-                <!-- 1. Small label: YOUR MOOD -->
-                <TextView
-                    android:id="@+id/moodEyebrowLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
-                    android:gravity="center"
-                    android:letterSpacing="0.08"
-                    android:text="@string/mood_eyebrow"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
-                    android:textColor="@color/accent_soft" />
-
-                <!-- 2. Main heading: What are you feeling today? -->
+                <!-- 1. Main heading: What are you feeling today? (Large, prominent, balanced 2-line layout) -->
                 <TextView
                     android:id="@+id/moodTitleHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
+                    android:layout_marginTop="@dimen/space_8"
                     android:accessibilityHeading="true"
                     android:gravity="center"
-                    android:lineSpacingExtra="4dp"
+                    android:lineSpacingMultiplier="1.15"
                     android:text="@string/mood_title"
                     android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                    android:textSize="28sp"
                     android:textColor="@color/text_primary"
                     tools:targetApi="28" />
 
-                <!-- 3. Visible instruction: Swipe left or right to explore moods -->
+                <!-- 2. Visible instruction: Swipe left or right to explore moods -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -112,74 +101,75 @@
 
                 </LinearLayout>
 
-                <!-- 4. Large Swipable Mood Character Area with Directional Cues -->
+                <!-- 3. Large Swipable Mood Character Area with Integrated Directional Brackets -->
                 <FrameLayout
                     android:id="@+id/moodFaceContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="220dp"
+                    android:layout_height="270dp"
                     android:layout_marginTop="@dimen/space_8"
                     android:clipChildren="false">
 
-                    <!-- Previous mood directional cue / button -->
+                    <!-- Previous mood directional cue / button: integrated side bracket -->
                     <ImageButton
                         android:id="@+id/moodPrev"
-                        android:layout_width="@dimen/touch_target"
-                        android:layout_height="@dimen/touch_target"
+                        android:layout_width="38dp"
+                        android:layout_height="64dp"
                         android:layout_gravity="start|center_vertical"
-                        android:background="@drawable/bg_glass_circle"
+                        android:background="@drawable/bg_glass_pill"
                         android:contentDescription="@string/mood_prev_description"
-                        android:padding="@dimen/space_12"
+                        android:padding="8dp"
                         android:src="@drawable/ic_back"
                         app:tint="@color/text_primary" />
 
-                    <!-- The interactive Character -->
+                    <!-- The interactive Character (enlarged ~30%) -->
                     <com.example.cinefiles.ui.mood.MoodFaceView
                         android:id="@+id/moodFace"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginStart="@dimen/space_40"
-                        android:layout_marginEnd="@dimen/space_40"
+                        android:layout_marginStart="44dp"
+                        android:layout_marginEnd="44dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:importantForAccessibility="no" />
 
-                    <!-- Next mood directional cue / button -->
+                    <!-- Next mood directional cue / button: integrated side bracket -->
                     <ImageButton
                         android:id="@+id/moodNext"
-                        android:layout_width="@dimen/touch_target"
-                        android:layout_height="@dimen/touch_target"
+                        android:layout_width="38dp"
+                        android:layout_height="64dp"
                         android:layout_gravity="end|center_vertical"
-                        android:background="@drawable/bg_glass_circle"
+                        android:background="@drawable/bg_glass_pill"
                         android:contentDescription="@string/mood_next_description"
-                        android:padding="@dimen/space_12"
+                        android:padding="8dp"
                         android:src="@drawable/ic_arrow_forward"
                         app:tint="@color/text_primary" />
 
                 </FrameLayout>
 
-                <!-- 5. Selected mood name -->
+                <!-- 4. Selected mood name (close to character) -->
                 <TextView
                     android:id="@+id/moodName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_8"
+                    android:layout_marginTop="@dimen/space_4"
                     android:gravity="center"
                     android:maxLines="1"
                     android:textAppearance="@style/TextAppearance.CineFiles.Display"
                     tools:text="Happy" />
 
-                <!-- 6. Short mood description -->
+                <!-- 5. Short mood description (close to name) -->
                 <TextView
                     android:id="@+id/moodLine"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
+                    android:layout_marginTop="2dp"
                     android:gravity="center_horizontal"
-                    android:minLines="2"
+                    android:minLines="1"
+                    android:maxLines="2"
                     android:textAppearance="@style/TextAppearance.CineFiles.Callout"
                     tools:text="Bright, funny, feel-good movies." />
 
-                <!-- 7. Add mood button -->
+                <!-- 6. Selection button: "I'm feeling this" -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/moodToggle"
                     style="@style/Widget.CineFiles.Button.Tonal"
@@ -193,6 +183,53 @@
                     android:text="@string/mood_add"
                     app:icon="@drawable/ic_add"
                     app:iconSize="@dimen/icon_size_small" />
+
+                <!-- 7. Explanatory Section: Explains CineFiles personalized discovery to new users -->
+                <LinearLayout
+                    android:id="@+id/moodExplanationCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@drawable/bg_glass_panel"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/space_16"
+                    android:paddingTop="@dimen/space_12"
+                    android:paddingEnd="@dimen/space_16"
+                    android:paddingBottom="@dimen/space_12">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_sparkle"
+                        app:tint="@color/accent" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/mood_scene_title"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:lineSpacingExtra="2dp"
+                            android:text="@string/mood_scene_subtitle"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                            android:textColor="@color/text_secondary" />
+
+                    </LinearLayout>
+                </LinearLayout>
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
