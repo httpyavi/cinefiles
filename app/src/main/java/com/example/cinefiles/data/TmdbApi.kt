@@ -3,6 +3,7 @@ package com.example.cinefiles.data
 import com.example.cinefiles.BuildConfig
 import com.example.cinefiles.data.dto.MovieDto
 import com.example.cinefiles.data.dto.MovieListResponse
+import com.example.cinefiles.logic.ContentFilter
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -51,6 +52,8 @@ interface TmdbApi {
         @Query("with_runtime.gte") minRuntime: Int? = null,
         @Query("with_runtime.lte") maxRuntime: Int? = null,
         @Query("with_original_language") originalLanguage: String? = null,
+        @Query("without_companies") withoutCompanies: String? = EXCLUDED_COMPANIES,
+        @Query("without_keywords") withoutKeywords: String? = EXCLUDED_KEYWORDS,
         @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("page") page: Int = 1,
         @Query("language") language: String = LANGUAGE,
@@ -83,6 +86,8 @@ interface TmdbApi {
     companion object {
         const val BASE_URL = "https://api.themoviedb.org/3/"
         const val LANGUAGE = "en-US"
+        const val EXCLUDED_COMPANIES = ContentFilter.EXCLUDED_COMPANIES
+        const val EXCLUDED_KEYWORDS = ContentFilter.EXCLUDED_KEYWORDS
         private const val TIMEOUT_SECONDS = 15L
 
         /**

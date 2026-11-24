@@ -1,6 +1,7 @@
 package com.example.cinefiles.data
 
 import com.example.cinefiles.logic.BrowseCategory
+import com.example.cinefiles.logic.ContentFilter
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
 import com.example.cinefiles.logic.Language
@@ -169,6 +170,8 @@ class MovieRepositoryTest {
         assertEquals("3", sent.params["page"])
         assertEquals("en-US", sent.params["language"])
         assertEquals("false", sent.params["include_adult"])
+        assertEquals(ContentFilter.EXCLUDED_COMPANIES, sent.params["without_companies"])
+        assertEquals(ContentFilter.EXCLUDED_KEYWORDS, sent.params["without_keywords"])
         // Things the user did not choose are not sent at all
         assertNull(sent.params["primary_release_date.lte"])
         assertNull(sent.params["with_runtime.gte"])

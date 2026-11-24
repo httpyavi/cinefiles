@@ -1,6 +1,7 @@
 package com.example.cinefiles.data.dto
 
 import com.example.cinefiles.data.Movie
+import com.example.cinefiles.logic.ContentFilter
 import com.example.cinefiles.logic.Genres
 import com.google.gson.annotations.SerializedName
 
@@ -38,7 +39,8 @@ data class MovieDto(
     val genres: List<GenreDto>? = null,
     val runtime: Int? = null,
     val credits: CreditsDto? = null,
-    val videos: VideosDto? = null
+    val videos: VideosDto? = null,
+    val adult: Boolean? = null
 )
 
 data class GenreDto(val id: Int? = null, val name: String? = null)
@@ -76,8 +78,10 @@ data class VideoDto(
  */
 fun MovieDto.toMovie(): Movie? {
     val movieId = id ?: return null
+    if (adult == true) return null
     val movieTitle = (title ?: originalTitle)?.trim().orEmpty()
     if (movieTitle.isEmpty()) return null
+    if (ContentFilter.isExplicit(movieTitle, originalTitle, overview)) return null
 
     val votes = voteCount ?: 0
     // The details answer has genres with names; a list only has numbers (names come from logic/Genres.kt)

@@ -60,6 +60,7 @@ data class DiscoveryRequest(
     val maxVotes: Int? = null
 ) {
     fun matches(movie: Movie): Boolean {
+        if (movie.isExplicit()) return false
         if (genreIds.isNotEmpty() && movie.genreIds.none { it in genreIds }) return false
 
         // The year and rating are always known, so a movie without them cannot meet a limit

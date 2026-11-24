@@ -193,4 +193,16 @@ class MovieMappingTest {
     fun aDetailsAnswerWithoutATitleIsNotUsable() {
         assertNull(MovieDto(id = 1).toDetails())
     }
+
+    @Test
+    fun adultAndSexuallyExplicitMoviesAreDropped() {
+        val adultMovie = MovieDto(id = 10, title = "Adult Title", adult = true, posterPath = "/a.jpg")
+        val eroticMovie = MovieDto(id = 11, title = "Erotic Film", overview = "An erotic thriller.", posterPath = "/b.jpg")
+        val normalRomance = MovieDto(id = 12, title = "Romantic Evening", overview = "A couple falls in love and marries.", posterPath = "/c.jpg")
+        val list = listOf(adultMovie, eroticMovie, normalRomance).toMovies(requirePoster = false)
+
+        assertEquals(1, list.size)
+        assertEquals(12, list.first().id)
+        assertEquals("Romantic Evening", list.first().title)
+    }
 }
