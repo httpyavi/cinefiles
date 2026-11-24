@@ -8,6 +8,12 @@
          opacity) for things that float above pictures: the tab bar, round buttons, pills, panels.
          Red means "primary action, selected, liked". Use it for the one thing that matters on a screen. -->
 
+    <!-- Preferences category tint tokens -->
+    <color name="pref_category_era">#FFA726</color>       <!-- warm cinematic amber -->
+    <color name="pref_category_rating">#FFC857</color>    <!-- star gold -->
+    <color name="pref_category_runtime">#26C6DA</color>   <!-- fresh cyan -->
+    <color name="pref_category_language">#FF3449</color>  <!-- CineFiles accent red -->
+
     <!-- Surfaces (opaque). Depth comes from these steps and from glass, not from borders. -->
     <color name="background">#0A0A0D</color>   <!-- screens -->
     <color name="surface">#141419</color>      <!-- quiet blocks, loading placeholders -->
@@ -52,18 +58,20 @@
 
     <color name="badge_background">#CC0A0A0D</color> <!-- 80% background, behind poster badges -->
 
-    <!-- Mood colors: each mood has its own hue. They tint the Mood screen's glow and the face, and are
-         laid out around the color wheel in slider order, so sliding from one mood to the next
-         always travels smoothly through nearby hues. -->
-    <color name="mood_tint_relaxed">#3EC8B4</color>      <!-- teal -->
+    <!-- Mood colors: exact 10 moods -->
     <color name="mood_tint_happy">#FFB938</color>        <!-- sunny amber -->
     <color name="mood_tint_romantic">#FF5C93</color>     <!-- rose -->
+    <color name="mood_tint_relaxed">#3EC8B4</color>      <!-- teal -->
     <color name="mood_tint_emotional">#4F8BFF</color>    <!-- ocean blue -->
-    <color name="mood_tint_scared">#8A5CFF</color>       <!-- violet -->
-    <color name="mood_tint_mind_bending">#36C5F0</color> <!-- electric cyan -->
-    <color name="mood_tint_escape">#52E08A</color>       <!-- aurora green -->
     <color name="mood_tint_excited">#FF7A3D</color>      <!-- hot orange -->
+    <color name="mood_tint_curious">#36C5F0</color>      <!-- electric cyan -->
+    <color name="mood_tint_nostalgic">#E5A96A</color>    <!-- warm vintage gold -->
+    <color name="mood_tint_bored">#A1A1AD</color>        <!-- cool slate -->
+    <color name="mood_tint_angry">#FF3449</color>        <!-- intense crimson -->
     <color name="mood_tint_surprise">#C9A7FF</color>     <!-- lilac -->
+    <color name="mood_tint_scared">#8A5CFF</color>
+    <color name="mood_tint_mind_bending">#36C5F0</color>
+    <color name="mood_tint_escape">#52E08A</color>
 
     <!-- The TMDB credit badge on the Profile screen (TMDB's own brand colors) -->
     <color name="tmdb_green">#90CEA1</color>

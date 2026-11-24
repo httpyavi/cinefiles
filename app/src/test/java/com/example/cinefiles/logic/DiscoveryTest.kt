@@ -70,6 +70,15 @@ class DiscoveryTest {
     }
 
     @Test
+    fun filipinoLanguageMatchesTlAndFil() {
+        val r = request(language = "tl")
+        assertTrue(r.matches(movie(1, language = "tl")))
+        assertTrue(r.matches(movie(2, language = "fil")))
+        assertFalse(r.matches(movie(3, language = "en")))
+        assertFalse(r.matches(movie(4, language = "ja")))
+    }
+
+    @Test
     fun hiddenGemsNeedKnownAndSmallVoteCounts() {
         val gem = request(source = DiscoverySource.HIDDEN_GEM, minVotes = 200, maxVotes = 5000)
         assertTrue(gem.matches(movie(1, votes = 1500)))
@@ -100,16 +109,16 @@ class DiscoveryTest {
 
     @Test
     fun eachStepLetsGoOfOneMoreThing() {
-        assertEquals(null, firstRequest(1).language)
-        assertEquals(119, firstRequest(1).maxMinutes)
-        assertEquals(null, firstRequest(2).maxMinutes)
-        assertEquals(2015, firstRequest(2).yearFrom)
-        assertEquals(null, firstRequest(3).yearFrom)
-        assertEquals(8.0, firstRequest(3).minRating)
-        assertEquals(null, firstRequest(4).minRating)
-        assertEquals(listOf(comedy), firstRequest(4).genreIds)
-        assertTrue(firstRequest(5).genreIds.isEmpty())
-        assertEquals(DiscoverySource.EXPLORE, firstRequest(5).source)
+        assertEquals("ko", firstRequest(1).language)
+        assertEquals(null, firstRequest(1).maxMinutes)
+        assertEquals(2015, firstRequest(1).yearFrom)
+        assertEquals(null, firstRequest(2).yearFrom)
+        assertEquals(8.0, firstRequest(2).minRating)
+        assertEquals(null, firstRequest(3).minRating)
+        assertEquals(listOf(comedy), firstRequest(3).genreIds)
+        assertTrue(firstRequest(4).genreIds.isEmpty())
+        assertEquals(DiscoverySource.EXPLORE, firstRequest(4).source)
+        assertEquals("ko", firstRequest(4).language)
     }
 
     @Test

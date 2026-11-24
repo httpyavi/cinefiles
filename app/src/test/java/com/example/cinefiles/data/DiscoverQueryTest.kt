@@ -131,7 +131,7 @@ class DiscoverQueryTest {
         val q = moodQuery(listOf(comedy), prefs, relax = 5)
         assertNull(q.withGenres)
         assertNull(q.releasedFrom)
-        assertNull(q.originalLanguage)
+        assertEquals("ko", q.originalLanguage)
     }
 
     @Test

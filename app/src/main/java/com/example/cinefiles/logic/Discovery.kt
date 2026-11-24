@@ -74,7 +74,10 @@ data class DiscoveryRequest(
         if (maxMinutes != null && minutes != null && minutes > maxMinutes) return false
 
         val movieLanguage = movie.originalLanguage
-        if (language != null && movieLanguage != null && movieLanguage != language) return false
+        if (language != null && movieLanguage != null) {
+            val matches = if (language == "tl") movieLanguage == "tl" || movieLanguage == "fil" else movieLanguage.equals(language, ignoreCase = true)
+            if (!matches) return false
+        }
 
         // Vote limits are about "how well known": 0 means we do not know, which can never be a hidden gem
         if (minVotes != null && movie.voteCount < minVotes) return false
@@ -104,23 +107,24 @@ object Discovery {
 
     /**
      * The questions to ask for a deck, at a given looseness: [relax] = 0 is everything the user asked for;
-     * 1 forgets the language; 2 also the length; 3 also the release period; 4 also the minimum rating;
-     * 5 also the mood's genres (anything goes).
+     * 1 forgets the runtime length; 2 also the release period; 3 also the minimum rating;
+     * 4 also the mood's genres (anything goes).
+     * The selected language is strictly preserved when set (never silently relaxed).
      */
     fun plan(moodGenreIds: List<Int>, preferences: Preferences, relax: Int): List<DiscoveryRequest> {
-        val dropGenres = relax >= 5
-        val (yearFrom, yearTo) = if (relax >= 3) NO_LIMIT else yearsOf(preferences.releasePeriod)
-        val (minMinutes, maxMinutes) = if (relax >= 2) NO_LIMIT else minutesOf(preferences.length)
+        val dropGenres = relax >= 4
+        val (yearFrom, yearTo) = if (relax >= 2) NO_LIMIT else yearsOf(preferences.releasePeriod)
+        val (minMinutes, maxMinutes) = if (relax >= 1) NO_LIMIT else minutesOf(preferences.length)
 
         val base = DiscoveryRequest(
             source = if (dropGenres) DiscoverySource.EXPLORE else DiscoverySource.MOOD_MATCH,
             genreIds = if (dropGenres) emptyList() else moodGenreIds,
             yearFrom = yearFrom,
             yearTo = yearTo,
-            minRating = if (relax >= 4) null else ratingOf(preferences.minRating),
+            minRating = if (relax >= 3) null else ratingOf(preferences.minRating),
             minMinutes = minMinutes,
             maxMinutes = maxMinutes,
-            language = if (relax >= 1) null else languageCode(preferences.language)
+            language = languageCode(preferences.language)
         )
         val rating = base.minRating ?: 0.0
 
@@ -185,8 +189,10 @@ object Discovery {
     ): List<Pick> {
         val deck = ArrayList<Pick>()
         val used = exclude.toMutableSet()
+        val langCode = languageCode(preferences.language)
 
-        for (relax in 0..MAX_RELAX) {
+        val maxRelax = if (langCode != null) 3 else MAX_RELAX
+        for (relax in 0..maxRelax) {
             if (deck.size >= wanted) break
             // awaitAll keeps the order of the questions, so the mix is the same as when they were asked one by one
             val batches = coroutineScope {
@@ -194,9 +200,20 @@ object Discovery {
                     .map { request -> async { request.source to fetch(request) } }
                     .awaitAll()
             }
-            val more = mix(batches, used, limit - deck.size)
+            val filteredBatches = if (langCode != null) {
+                batches.map { (source, movies) ->
+                    source to movies.filter { movie ->
+                        val ml = movie.originalLanguage
+                        if (ml == null) true
+                        else if (langCode == "tl") ml == "tl" || ml == "fil"
+                        else ml.equals(langCode, ignoreCase = true)
+                    }
+                }
+            } else batches
+            val more = mix(filteredBatches, used, limit - deck.size)
             deck.addAll(more)
             used.addAll(more.map { it.movie.id })
+            if (langCode != null && deck.isNotEmpty() && relax >= 3) break
         }
         return deck
     }
@@ -227,7 +244,7 @@ object Discovery {
         Length.OVER_2_HOURS -> Pair(120, null)
     }
 
-    private fun languageCode(language: Language): String? = when (language) {
+    fun languageCode(language: Language): String? = when (language) {
         Language.ANY -> null
         Language.ENGLISH -> "en"
         Language.FILIPINO -> "tl"

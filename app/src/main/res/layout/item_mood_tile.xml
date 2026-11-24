@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A mood tile in the 2-column grid.
+     Shows the mood character illustration, mood name, and short description.
+     Active state has a vibrant CineFiles red accent border, soft wash, and check badge. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/moodTileCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="@dimen/radius_large"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/glass_stroke"
+    app:strokeWidth="1dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <!-- Character illustration -->
+            <ImageView
+                android:id="@+id/moodIllustration"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                tools:src="@drawable/happy" />
+
+            <!-- Mood title -->
+            <TextView
+                android:id="@+id/moodTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                tools:text="Happy" />
+
+            <!-- Exact mood description -->
+            <TextView
+                android:id="@+id/moodDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:lineSpacingExtra="1dp"
+                android:maxLines="2"
+                android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                tools:text="I want something that lifts my spirits." />
+
+        </LinearLayout>
+
+        <!-- Selection check indicator badge -->
+        <ImageView
+            android:id="@+id/moodCheckBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/bg_badge_circle"
+            android:backgroundTint="@color/accent"
+            android:contentDescription="@null"
+            android:padding="3dp"
+            android:src="@drawable/ic_check"
+            android:visibility="gone"
+            app:tint="@color/on_accent"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

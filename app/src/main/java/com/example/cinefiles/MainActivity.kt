@@ -57,9 +57,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * The red launch screen: progressive left-to-right reveal of the CineFiles logo
-     * across the letters (~1.15s), holds briefly (~200ms), then smoothly transitions
-     * into Home by fading away the red overlay layer (300ms).
+     * The red launch screen: clean, smooth fade-in of the centered CineFiles logo (~280ms),
+     * holds briefly (~350ms), then smoothly transitions into Home by fading away the red
+     * overlay layer (~250ms).
      */
     private fun playLaunchSplash(isNewLaunch: Boolean) {
         val overlay = binding.launchOverlay
@@ -68,14 +68,26 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        binding.launchLogo.startReveal {
-            overlay.animate()
-                .alpha(0f)
-                .setStartDelay(SPLASH_HOLD_MS)
-                .setDuration(SPLASH_FADE_MS)
-                .withEndAction { overlay.isGone = true }
-                .start()
-        }
+        val logo = binding.launchLogo
+        logo.alpha = 0f
+        logo.scaleX = 0.94f
+        logo.scaleY = 0.94f
+
+        logo.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(SPLASH_FADE_IN_MS)
+            .setInterpolator(DecelerateInterpolator())
+            .withEndAction {
+                overlay.animate()
+                    .alpha(0f)
+                    .setStartDelay(SPLASH_HOLD_MS)
+                    .setDuration(SPLASH_FADE_OUT_MS)
+                    .withEndAction { overlay.isGone = true }
+                    .start()
+            }
+            .start()
     }
 
     private fun setUpTabBar() {
@@ -147,8 +159,9 @@ class MainActivity : AppCompatActivity() {
         const val BAR_SLIDE_MS = 220L
 
         // The launch splash
-        const val SPLASH_HOLD_MS = 200L      // brief settle / hold after reveal completes
-        const val SPLASH_FADE_MS = 300L
+        const val SPLASH_FADE_IN_MS = 280L
+        const val SPLASH_HOLD_MS = 350L
+        const val SPLASH_FADE_OUT_MS = 250L
 
         // The screens that are tabs. Every other screen hides the bar.
         val TAB_SCREEN_IDS = setOf(

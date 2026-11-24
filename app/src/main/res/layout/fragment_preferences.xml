@@ -126,7 +126,7 @@
                             android:layout_height="20dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_film"
-                            app:tint="@color/accent" />
+                            app:tint="@color/pref_category_era" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -218,7 +218,7 @@
                             android:layout_height="20dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_star_filled"
-                            app:tint="@color/accent" />
+                            app:tint="@color/pref_category_rating" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -305,7 +305,7 @@
                             android:layout_height="20dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_clock"
-                            app:tint="@color/accent" />
+                            app:tint="@color/pref_category_runtime" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -397,7 +397,7 @@
                             android:layout_height="20dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_globe"
-                            app:tint="@color/accent" />
+                            app:tint="@color/pref_category_language" />
 
                         <TextView
                             android:layout_width="wrap_content"

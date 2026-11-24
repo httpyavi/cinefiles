@@ -28,8 +28,8 @@
         android:layout_marginBottom="@dimen/bottom_nav_margin_bottom"
         app:menu="@menu/bottom_nav" />
 
-    <!-- The launch splash: a full red layer with progressive CineFiles logo reveal animation.
-         MainActivity runs the letter-by-letter reveal, holds briefly, and fades away into Home. -->
+    <!-- The launch splash: a full red layer with centered CineFiles logo.
+         MainActivity runs a clean fade-in, holds briefly, and fades away into Home. -->
     <FrameLayout
         android:id="@+id/launchOverlay"
         android:layout_width="match_parent"
@@ -38,11 +38,13 @@
         android:clickable="true"
         android:focusable="true">
 
-        <com.example.cinefiles.ui.components.LogoRevealView
+        <ImageView
             android:id="@+id/launchLogo"
-            android:layout_width="@dimen/launch_logo_width"
-            android:layout_height="145dp"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
             android:layout_gravity="center"
+            android:src="@drawable/cinefiles_logo_white"
             android:contentDescription="@string/app_name" />
 
     </FrameLayout>

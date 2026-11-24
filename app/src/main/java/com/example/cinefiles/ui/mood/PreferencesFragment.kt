@@ -35,7 +35,10 @@ class PreferencesFragment : Fragment() {
 
     private val watchFlow: WatchFlowViewModel by activityViewModels()
 
-    private var accentColor = 0
+    private var eraColor = 0
+    private var ratingColor = 0
+    private var runtimeColor = 0
+    private var languageColor = 0
     private var glassStrokeColor = 0
     private var glassFillColor = 0
     private var textColorPrimary = 0
@@ -60,7 +63,10 @@ class PreferencesFragment : Fragment() {
         binding.prefsFooter.applySystemBarsPadding(top = false, bottom = true)
         binding.prefsGlow.strength = GLOW_STRENGTH
 
-        accentColor = ContextCompat.getColor(requireContext(), R.color.accent)
+        eraColor = ContextCompat.getColor(requireContext(), R.color.pref_category_era)
+        ratingColor = ContextCompat.getColor(requireContext(), R.color.pref_category_rating)
+        runtimeColor = ContextCompat.getColor(requireContext(), R.color.pref_category_runtime)
+        languageColor = ContextCompat.getColor(requireContext(), R.color.pref_category_language)
         glassStrokeColor = ContextCompat.getColor(requireContext(), R.color.glass_stroke)
         glassFillColor = ContextCompat.getColor(requireContext(), R.color.glass_fill)
         textColorPrimary = ContextCompat.getColor(requireContext(), R.color.text_primary)
@@ -164,38 +170,38 @@ class PreferencesFragment : Fragment() {
     private fun renderPeriodGroup() {
         val selected = watchFlow.preferences.releasePeriod
         for ((button, period) in periodButtons) {
-            applyCardState(button, period == selected)
+            applyCardState(button, period == selected, eraColor)
         }
     }
 
     private fun renderRatingGroup() {
         val selected = watchFlow.preferences.minRating
         for ((button, rating) in ratingButtons) {
-            applyCardState(button, rating == selected)
+            applyCardState(button, rating == selected, ratingColor)
         }
     }
 
     private fun renderLengthGroup() {
         val selected = watchFlow.preferences.length
         for ((button, length) in lengthButtons) {
-            applyCardState(button, length == selected)
+            applyCardState(button, length == selected, runtimeColor)
         }
     }
 
     private fun renderLanguageGroup() {
         val selected = watchFlow.preferences.language
         for ((button, language) in languageButtons) {
-            applyCardState(button, language == selected)
+            applyCardState(button, language == selected, languageColor)
         }
     }
 
-    private fun applyCardState(button: MaterialButton, isSelected: Boolean) {
+    private fun applyCardState(button: MaterialButton, isSelected: Boolean, activeColor: Int) {
         val strokeWidth = if (isSelected) dpToPx(2f) else dpToPx(1f)
 
         button.strokeWidth = strokeWidth
         if (isSelected) {
-            button.strokeColor = ColorStateList.valueOf(accentColor)
-            button.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accentColor, ACTIVE_FILL_ALPHA))
+            button.strokeColor = ColorStateList.valueOf(activeColor)
+            button.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, ACTIVE_FILL_ALPHA))
             button.setTextColor(textColorPrimary)
         } else {
             button.strokeColor = ColorStateList.valueOf(glassStrokeColor)

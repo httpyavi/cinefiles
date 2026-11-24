@@ -101,8 +101,8 @@ class MovieRepository(
      * here with [DiscoveryRequest.matches]. Every other kind is a /discover call that TMDB filters itself.
      */
     suspend fun moviesFor(request: DiscoveryRequest, page: Int = 1): Result<List<Movie>> = when (request.source) {
-        DiscoverySource.TRENDING -> trending(page).map { movies -> movies.filter(request::matches) }
-        DiscoverySource.POPULAR -> popular(page).map { movies -> movies.filter(request::matches) }
+        DiscoverySource.TRENDING -> if (request.language != null) discover(request, page) else trending(page).map { movies -> movies.filter(request::matches) }
+        DiscoverySource.POPULAR -> if (request.language != null) discover(request, page) else popular(page).map { movies -> movies.filter(request::matches) }
         else -> discover(request, page)
     }
 
@@ -122,8 +122,9 @@ class MovieRepository(
         val found = LinkedHashMap<Int, Movie>()
 
         for (relax in listOf(NO_RELAXING, DROP_PREFERENCES)) {
-            // relax 0 keeps every preference; relax 4 forgets language, length, release period and rating but keeps the genres
-            val request = Discovery.plan(genreIds, preferences, relax).first().copy(minVotes = PICKS_MIN_VOTES)
+            // relax 0 keeps every preference; DROP_PREFERENCES forgets language, length, release period and rating but keeps the genres
+            val pref = if (relax == DROP_PREFERENCES) Preferences() else preferences
+            val request = Discovery.plan(genreIds, pref, 0).first().copy(minVotes = PICKS_MIN_VOTES)
             for (page in 1..PICKS_PAGES) {
                 for (movie in discover(request, page).getOrThrow()) {
                     if (movie.id !in hidden) found.putIfAbsent(movie.id, movie)

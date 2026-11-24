@@ -11,7 +11,7 @@ class MoodSelectionTest {
     private val happy = Moods.all.first { it.id == "happy" }
     private val excited = Moods.all.first { it.id == "excited" }
     private val romantic = Moods.all.first { it.id == "romantic" }
-    private val scared = Moods.all.first { it.id == "scared" }
+    private val angry = Moods.all.first { it.id == "angry" }
     private val surprise = Moods.all.first { it.isSurprise }
 
     /** Taps the moods one after another, like a user would. */
@@ -59,17 +59,17 @@ class MoodSelectionTest {
     @Test
     fun aFourthMoodIsRefusedAndNothingChanges() {
         val three = tapAll(happy, excited, romantic)
-        val outcome = three.toggle(scared)
+        val outcome = three.toggle(angry)
         assertEquals(ToggleResult.LIMIT_REACHED, outcome.result)
         assertEquals(three, outcome.selection)
-        assertFalse(outcome.selection.isSelected(scared))
+        assertFalse(outcome.selection.isSelected(angry))
     }
 
     @Test
     fun afterThreeYouCanStillTurnOneOffAndPickAnother() {
         val three = tapAll(happy, excited, romantic)
         val afterOff = three.toggle(happy).selection
-        val afterNew = afterOff.toggle(scared)
+        val afterNew = afterOff.toggle(angry)
         assertEquals(ToggleResult.SELECTED, afterNew.result)
         assertEquals(3, afterNew.selection.count)
         assertFalse(afterNew.selection.isSelected(happy))

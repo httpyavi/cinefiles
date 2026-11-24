@@ -47,12 +47,14 @@
 
     <!-- Mood screen -->
     <string name="mood_title">What are you feeling today?</string>
+    <string name="mood_choose_instruction">Choose up to 3 moods</string>
     <string name="mood_scene_title">Your mood sets the scene.</string>
-    <string name="mood_scene_subtitle">We\'ll match your mood and movie preferences to find films you\'ll love.</string>
-    <string name="mood_swipe_instruction">Swipe left or right to explore moods</string>
+    <string name="mood_scene_description">We\'ll use how you feel and the movies you love to find something that fits your mood.</string>
+    <string name="mood_scene_subtitle">We\'ll use how you feel and the movies you love to find something that fits your mood.</string>
+    <string name="mood_swipe_instruction">Choose up to 3 moods</string>
     <string name="mood_prev_description">Previous mood</string>
     <string name="mood_next_description">Next mood</string>
-    <string name="mood_hint">Tap the character to add a mood. Up to three.</string>
+    <string name="mood_hint">Tap mood tiles to select. Up to 3 moods.</string>
     <string name="mood_add">I\'m feeling this</string>
     <string name="mood_added">Feeling this</string>
     <string name="mood_slider_description">Mood slider</string>
@@ -63,39 +65,61 @@
     <string name="mood_add_description">Add %1$s to my feelings</string>
     <!-- "2 of 3 selected" reads the same for any number, so no plural form is needed -->
     <string name="mood_selected_count" tools:ignore="PluralsCandidate">%1$d of %2$d selected</string>
+    <string name="mood_surprise_selected">Surprise Me selected</string>
     <string name="mood_continue">Continue</string>
     <string name="mood_limit_reached">You can choose up to three moods.</string>
 
-    <!-- The moods: a name and a one-line hint each (the genre ids live in logic/Moods.kt) -->
-    <string name="mood_happy">Happy / Feel-Good</string>
-    <string name="mood_happy_hint">Light and fun</string>
-    <string name="mood_excited">Excited / Adventurous</string>
-    <string name="mood_excited_hint">Big thrills</string>
+    <!-- The exact 10 moods: names and exact descriptions -->
+    <string name="mood_happy">Happy</string>
+    <string name="mood_happy_hint">Lifts my spirits</string>
+    <string name="mood_happy_line">I want something that lifts my spirits.</string>
+
     <string name="mood_romantic">Romantic</string>
     <string name="mood_romantic_hint">Love stories</string>
-    <string name="mood_scared">Scared / Suspenseful</string>
-    <string name="mood_scared_hint">Pulse-racing</string>
-    <string name="mood_emotional">Emotional</string>
-    <string name="mood_emotional_hint">Big feelings</string>
+    <string name="mood_romantic_line">Give me butterflies and a little love.</string>
+
     <string name="mood_relaxed">Relaxed</string>
-    <string name="mood_relaxed_hint">Easy and cozy</string>
+    <string name="mood_relaxed_hint">Calm and comforting</string>
+    <string name="mood_relaxed_line">Something calm and comforting.</string>
+
+    <string name="mood_emotional">Emotional</string>
+    <string name="mood_emotional_hint">Hits deep</string>
+    <string name="mood_emotional_line">I want a story that hits deep.</string>
+
+    <string name="mood_excited">Excited</string>
+    <string name="mood_excited_hint">Thrilling and fun</string>
+    <string name="mood_excited_line">Give me something thrilling and fun.</string>
+
+    <string name="mood_curious">Curious</string>
+    <string name="mood_curious_hint">Intriguing</string>
+    <string name="mood_curious_line">I want something intriguing or mind-bending.</string>
+
+    <string name="mood_nostalgic">Nostalgic</string>
+    <string name="mood_nostalgic_hint">Another time</string>
+    <string name="mood_nostalgic_line">Take me back to another time.</string>
+
+    <string name="mood_bored">Bored</string>
+    <string name="mood_bored_hint">Surprise me</string>
+    <string name="mood_bored_line">Surprise me with something different.</string>
+
+    <string name="mood_angry">Angry</string>
+    <string name="mood_angry_hint">Intense</string>
+    <string name="mood_angry_line">I need something intense.</string>
+
+    <string name="mood_surprise">Surprise Me</string>
+    <string name="mood_surprise_hint">Pick for me</string>
+    <string name="mood_surprise_line">Pick the mood for me.</string>
+
+    <!-- Legacy / compatibility strings -->
+    <string name="mood_scared">Scared</string>
+    <string name="mood_scared_hint">Pulse-racing</string>
+    <string name="mood_scared_line">Suspense and scares.</string>
     <string name="mood_escape">Escape</string>
     <string name="mood_escape_hint">Other worlds</string>
+    <string name="mood_escape_line">Fantasy and sci-fi.</string>
     <string name="mood_mind_bending">Mind-bending</string>
     <string name="mood_mind_bending_hint">Twisty plots</string>
-    <string name="mood_surprise">Surprise Me</string>
-    <string name="mood_surprise_hint">Let us pick for you</string>
-
-    <!-- One friendly sentence per mood, shown under its name while you slide -->
-    <string name="mood_happy_line">Bright, funny, feel-good movies.</string>
-    <string name="mood_excited_line">Big action and wild adventures.</string>
-    <string name="mood_romantic_line">Love stories to melt into.</string>
-    <string name="mood_scared_line">Suspense and scares. Lights off.</string>
-    <string name="mood_emotional_line">Stories that hit you right in the feelings.</string>
-    <string name="mood_relaxed_line">Gentle, cozy and easy to watch.</string>
-    <string name="mood_escape_line">Fantasy and sci-fi, far from here.</string>
-    <string name="mood_mind_bending_line">Mysteries and twists to untangle.</string>
-    <string name="mood_surprise_line">No rules. We will pick for you.</string>
+    <string name="mood_mind_bending_line">Mysteries and twists.</string>
 
     <!-- Preferences screen -->
     <string name="pref_title">Make it yours</string>
@@ -138,14 +162,18 @@
 
     <!-- One-word mood names, for small places like the caption on the swipe screen -->
     <string name="mood_happy_short">Happy</string>
-    <string name="mood_excited_short">Excited</string>
     <string name="mood_romantic_short">Romantic</string>
-    <string name="mood_scared_short">Scared</string>
-    <string name="mood_emotional_short">Emotional</string>
     <string name="mood_relaxed_short">Relaxed</string>
+    <string name="mood_emotional_short">Emotional</string>
+    <string name="mood_excited_short">Excited</string>
+    <string name="mood_curious_short">Curious</string>
+    <string name="mood_nostalgic_short">Nostalgic</string>
+    <string name="mood_bored_short">Bored</string>
+    <string name="mood_angry_short">Angry</string>
+    <string name="mood_surprise_short">Surprise Me</string>
+    <string name="mood_scared_short">Scared</string>
     <string name="mood_escape_short">Escape</string>
     <string name="mood_mind_bending_short">Mind-bending</string>
-    <string name="mood_surprise_short">Surprise Me</string>
 
     <!-- Swipe screen -->
     <string name="swipe_progress">%1$d of %2$d</string>
