@@ -44,9 +44,9 @@ object Moods {
     // 3. RELAXED
     // 4. EMOTIONAL
     // 5. EXCITED
-    // 6. CURIOUS (asset missing)
+    // 6. CURIOUS
     // 7. NOSTALGIC
-    // 8. BORED (asset missing)
+    // 8. SCARED
     // 9. ANGRY
     // 10. SURPRISE ME
     val all: List<Mood> = listOf(
@@ -66,13 +66,13 @@ object Moods {
             R.string.mood_excited_line, listOf(28, 12), R.color.mood_tint_excited, R.drawable.excited),
 
         Mood("curious", R.string.mood_curious, R.string.mood_curious_short, R.string.mood_curious_hint,
-            R.string.mood_curious_line, listOf(9648, 878), R.color.mood_tint_curious, null),
+            R.string.mood_curious_line, listOf(9648, 878), R.color.mood_tint_curious, R.drawable.curious),
 
         Mood("nostalgic", R.string.mood_nostalgic, R.string.mood_nostalgic_short, R.string.mood_nostalgic_hint,
             R.string.mood_nostalgic_line, listOf(36, 10751), R.color.mood_tint_nostalgic, R.drawable.nostalgic),
 
-        Mood("bored", R.string.mood_bored, R.string.mood_bored_short, R.string.mood_bored_hint,
-            R.string.mood_bored_line, listOf(14, 53), R.color.mood_tint_bored, null),
+        Mood("scared", R.string.mood_scared, R.string.mood_scared_short, R.string.mood_scared_hint,
+            R.string.mood_scared_line, listOf(27, 53), R.color.mood_tint_scared, R.drawable.scared),
 
         Mood("angry", R.string.mood_angry, R.string.mood_angry_short, R.string.mood_angry_hint,
             R.string.mood_angry_line, listOf(28, 53), R.color.mood_tint_angry, R.drawable.angry),

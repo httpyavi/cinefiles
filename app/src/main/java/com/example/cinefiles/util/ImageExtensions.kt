@@ -9,6 +9,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.cinefiles.R
+import com.example.cinefiles.ui.components.ShimmerDrawable
 
 /**
  * Loads a picture from the web into this ImageView with Glide.
@@ -33,7 +34,12 @@ fun ImageView.loadImage(
         .transition(DrawableTransitionOptions.withCrossFade())
 
     if (showSurfaceWhileMissing) {
-        request = request.placeholder(R.color.surface).error(R.color.surface)
+        val cornerRadius = resources.getDimension(R.dimen.radius_medium)
+        val shimmer = ShimmerDrawable(cornerRadius = cornerRadius, startImmediately = true)
+        request = request
+            .placeholder(shimmer)
+            .fallback(R.drawable.bg_poster_fallback)
+            .error(R.drawable.bg_poster_fallback)
     }
 
     if (onResult != null) {

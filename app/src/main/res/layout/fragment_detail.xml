@@ -124,9 +124,9 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/likeButton"
-                        style="@style/Widget.CineFiles.Button.Tonal"
+                        style="@style/Widget.CineFiles.Button.DetailAction"
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_4"
                         android:layout_weight="1"
                         app:icon="@drawable/ic_heart"
@@ -135,9 +135,9 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/watchedButton"
-                        style="@style/Widget.CineFiles.Button.Tonal"
+                        style="@style/Widget.CineFiles.Button.DetailAction"
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_4"
                         android:layout_marginEnd="@dimen/space_4"
                         android:layout_weight="1"
@@ -147,88 +147,14 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/favoriteButton"
-                        style="@style/Widget.CineFiles.Button.Tonal"
+                        style="@style/Widget.CineFiles.Button.DetailAction"
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_4"
                         android:layout_weight="1"
                         app:icon="@drawable/ic_star_filled"
                         app:iconGravity="textStart"
                         tools:text="Favorite" />
-                </LinearLayout>
-
-                <!-- Personal Movie Experience: Rating & Diary -->
-                <LinearLayout
-                    android:id="@+id/personalSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:background="@drawable/bg_glass_panel"
-                    android:orientation="vertical"
-                    android:padding="@dimen/space_16">
-
-                    <!-- Personal Rating Header -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/detail_personal_rating"
-                            android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
-
-                        <TextView
-                            android:id="@+id/personalRatingText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.CineFiles.Button"
-                            android:textColor="@color/accent"
-                            tools:text="★ 4.5" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ratingBarRow"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_12"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRateMovie"
-                            style="@style/Widget.CineFiles.Button.Tonal"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/detail_rate_movie"
-                            app:icon="@drawable/ic_star_filled"
-                            app:iconGravity="textStart" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnLogDiary"
-                            style="@style/Widget.CineFiles.Button.Tonal"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_8"
-                            android:layout_weight="1"
-                            android:text="@string/detail_log_in_diary"
-                            app:icon="@drawable/ic_edit"
-                            app:iconGravity="textStart" />
-                    </LinearLayout>
-
-                    <!-- User's Diary entries for this movie -->
-                    <LinearLayout
-                        android:id="@+id/diaryEntriesContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_12"
-                        android:orientation="vertical"
-                        android:visibility="gone" />
-
                 </LinearLayout>
 
                 <!-- The story: three lines, then "More" -->

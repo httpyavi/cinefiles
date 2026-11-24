@@ -98,6 +98,11 @@
         <item name="android:textSize">16sp</item>
     </style>
 
+    <style name="TextAppearance.CineFiles.Button.Compact" parent="TextAppearance.CineFiles.SemiBold">
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
     <style name="TextAppearance.CineFiles.Label" parent="TextAppearance.CineFiles.Medium">
         <item name="android:textSize">14sp</item>
     </style>
@@ -160,6 +165,20 @@
         <item name="strokeColor">@color/glass_stroke</item>
         <item name="strokeWidth">@dimen/glass_stroke_width</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- Compact Detail Action button (Like, Watched, Favorite) preventing word wrap -->
+    <style name="Widget.CineFiles.Button.DetailAction" parent="Widget.CineFiles.Button.Tonal">
+        <item name="android:minHeight">44dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:paddingStart">6dp</item>
+        <item name="android:paddingEnd">6dp</item>
+        <item name="iconSize">16dp</item>
+        <item name="iconPadding">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Button.Compact</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">none</item>
     </style>
 
     <!-- Text button: just red text, for tertiary actions -->

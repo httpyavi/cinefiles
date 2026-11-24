@@ -23,6 +23,7 @@ import com.example.cinefiles.logic.DiscoverFilters
 import com.example.cinefiles.logic.Genres
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
+import com.example.cinefiles.ui.components.ShimmerDrawable
 import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.PaginationScrollListener
 import com.example.cinefiles.util.addChoiceChip
@@ -86,6 +87,7 @@ class DiscoverFragment : Fragment() {
         setUpFilterChips()
         setUpSearch()
         setUpStateButtons()
+        setUpLoadingSkeletons()
 
         viewModel.start()
         observeViewModel()
@@ -275,6 +277,22 @@ class DiscoverFragment : Fragment() {
         binding.stateError.errorRetry.setOnClickListener { viewModel.retry() }
     }
 
+    private fun setUpLoadingSkeletons() {
+        val posterRadius = resources.getDimension(R.dimen.radius_medium)
+        val textRadius = resources.getDimension(R.dimen.radius_small)
+
+        val loading = binding.stateLoading
+        loading.loadingPosterOne.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingPosterTwo.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingPosterThree.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingPosterFour.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingPosterFive.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingPosterSix.background = ShimmerDrawable(posterRadius, startImmediately = true)
+        loading.loadingHeading.background = ShimmerDrawable(textRadius, startImmediately = true)
+        loading.loadingLineOne.background = ShimmerDrawable(textRadius, startImmediately = true)
+        loading.loadingLineTwo.background = ShimmerDrawable(textRadius, startImmediately = true)
+    }
+
     private fun observeViewModel() {
         viewModel.sections.observe(viewLifecycleOwner) { sections ->
             popularAdapter.submit(null, sections.popular)
@@ -290,6 +308,12 @@ class DiscoverFragment : Fragment() {
             romanceAdapter.submit(null, sections.romance)
             scifiAdapter.submit(null, sections.scifi)
             thrillerAdapter.submit(null, sections.thriller)
+
+            val isSearching = viewModel.filters.value?.isSearching == true
+            if (!isSearching && sections.popular.isNotEmpty()) {
+                binding.stateLoading.root.isVisible = false
+                binding.sectionsScroll.isVisible = true
+            }
         }
 
         viewModel.filters.observe(viewLifecycleOwner) { filters ->
@@ -341,11 +365,12 @@ class DiscoverFragment : Fragment() {
                 else -> searchAdapter.submit(null, emptyList())
             }
         } else {
-            // In browsing mode, sectionsScroll is active
-            binding.stateLoading.root.isVisible = false
+            // In browsing mode, show skeleton loading until popular section has items
+            val isLoadingSections = popularAdapter.itemCount == 0 && state !is DiscoverState.Error
+            binding.stateLoading.root.isVisible = isLoadingSections
             binding.stateError.root.isVisible = state is DiscoverState.Error && (popularAdapter.itemCount == 0)
             binding.stateEmpty.root.isVisible = false
-            binding.sectionsScroll.isVisible = true
+            binding.sectionsScroll.isVisible = !isLoadingSections
             binding.discoverGrid.isVisible = false
             binding.loadMoreBar.isVisible = false
         }

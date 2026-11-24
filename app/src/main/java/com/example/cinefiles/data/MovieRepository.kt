@@ -6,6 +6,7 @@ import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
+import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.RecommendationEngine
 import com.example.cinefiles.logic.canLike
@@ -124,7 +125,8 @@ class MovieRepository(
         for (relax in listOf(NO_RELAXING, DROP_PREFERENCES)) {
             // relax 0 keeps every preference; DROP_PREFERENCES forgets language, length, release period and rating but keeps the genres
             val pref = if (relax == DROP_PREFERENCES) Preferences() else preferences
-            val request = Discovery.plan(genreIds, pref, 0).first().copy(minVotes = PICKS_MIN_VOTES)
+            val picksMinVotes = if (pref.language == Language.FILIPINO) 3 else PICKS_MIN_VOTES
+            val request = Discovery.plan(genreIds, pref, 0).first().copy(minVotes = picksMinVotes)
             for (page in 1..PICKS_PAGES) {
                 for (movie in discover(request, page).getOrThrow()) {
                     if (movie.id !in hidden) found.putIfAbsent(movie.id, movie)

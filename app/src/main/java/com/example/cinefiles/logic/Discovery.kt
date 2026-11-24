@@ -133,7 +133,8 @@ object Discovery {
             base.copy(source = DiscoverySource.TOP_RATED, minRating = max(rating, TOP_RATED_MIN_RATING)),
             base.copy(
                 source = DiscoverySource.HIDDEN_GEM, minRating = max(rating, HIDDEN_GEM_MIN_RATING),
-                minVotes = HIDDEN_GEM_MIN_VOTES, maxVotes = HIDDEN_GEM_MAX_VOTES
+                minVotes = if (base.language == "tl") 3 else HIDDEN_GEM_MIN_VOTES,
+                maxVotes = if (base.language == "tl") 100 else HIDDEN_GEM_MAX_VOTES
             ),
             base.copy(source = DiscoverySource.TRENDING),
             base.copy(source = DiscoverySource.POPULAR)

@@ -30,7 +30,7 @@ fun DiscoveryRequest.toDiscoverQuery(): DiscoverQuery = DiscoverQuery(
     releasedFrom = yearFrom?.let { "$it-01-01" },
     releasedTo = yearTo?.let { "$it-12-31" },
     minRating = minRating,
-    minVotes = minVotes ?: DEFAULT_MIN_VOTES,
+    minVotes = minVotes ?: if (language == "tl") 5 else DEFAULT_MIN_VOTES,
     maxVotes = maxVotes,
     minRuntime = minMinutes,
     maxRuntime = maxMinutes,

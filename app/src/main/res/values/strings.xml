@@ -264,12 +264,15 @@
     <string name="profile_member">CineFiles member</string>
     <string name="profile_edit">Edit</string>
     <string name="profile_edit_description">Edit your name</string>
-    <string name="profile_edit_title">Your name</string>
+    <string name="profile_edit_title">Edit your name</string>
     <string name="profile_edit_hint">Name</string>
     <string name="profile_edit_save">Save</string>
     <string name="profile_edit_error">Please type a name</string>
     <string name="profile_cancel">Cancel</string>
     <string name="profile_taste_title">Your taste</string>
+    <string name="profile_taste_empty_title">Your taste is taking shape</string>
+    <string name="profile_taste_empty_desc">Like movies you love and save your favorites. The more you explore, the more your collection reflects you.</string>
+    <string name="profile_taste_empty_cta">Explore movies</string>
     <string name="profile_taste_none">—</string>
     <string name="profile_taste_value">%1$s · %2$s</string>
     <plurals name="profile_taste_liked">
@@ -331,7 +334,7 @@
     <!-- Movie Details -->
     <string name="detail_label">Movie details</string>
     <string name="detail_in_watchlist">In Watchlist</string>
-    <string name="detail_mark_watched">Mark watched</string>
+    <string name="detail_mark_watched">Watched</string>
     <string name="detail_watch_trailer">Watch trailer</string>
     <string name="detail_more">More</string>
     <string name="detail_less">Less</string>
@@ -402,7 +405,7 @@
     <string name="detail_rating_format">%1$.1f / 5.0</string>
     <string name="detail_remove_rating">Remove rating</string>
     <string name="detail_favorite">Favorite</string>
-    <string name="detail_favorited">Favorited</string>
+    <string name="detail_favorited">Favorite</string>
     <string name="favorite_limit_reached">You can only have up to 4 favorites. Remove an existing favorite first.</string>
     <string name="detail_personal_diary">Movie Diary</string>
     <string name="detail_log_in_diary">Log in Diary</string>

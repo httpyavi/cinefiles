@@ -57,9 +57,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * The red launch screen: clean, smooth fade-in of the centered CineFiles logo (~280ms),
-     * holds briefly (~350ms), then smoothly transitions into Home by fading away the red
-     * overlay layer (~250ms).
+     * The red launch screen: clean, smooth fade-in of the centered CineFiles logo (~450ms),
+     * holds fully visible (~1350ms), then smoothly transitions into Home by fading away the
+     * red overlay layer (~400ms). Total duration ~2.2s.
      */
     private fun playLaunchSplash(isNewLaunch: Boolean) {
         val overlay = binding.launchOverlay
@@ -70,13 +70,9 @@ class MainActivity : AppCompatActivity() {
 
         val logo = binding.launchLogo
         logo.alpha = 0f
-        logo.scaleX = 0.94f
-        logo.scaleY = 0.94f
 
         logo.animate()
             .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
             .setDuration(SPLASH_FADE_IN_MS)
             .setInterpolator(DecelerateInterpolator())
             .withEndAction {
@@ -158,10 +154,10 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         const val BAR_SLIDE_MS = 220L
 
-        // The launch splash
-        const val SPLASH_FADE_IN_MS = 280L
-        const val SPLASH_HOLD_MS = 350L
-        const val SPLASH_FADE_OUT_MS = 250L
+        // The launch splash: ~2.2s total duration for clear visibility and smooth transition
+        const val SPLASH_FADE_IN_MS = 450L
+        const val SPLASH_HOLD_MS = 1350L
+        const val SPLASH_FADE_OUT_MS = 400L
 
         // The screens that are tabs. Every other screen hides the bar.
         val TAB_SCREEN_IDS = setOf(

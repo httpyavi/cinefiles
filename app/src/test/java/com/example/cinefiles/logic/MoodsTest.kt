@@ -38,7 +38,7 @@ class MoodsTest {
         assertEquals(listOf(28, 12), genresOf("excited"))         // Action + Adventure
         assertEquals(listOf(9648, 878), genresOf("curious"))      // Mystery + Sci-Fi
         assertEquals(listOf(36, 10751), genresOf("nostalgic"))    // History + Family
-        assertEquals(listOf(14, 53), genresOf("bored"))           // Fantasy + Thriller
+        assertEquals(listOf(27, 53), genresOf("scared"))          // Horror + Thriller
         assertEquals(listOf(28, 53), genresOf("angry"))           // Action + Thriller
     }
 

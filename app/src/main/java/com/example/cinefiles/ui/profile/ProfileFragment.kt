@@ -103,14 +103,8 @@ class ProfileFragment : Fragment() {
             binding.navWatchedCount.text = counts.watched.formatted()
         }
 
-        viewModel.ratedCount.observe(viewLifecycleOwner) { count ->
-            binding.statRated.text = count.formatted()
-            binding.navRatingsCount.text = count.formatted()
-        }
-
-        viewModel.diaryCount.observe(viewLifecycleOwner) { count ->
-            binding.statDiary.text = count.formatted()
-            binding.navDiaryCount.text = count.formatted()
+        binding.btnExploreMovies.setOnClickListener {
+            findNavController().openTab(R.id.discoverFragment)
         }
 
         viewModel.favorites.observe(viewLifecycleOwner) { favorites ->
@@ -140,14 +134,6 @@ class ProfileFragment : Fragment() {
         binding.navWatchedRow.setOnClickListener {
             collectionViewModel.selectTab(CollectionTab.WATCHED)
             findNavController().openTab(R.id.collectionFragment)
-        }
-
-        binding.navRatingsRow.setOnClickListener {
-            showRatingsDialog()
-        }
-
-        binding.navDiaryRow.setOnClickListener {
-            showDiaryDialog()
         }
     }
 
@@ -188,96 +174,56 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showTaste(taste: Taste) {
-        binding.profileTaste.text = when {
-            taste.likedCount == 0 -> getString(R.string.profile_taste_none)
-            taste.topGenre == null -> likedMovies(taste.likedCount)
-            else -> getString(R.string.profile_taste_value, taste.topGenre, likedMovies(taste.likedCount))
+        if (taste.likedCount == 0) {
+            binding.tasteEmptyContainer.isVisible = true
+            binding.tasteContentContainer.isVisible = false
+        } else {
+            binding.tasteEmptyContainer.isVisible = false
+            binding.tasteContentContainer.isVisible = true
+            binding.profileTaste.text = if (taste.topGenre == null) {
+                likedMovies(taste.likedCount)
+            } else {
+                getString(R.string.profile_taste_value, taste.topGenre, likedMovies(taste.likedCount))
+            }
         }
     }
 
     private fun likedMovies(count: Int): String =
         resources.getQuantityString(R.plurals.profile_taste_liked, count, count)
 
-    // ---------- Ratings & Diary Dialogs ----------
-
-    private fun showRatingsDialog() {
-        val dialogBinding = DialogProfileListBinding.inflate(layoutInflater)
-        dialogBinding.dialogTitle.text = getString(R.string.profile_nav_ratings)
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root)
-            .create()
-
-        dialogBinding.dialogCloseButton.setOnClickListener { dialog.dismiss() }
-
-        val movies = viewModel.ratedMovies.value.orEmpty()
-        dialogBinding.dialogSubtitle.text = getString(R.string.detail_rating_format, "${movies.size} movies")
-        dialogBinding.dialogEmptyMessage.text = getString(R.string.profile_no_ratings)
-        dialogBinding.dialogEmptyMessage.isVisible = movies.isEmpty()
-        dialogBinding.dialogRecycler.isVisible = movies.isNotEmpty()
-
-        if (movies.isNotEmpty()) {
-            dialogBinding.dialogRecycler.layoutManager = LinearLayoutManager(requireContext())
-            dialogBinding.dialogRecycler.adapter = RatedMoviesAdapter(movies) { movie ->
-                dialog.dismiss()
-                findNavController().openMovieDetails(movie.id)
-            }
-        }
-
-        dialog.show()
-    }
-
-    private fun showDiaryDialog() {
-        val dialogBinding = DialogProfileListBinding.inflate(layoutInflater)
-        dialogBinding.dialogTitle.text = getString(R.string.profile_nav_diary)
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root)
-            .create()
-
-        dialogBinding.dialogCloseButton.setOnClickListener { dialog.dismiss() }
-
-        val entries = viewModel.diaryEntries.value.orEmpty()
-        dialogBinding.dialogSubtitle.text = "${entries.size} entries"
-        dialogBinding.dialogEmptyMessage.text = getString(R.string.profile_no_diary)
-        dialogBinding.dialogEmptyMessage.isVisible = entries.isEmpty()
-        dialogBinding.dialogRecycler.isVisible = entries.isNotEmpty()
-
-        if (entries.isNotEmpty()) {
-            dialogBinding.dialogRecycler.layoutManager = LinearLayoutManager(requireContext())
-            dialogBinding.dialogRecycler.adapter = DiaryEntriesAdapter(entries) { entry ->
-                dialog.dismiss()
-                findNavController().openMovieDetails(entry.movieId.toInt())
-            }
-        }
-
-        dialog.show()
-    }
-
     // ---------- Edit Name & Clear Data Dialogs ----------
 
     private fun showEditNameDialog() {
-        val dialogViews = DialogEditNameBinding.inflate(layoutInflater)
-        dialogViews.nameInput.setText(viewModel.name.value)
-        dialogViews.nameInput.setSelection(dialogViews.nameInput.length())
+        val dialogBinding = DialogEditNameBinding.inflate(layoutInflater)
+        dialogBinding.nameInput.setText(viewModel.name.value)
+        dialogBinding.nameInput.setSelection(dialogBinding.nameInput.length())
 
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.profile_edit_title)
-            .setView(dialogViews.root)
-            .setNegativeButton(R.string.profile_cancel, null)
-            .setPositiveButton(R.string.profile_edit_save, null)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setView(dialogBinding.root)
             .create()
 
-        dialog.setOnShowListener {
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-                if (viewModel.rename(dialogViews.nameInput.text.toString())) {
-                    dialog.dismiss()
-                } else {
-                    dialogViews.nameLayout.error = getString(R.string.profile_edit_error)
-                }
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnSave.setOnClickListener {
+            val input = dialogBinding.nameInput.text.toString()
+            if (viewModel.rename(input)) {
+                dialog.dismiss()
+            } else {
+                dialogBinding.errorText.text = getString(R.string.profile_edit_error)
+                dialogBinding.errorText.isVisible = true
             }
         }
+
+        dialogBinding.nameInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                dialogBinding.btnSave.performClick()
+                true
+            } else false
+        }
+
         dialog.show()
+        dialogBinding.nameInput.requestFocus()
     }
 
     private fun showClearDataDialog() {
@@ -287,74 +233,6 @@ class ProfileFragment : Fragment() {
             .setNegativeButton(R.string.profile_cancel, null)
             .setPositiveButton(R.string.profile_clear_confirm) { _, _ -> viewModel.clearMyData() }
             .show()
-    }
-
-    // ---------- Adapters for Dialogs ----------
-
-    private class RatedMoviesAdapter(
-        private val movies: List<Movie>,
-        private val onClick: (Movie) -> Unit
-    ) : RecyclerView.Adapter<RatedMoviesAdapter.ViewHolder>() {
-
-        class ViewHolder(val binding: ItemProfileRatedMovieBinding) : RecyclerView.ViewHolder(binding.root)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val binding = ItemProfileRatedMovieBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return ViewHolder(binding)
-        }
-
-        override fun getItemCount(): Int = movies.size
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val movie = movies[position]
-            holder.binding.movieTitle.text = movie.title
-            holder.binding.movieYear.text = movie.releaseDate?.take(4) ?: ""
-            val rating = movie.personalRating ?: 0f
-            holder.binding.movieRating.text = "★ ${String.format(Locale.US, "%.1f", rating)} / 5.0"
-            holder.binding.moviePoster.loadImage(ImageUrls.poster(movie.posterPath))
-            holder.binding.root.setOnClickListener { onClick(movie) }
-        }
-    }
-
-    private class DiaryEntriesAdapter(
-        private val entries: List<DiaryEntry>,
-        private val onClick: (DiaryEntry) -> Unit
-    ) : RecyclerView.Adapter<DiaryEntriesAdapter.ViewHolder>() {
-
-        private val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-
-        class ViewHolder(val binding: ItemProfileDiaryEntryBinding) : RecyclerView.ViewHolder(binding.root)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val binding = ItemProfileDiaryEntryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return ViewHolder(binding)
-        }
-
-        override fun getItemCount(): Int = entries.size
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val entry = entries[position]
-            holder.binding.diaryMovieTitle.text = entry.movieTitle
-            holder.binding.diaryDate.text = dateFormat.format(Date(entry.dateWatched))
-            holder.binding.diaryRewatch.isVisible = entry.isRewatch
-
-            if (entry.rating != null && entry.rating > 0f) {
-                holder.binding.diaryRating.isVisible = true
-                holder.binding.diaryRating.text = "★ ${String.format(Locale.US, "%.1f", entry.rating)}"
-            } else {
-                holder.binding.diaryRating.isVisible = false
-            }
-
-            if (!entry.notes.isNullOrBlank()) {
-                holder.binding.diaryNotes.isVisible = true
-                holder.binding.diaryNotes.text = entry.notes
-            } else {
-                holder.binding.diaryNotes.isVisible = false
-            }
-
-            holder.binding.diaryPoster.loadImage(ImageUrls.poster(entry.posterPath))
-            holder.binding.root.setOnClickListener { onClick(entry) }
-        }
     }
 
     private companion object {
