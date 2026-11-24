@@ -16,9 +16,11 @@ import com.example.cinefiles.data.Movie
 
 /** The three lists of the Discover tab. */
 enum class BrowseCategory(@StringRes val label: Int) {
+    ALL(R.string.discover_all),
     POPULAR(R.string.discover_popular),
     TRENDING(R.string.discover_trending),
-    TOP_RATED(R.string.discover_top_rated)
+    TOP_RATED(R.string.discover_top_rated),
+    GENRE(R.string.discover_title)
 }
 
 /** A search needs at least this many letters (one letter would match far too much). */
@@ -30,13 +32,13 @@ fun isSearchText(text: String): Boolean = text.trim().length >= MIN_SEARCH_LETTE
 /** What the user chose on the Discover tab. */
 data class DiscoverFilters(
     val query: String = "",
-    val category: BrowseCategory = BrowseCategory.POPULAR,
+    val category: BrowseCategory = BrowseCategory.ALL,
     val genreId: Int? = null
 ) {
     val isSearching: Boolean get() = isSearchText(query)
 
     /** Is anything chosen that "Clear filters" would undo? */
-    val hasFilters: Boolean get() = query.isNotBlank() || genreId != null || category != BrowseCategory.POPULAR
+    val hasFilters: Boolean get() = query.isNotBlank() || genreId != null || category != BrowseCategory.ALL
 }
 
 /** The movies of the next page added to the ones already shown. A movie that is already there is not added again. */

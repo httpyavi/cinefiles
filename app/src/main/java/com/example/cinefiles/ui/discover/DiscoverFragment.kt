@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.HorizontalScrollView
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
@@ -21,9 +20,11 @@ import com.example.cinefiles.databinding.FragmentDiscoverBinding
 import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.DiscoverFilters
 import com.example.cinefiles.logic.Genres
+import com.example.cinefiles.logic.Moods
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
 import com.example.cinefiles.ui.components.ShimmerDrawable
+import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.PaginationScrollListener
 import com.example.cinefiles.util.addChoiceChip
@@ -31,12 +32,11 @@ import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.show
 import com.example.cinefiles.util.showMessage
-import com.google.android.material.chip.Chip
 
 /**
- * Discover screen: Redesigned with ONE single horizontal scrollable filter row,
- * clearly separated movie categories (Popular, Trending, Top Rated) and genre browsing sections
- * with horizontally browsable movie posters.
+ * Discover screen: ONE single horizontally scrollable filter row with subtle separator
+ * (All · Popular · Trending · Top Rated | Action · Adventure · Animation · ...),
+ * and a 3-column movie grid that actually updates movie results when any filter is selected.
  */
 class DiscoverFragment : Fragment() {
 
@@ -44,26 +44,16 @@ class DiscoverFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: DiscoverViewModel by activityViewModels()
+    private val watchFlow: WatchFlowViewModel by activityViewModels()
 
-    // Adapters for the category and genre horizontal rows
-    private lateinit var popularAdapter: PosterAdapter
-    private lateinit var trendingAdapter: PosterAdapter
-    private lateinit var topRatedAdapter: PosterAdapter
-    private lateinit var actionAdapter: PosterAdapter
-    private lateinit var adventureAdapter: PosterAdapter
-    private lateinit var animationAdapter: PosterAdapter
-    private lateinit var comedyAdapter: PosterAdapter
-    private lateinit var dramaAdapter: PosterAdapter
-    private lateinit var horrorAdapter: PosterAdapter
-    private lateinit var romanceAdapter: PosterAdapter
-    private lateinit var scifiAdapter: PosterAdapter
-    private lateinit var thrillerAdapter: PosterAdapter
-
-    // Adapter for search results grid
-    private lateinit var searchAdapter: PosterAdapter
+    // Single 3-column grid adapter for all Discover results
+    private lateinit var discoverAdapter: PosterAdapter
 
     private var allChipId: Int = 0
-    private val chipTags = HashMap<Int, String>()
+    private var activeFilterChipId: Int = 0
+    private var isUpdatingChips: Boolean = false
+
+    private val chipCategories = HashMap<Int, BrowseCategory>()
     private val chipGenreIds = HashMap<Int, Int>()
 
     override fun onCreateView(
@@ -77,65 +67,47 @@ class DiscoverFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.discoverHeader.applySystemBarsPadding(top = true, bottom = false)
-        binding.sectionsScroll.applySystemBarsPadding(top = false, bottom = true)
         binding.discoverGrid.applySystemBarsPadding(top = false, bottom = true)
 
         binding.discoverGlow.strength = GLOW_STRENGTH
         binding.discoverGlow.setTint(ContextCompat.getColor(requireContext(), R.color.accent))
 
-        setUpAdapters()
+        setUpAdapter()
         setUpFilterChips()
         setUpSearch()
         setUpStateButtons()
         setUpLoadingSkeletons()
 
+        syncPreferences()
         viewModel.start()
         observeViewModel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        syncPreferences()
+    }
+
+    private fun syncPreferences() {
+        val moodGenreIds = Moods.genreIdsFor(watchFlow.selection.value?.ids.orEmpty())
+        viewModel.setPreferences(watchFlow.preferences, moodGenreIds)
     }
 
     override fun onDestroyView() {
         hideKeyboard()
         super.onDestroyView()
-        chipTags.clear()
+        chipCategories.clear()
         chipGenreIds.clear()
         _binding = null
     }
 
-    // ---------- Adapters & Setup ----------
+    // ---------- Adapter & Setup ----------
 
-    private fun setUpAdapters() {
+    private fun setUpAdapter() {
         val openDetails = { movieId: Int -> findNavController().openMovieDetails(movieId) }
+        discoverAdapter = PosterAdapter(PosterStyle.GRID, showBadges = true, onMovieClick = { openDetails(it.id) })
 
-        popularAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        trendingAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        topRatedAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-
-        actionAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        adventureAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        animationAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        comedyAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        dramaAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        horrorAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        romanceAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        scifiAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-        thrillerAdapter = PosterAdapter(PosterStyle.ROW, showBadges = true, onMovieClick = { openDetails(it.id) })
-
-        binding.popularList.adapter = popularAdapter
-        binding.trendingList.adapter = trendingAdapter
-        binding.topRatedList.adapter = topRatedAdapter
-        binding.actionList.adapter = actionAdapter
-        binding.adventureList.adapter = adventureAdapter
-        binding.animationList.adapter = animationAdapter
-        binding.comedyList.adapter = comedyAdapter
-        binding.dramaList.adapter = dramaAdapter
-        binding.horrorList.adapter = horrorAdapter
-        binding.romanceList.adapter = romanceAdapter
-        binding.scifiList.adapter = scifiAdapter
-        binding.thrillerList.adapter = thrillerAdapter
-
-        // Search Grid Adapter
-        searchAdapter = PosterAdapter(PosterStyle.GRID, showBadges = true, onMovieClick = { openDetails(it.id) })
-        binding.discoverGrid.adapter = searchAdapter
+        binding.discoverGrid.adapter = discoverAdapter
         binding.discoverGrid.itemAnimator = null
 
         binding.discoverGrid.addOnScrollListener(PaginationScrollListener { viewModel.loadNextPage() })
@@ -147,87 +119,71 @@ class DiscoverFragment : Fragment() {
     }
 
     /**
-     * Builds all filter chips in ONE single horizontal row.
-     * Order: All, Popular, Trending, Top Rated, then Genres.
+     * Builds all filters in ONE single horizontally scrollable row:
+     * Curated (All · Popular · Trending · Top Rated) | Genres (Action · Adventure · ...).
      */
     private fun setUpFilterChips() {
-        val group = binding.filterChips
+        val curatedGroup = binding.filterChipsCurated
+        val genreGroup = binding.filterChipsGenres
 
-        val allChip = group.addChoiceChip(getString(R.string.discover_all))
+        // Curated discovery filters
+        val allChip = curatedGroup.addChoiceChip(getString(R.string.discover_all))
         allChipId = allChip.id
-        chipTags[allChip.id] = "all"
+        chipCategories[allChip.id] = BrowseCategory.ALL
+        allChip.setOnClickListener { selectFilter(allChip.id, isCurated = true) }
 
-        val popularChip = group.addChoiceChip(getString(R.string.discover_popular))
-        chipTags[popularChip.id] = "popular"
+        val popularChip = curatedGroup.addChoiceChip(getString(R.string.discover_popular))
+        chipCategories[popularChip.id] = BrowseCategory.POPULAR
+        popularChip.setOnClickListener { selectFilter(popularChip.id, isCurated = true) }
 
-        val trendingChip = group.addChoiceChip(getString(R.string.discover_trending))
-        chipTags[trendingChip.id] = "trending"
+        val trendingChip = curatedGroup.addChoiceChip(getString(R.string.discover_trending))
+        chipCategories[trendingChip.id] = BrowseCategory.TRENDING
+        trendingChip.setOnClickListener { selectFilter(trendingChip.id, isCurated = true) }
 
-        val topRatedChip = group.addChoiceChip(getString(R.string.discover_top_rated))
-        chipTags[topRatedChip.id] = "top_rated"
+        val topRatedChip = curatedGroup.addChoiceChip(getString(R.string.discover_top_rated))
+        chipCategories[topRatedChip.id] = BrowseCategory.TOP_RATED
+        topRatedChip.setOnClickListener { selectFilter(topRatedChip.id, isCurated = true) }
 
-        val majorGenres = listOf(
-            28 to "Action",
-            12 to "Adventure",
-            16 to "Animation",
-            35 to "Comedy",
-            18 to "Drama",
-            27 to "Horror",
-            10749 to "Romance",
-            878 to "Sci-Fi",
-            53 to "Thriller"
-        )
-        for ((genreId, name) in majorGenres) {
-            val chip = group.addChoiceChip(name)
-            val tag = name.lowercase().replace("-", "")
-            chipTags[chip.id] = tag
-            chipGenreIds[chip.id] = genreId
-        }
-
-        // Remaining genres
-        val majorIds = majorGenres.map { it.first }.toSet()
+        // Genre filters in alphabetical order: Action, Adventure, Animation, Comedy, Crime, etc.
         for ((genreId, name) in Genres.all) {
-            if (genreId !in majorIds) {
-                val chip = group.addChoiceChip(name)
-                chipTags[chip.id] = "genre_$genreId"
-                chipGenreIds[chip.id] = genreId
-            }
+            val chip = genreGroup.addChoiceChip(name)
+            chipGenreIds[chip.id] = genreId
+            chip.setOnClickListener { selectFilter(chip.id, isCurated = false) }
         }
 
-        group.check(allChipId)
-
-        group.setOnCheckedStateChangeListener { _, checkedIds ->
-            val checkedId = checkedIds.firstOrNull() ?: allChipId
-            onFilterChipSelected(checkedId)
-        }
+        // Default selection: ALL
+        activeFilterChipId = allChipId
+        curatedGroup.check(allChipId)
     }
 
-    private fun onFilterChipSelected(chipId: Int) {
-        val tag = chipTags[chipId] ?: "all"
-        val isSearching = viewModel.filters.value?.isSearching == true
-
-        if (isSearching) {
-            val genreId = chipGenreIds[chipId]
-            viewModel.selectGenre(genreId)
+    private fun selectFilter(chipId: Int, isCurated: Boolean) {
+        if (activeFilterChipId == chipId) {
+            // Ensure the chip remains visually checked
+            if (isCurated) binding.filterChipsCurated.check(chipId)
+            else binding.filterChipsGenres.check(chipId)
             return
         }
 
-        // Browsing mode: smoothly scroll the sections container to the selected section
-        when (tag) {
-            "all" -> binding.sectionsScroll.smoothScrollTo(0, 0)
-            "popular" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionPopular.top)
-            "trending" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionTrending.top)
-            "top_rated" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionTopRated.top)
-            "action" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAction.top)
-            "adventure" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAdventure.top)
-            "animation" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionAnimation.top)
-            "comedy" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionComedy.top)
-            "drama" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionDrama.top)
-            "horror" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionHorror.top)
-            "romance" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionRomance.top)
-            "scifi" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionScifi.top)
-            "thriller" -> binding.sectionsScroll.smoothScrollTo(0, binding.sectionThriller.top)
-            else -> Unit
+        activeFilterChipId = chipId
+        isUpdatingChips = true
+        try {
+            if (isCurated) {
+                binding.filterChipsGenres.clearCheck()
+                binding.filterChipsCurated.check(chipId)
+            } else {
+                binding.filterChipsCurated.clearCheck()
+                binding.filterChipsGenres.check(chipId)
+            }
+        } finally {
+            isUpdatingChips = false
+        }
+
+        val category = chipCategories[chipId]
+        val genreId = chipGenreIds[chipId]
+        if (category != null) {
+            viewModel.selectCategory(category)
+        } else if (genreId != null) {
+            viewModel.selectGenre(genreId)
         }
 
         scrollToChip(chipId)
@@ -271,7 +227,7 @@ class DiscoverFragment : Fragment() {
             message = R.string.discover_empty_message,
             action = EmptyAction(R.string.discover_clear_filters) {
                 viewModel.clearFilters()
-                binding.filterChips.check(allChipId)
+                selectFilter(allChipId, isCurated = true)
             }
         )
         binding.stateError.errorRetry.setOnClickListener { viewModel.retry() }
@@ -294,28 +250,6 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        viewModel.sections.observe(viewLifecycleOwner) { sections ->
-            popularAdapter.submit(null, sections.popular)
-            trendingAdapter.submit(null, sections.trending)
-            topRatedAdapter.submit(null, sections.topRated)
-
-            actionAdapter.submit(null, sections.action)
-            adventureAdapter.submit(null, sections.adventure)
-            animationAdapter.submit(null, sections.animation)
-            comedyAdapter.submit(null, sections.comedy)
-            dramaAdapter.submit(null, sections.drama)
-            horrorAdapter.submit(null, sections.horror)
-            romanceAdapter.submit(null, sections.romance)
-            scifiAdapter.submit(null, sections.scifi)
-            thrillerAdapter.submit(null, sections.thriller)
-
-            val isSearching = viewModel.filters.value?.isSearching == true
-            if (!isSearching && sections.popular.isNotEmpty()) {
-                binding.stateLoading.root.isVisible = false
-                binding.sectionsScroll.isVisible = true
-            }
-        }
-
         viewModel.filters.observe(viewLifecycleOwner) { filters ->
             if (binding.searchInput.text.toString() != filters.query) {
                 binding.searchInput.setText(filters.query)
@@ -323,10 +257,6 @@ class DiscoverFragment : Fragment() {
             }
             binding.searchClear.isVisible = filters.query.isNotEmpty()
             binding.searchNote.isVisible = filters.isSearching
-
-            val isSearching = filters.isSearching
-            binding.sectionsScroll.isVisible = !isSearching
-            binding.discoverGrid.isVisible = isSearching
         }
 
         viewModel.state.observe(viewLifecycleOwner) { state ->
@@ -347,32 +277,18 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun renderState(state: DiscoverState) {
-        val isSearching = viewModel.filters.value?.isSearching == true
+        val content = state as? DiscoverState.Content
+        binding.stateLoading.root.isVisible = state is DiscoverState.Loading
+        binding.stateError.root.isVisible = state is DiscoverState.Error
+        binding.stateEmpty.root.isVisible = state is DiscoverState.Empty
+        binding.discoverGrid.isVisible = content != null
+        binding.loadMoreBar.isVisible = content?.isLoadingMore == true
 
-        if (isSearching) {
-            val content = state as? DiscoverState.Content
-            binding.stateLoading.root.isVisible = state is DiscoverState.Loading
-            binding.stateError.root.isVisible = state is DiscoverState.Error
-            binding.stateEmpty.root.isVisible = state is DiscoverState.Empty
-            binding.discoverGrid.isVisible = content != null
-            binding.sectionsScroll.isVisible = false
-            binding.loadMoreBar.isVisible = content?.isLoadingMore == true
-
-            when (state) {
-                is DiscoverState.Error -> binding.stateError.show(state.error)
-                is DiscoverState.Empty -> binding.stateEmpty.emptyAction.isVisible = state.hasFilters
-                is DiscoverState.Content -> searchAdapter.submit(null, state.movies)
-                else -> searchAdapter.submit(null, emptyList())
-            }
-        } else {
-            // In browsing mode, show skeleton loading until popular section has items
-            val isLoadingSections = popularAdapter.itemCount == 0 && state !is DiscoverState.Error
-            binding.stateLoading.root.isVisible = isLoadingSections
-            binding.stateError.root.isVisible = state is DiscoverState.Error && (popularAdapter.itemCount == 0)
-            binding.stateEmpty.root.isVisible = false
-            binding.sectionsScroll.isVisible = !isLoadingSections
-            binding.discoverGrid.isVisible = false
-            binding.loadMoreBar.isVisible = false
+        when (state) {
+            is DiscoverState.Error -> binding.stateError.show(state.error)
+            is DiscoverState.Empty -> binding.stateEmpty.emptyAction.isVisible = state.hasFilters
+            is DiscoverState.Content -> discoverAdapter.submit(null, state.movies)
+            else -> discoverAdapter.submit(null, emptyList())
         }
     }
 

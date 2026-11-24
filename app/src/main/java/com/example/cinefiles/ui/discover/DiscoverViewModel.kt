@@ -11,6 +11,7 @@ import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.friendlyError
 import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.DiscoverFilters
+import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.appendUnique
 import com.example.cinefiles.logic.filterByGenre
 import com.example.cinefiles.logic.withStateOf
@@ -101,49 +102,23 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
     private var hasMore = false
     private var autoPagesLeft = 0
 
-    /** The first call loads the sections and initial browse list. */
+    private var currentPreferences = Preferences()
+    private var currentMoodGenres = emptyList<Int>()
+
+    fun setPreferences(preferences: Preferences, moodGenres: List<Int>) {
+        val changed = (preferences != currentPreferences || moodGenres != currentMoodGenres)
+        currentPreferences = preferences
+        currentMoodGenres = moodGenres
+        if (changed && started) {
+            reload(debounce = false)
+        }
+    }
+
+    /** The first call loads the initial browse list. */
     fun start() {
         if (started) return
         started = true
-        loadSections()
         reload(debounce = false)
-    }
-
-    private fun loadSections() {
-        viewModelScope.launch {
-            try {
-                val popJob = async { repository.browsePage(BrowseCategory.POPULAR, null).getOrNull()?.movies.orEmpty() }
-                val trendJob = async { repository.browsePage(BrowseCategory.TRENDING, null).getOrNull()?.movies.orEmpty() }
-                val topJob = async { repository.browsePage(BrowseCategory.TOP_RATED, null).getOrNull()?.movies.orEmpty() }
-
-                val actionJob = async { repository.browsePage(BrowseCategory.POPULAR, 28).getOrNull()?.movies.orEmpty() }
-                val advJob = async { repository.browsePage(BrowseCategory.POPULAR, 12).getOrNull()?.movies.orEmpty() }
-                val animJob = async { repository.browsePage(BrowseCategory.POPULAR, 16).getOrNull()?.movies.orEmpty() }
-                val comJob = async { repository.browsePage(BrowseCategory.POPULAR, 35).getOrNull()?.movies.orEmpty() }
-                val dramaJob = async { repository.browsePage(BrowseCategory.POPULAR, 18).getOrNull()?.movies.orEmpty() }
-                val horrorJob = async { repository.browsePage(BrowseCategory.POPULAR, 27).getOrNull()?.movies.orEmpty() }
-                val romJob = async { repository.browsePage(BrowseCategory.POPULAR, 10749).getOrNull()?.movies.orEmpty() }
-                val scifiJob = async { repository.browsePage(BrowseCategory.POPULAR, 878).getOrNull()?.movies.orEmpty() }
-                val thrilJob = async { repository.browsePage(BrowseCategory.POPULAR, 53).getOrNull()?.movies.orEmpty() }
-
-                rawSections.value = DiscoverSections(
-                    popular = popJob.await(),
-                    trending = trendJob.await(),
-                    topRated = topJob.await(),
-                    action = actionJob.await(),
-                    adventure = advJob.await(),
-                    animation = animJob.await(),
-                    comedy = comJob.await(),
-                    drama = dramaJob.await(),
-                    horror = horrorJob.await(),
-                    romance = romJob.await(),
-                    scifi = scifiJob.await(),
-                    thriller = thrilJob.await()
-                )
-            } catch (_: Exception) {
-                // If network is completely offline, rawSections remains empty
-            }
-        }
     }
 
     /** Home's search icon: open the tab with the keyboard ready. */
@@ -168,16 +143,20 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
 
     fun selectCategory(category: BrowseCategory) {
         val before = filtersFlow.value
-        if (category == before.category) return
-        filtersFlow.value = before.copy(category = category)
-        if (!filtersFlow.value.isSearching) reload(debounce = false)
+        if (category == before.category && before.genreId == null) return
+        filtersFlow.value = before.copy(category = category, genreId = null)
+        reload(debounce = false)
     }
 
     /** A genre chip, or null when the chip was switched off. */
     fun selectGenre(genreId: Int?) {
         val before = filtersFlow.value
-        if (genreId == before.genreId) return
-        filtersFlow.value = before.copy(genreId = genreId)
+        if (genreId == null) {
+            selectCategory(BrowseCategory.ALL)
+            return
+        }
+        if (before.category == BrowseCategory.GENRE && before.genreId == genreId) return
+        filtersFlow.value = before.copy(category = BrowseCategory.GENRE, genreId = genreId)
         if (filtersFlow.value.isSearching) {
             autoPagesLeft = MAX_AUTO_PAGES
             if (requestJob?.isActive != true) requestJob = viewModelScope.launch { loadMoreWhileShort() }
@@ -187,13 +166,12 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearFilters() {
-        filtersFlow.value = DiscoverFilters()
+        filtersFlow.value = DiscoverFilters(category = BrowseCategory.ALL)
         reload(debounce = false)
     }
 
-    /** The Retry buttons: reload first page and sections. */
+    /** The Retry buttons: reload first page. */
     fun retry() {
-        loadSections()
         reload(debounce = false)
     }
 
@@ -229,7 +207,13 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
         val result = if (filters.isSearching) {
             repository.searchPage(filters.query, number)
         } else {
-            repository.browsePage(filters.category, filters.genreId, number)
+            repository.browsePage(
+                category = filters.category,
+                genreId = filters.genreId,
+                page = number,
+                preferences = currentPreferences,
+                moodGenreIds = currentMoodGenres
+            )
         }
 
         result

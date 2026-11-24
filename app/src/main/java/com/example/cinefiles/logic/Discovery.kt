@@ -223,23 +223,23 @@ object Discovery {
     // ---------- What the Preferences screen's choices mean ----------
 
     // Each of these gives a pair: (from, to), where null means "no limit on that side"
-    private val NO_LIMIT = Pair<Int?, Int?>(null, null)
+    val NO_LIMIT = Pair<Int?, Int?>(null, null)
 
-    private fun yearsOf(period: ReleasePeriod): Pair<Int?, Int?> = when (period) {
+    fun yearsOf(period: ReleasePeriod): Pair<Int?, Int?> = when (period) {
         ReleasePeriod.ANY -> NO_LIMIT
         ReleasePeriod.BEFORE_2000 -> Pair(null, 1999)
         ReleasePeriod.FROM_2000_TO_2014 -> Pair(2000, 2014)
         ReleasePeriod.FROM_2015 -> Pair(2015, null)
     }
 
-    private fun ratingOf(rating: MinRating): Double? = when (rating) {
+    fun ratingOf(rating: MinRating): Double? = when (rating) {
         MinRating.ANY -> null
         MinRating.SIX_PLUS -> 6.0
         MinRating.SEVEN_PLUS -> 7.0
         MinRating.EIGHT_PLUS -> 8.0
     }
 
-    private fun minutesOf(length: Length): Pair<Int?, Int?> = when (length) {
+    fun minutesOf(length: Length): Pair<Int?, Int?> = when (length) {
         Length.ANY -> NO_LIMIT
         Length.UNDER_90_MIN -> Pair(null, 89)
         Length.UNDER_2_HOURS -> Pair(null, 119)

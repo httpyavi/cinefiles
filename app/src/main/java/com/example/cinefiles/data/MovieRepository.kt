@@ -7,8 +7,11 @@ import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
 import com.example.cinefiles.logic.Language
+import com.example.cinefiles.logic.Length
+import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.RecommendationEngine
+import com.example.cinefiles.logic.ReleasePeriod
 import com.example.cinefiles.logic.canLike
 import com.example.cinefiles.logic.trendingSince
 import com.example.cinefiles.util.currentYear
@@ -152,24 +155,146 @@ class MovieRepository(
      * One page of a Discover list. With no genre, the three categories are TMDB's own lists (popular, trending,
      * top rated). With a genre they are /discover calls, because TMDB's own lists cannot be filtered by genre.
      */
-    suspend fun browsePage(category: BrowseCategory, genreId: Int?, page: Int = 1): Result<MoviePage> = call {
+    suspend fun browsePage(
+        category: BrowseCategory,
+        genreId: Int?,
+        page: Int = 1,
+        preferences: Preferences = Preferences(),
+        moodGenreIds: List<Int> = emptyList()
+    ): Result<MoviePage> = call {
+        val (fromYear, toYear) = Discovery.yearsOf(preferences.releasePeriod)
+        val (minMin, maxMin) = Discovery.minutesOf(preferences.length)
+        val langCode = Discovery.languageCode(preferences.language)
+        val minRating = Discovery.ratingOf(preferences.minRating)
+        val hasCustomPrefs = preferences.releasePeriod != ReleasePeriod.ANY ||
+                preferences.minRating != MinRating.ANY ||
+                preferences.length != Length.ANY ||
+                preferences.language != Language.ANY
+
         val response = if (genreId == null) {
             when (category) {
-                BrowseCategory.POPULAR -> api.popular(page)
-                BrowseCategory.TRENDING -> api.trending(page)
-                BrowseCategory.TOP_RATED -> api.topRated(page)
+                BrowseCategory.ALL -> {
+                    val genresStr = if (moodGenreIds.isNotEmpty()) moodGenreIds.joinToString("|") else null
+                    val minVotes = if (langCode == "tl") 5 else 20
+                    api.discover(
+                        withGenres = genresStr,
+                        releasedFrom = fromYear?.let { "$it-01-01" },
+                        releasedTo = toYear?.let { "$it-12-31" },
+                        minRating = minRating,
+                        minVotes = minVotes,
+                        minRuntime = minMin,
+                        maxRuntime = maxMin,
+                        originalLanguage = langCode,
+                        sortBy = "popularity.desc",
+                        page = page
+                    )
+                }
+                BrowseCategory.POPULAR -> {
+                    if (hasCustomPrefs) {
+                        val minVotes = if (langCode == "tl") 5 else 100
+                        api.discover(
+                            releasedFrom = fromYear?.let { "$it-01-01" },
+                            releasedTo = toYear?.let { "$it-12-31" },
+                            minRating = minRating,
+                            minVotes = minVotes,
+                            minRuntime = minMin,
+                            maxRuntime = maxMin,
+                            originalLanguage = langCode,
+                            sortBy = "popularity.desc",
+                            page = page
+                        )
+                    } else {
+                        api.popular(page)
+                    }
+                }
+                BrowseCategory.TRENDING -> {
+                    if (hasCustomPrefs) {
+                        val minVotes = if (langCode == "tl") 5 else 20
+                        api.discover(
+                            releasedFrom = fromYear?.let { "$it-01-01" } ?: trendingSince(currentYear()),
+                            releasedTo = toYear?.let { "$it-12-31" },
+                            minRating = minRating,
+                            minVotes = minVotes,
+                            minRuntime = minMin,
+                            maxRuntime = maxMin,
+                            originalLanguage = langCode,
+                            sortBy = "popularity.desc",
+                            page = page
+                        )
+                    } else {
+                        api.trending(page)
+                    }
+                }
+                BrowseCategory.TOP_RATED -> {
+                    if (hasCustomPrefs) {
+                        val minVotes = if (langCode == "tl") 5 else 300
+                        val rating = maxOf(minRating ?: 0.0, 7.5)
+                        api.discover(
+                            releasedFrom = fromYear?.let { "$it-01-01" },
+                            releasedTo = toYear?.let { "$it-12-31" },
+                            minRating = rating,
+                            minVotes = minVotes,
+                            minRuntime = minMin,
+                            maxRuntime = maxMin,
+                            originalLanguage = langCode,
+                            sortBy = "vote_average.desc",
+                            page = page
+                        )
+                    } else {
+                        api.topRated(page)
+                    }
+                }
+                else -> api.popular(page)
             }
         } else {
             val withGenre = genreId.toString()
             when (category) {
-                BrowseCategory.POPULAR ->
-                    api.discover(withGenres = withGenre, minVotes = 100, sortBy = "popularity.desc", page = page)
-                BrowseCategory.TRENDING -> api.discover(
-                    withGenres = withGenre, minVotes = 20, sortBy = "popularity.desc", page = page,
-                    releasedFrom = trendingSince(currentYear())
-                )
-                BrowseCategory.TOP_RATED ->
-                    api.discover(withGenres = withGenre, minVotes = 300, sortBy = "vote_average.desc", page = page)
+                BrowseCategory.TRENDING -> {
+                    val minVotes = if (langCode == "tl") 5 else 20
+                    api.discover(
+                        withGenres = withGenre,
+                        releasedFrom = fromYear?.let { "$it-01-01" } ?: trendingSince(currentYear()),
+                        releasedTo = toYear?.let { "$it-12-31" },
+                        minRating = minRating,
+                        minVotes = minVotes,
+                        minRuntime = minMin,
+                        maxRuntime = maxMin,
+                        originalLanguage = langCode,
+                        sortBy = "popularity.desc",
+                        page = page
+                    )
+                }
+                BrowseCategory.TOP_RATED -> {
+                    val minVotes = if (langCode == "tl") 5 else 300
+                    val rating = maxOf(minRating ?: 0.0, 7.5)
+                    api.discover(
+                        withGenres = withGenre,
+                        releasedFrom = fromYear?.let { "$it-01-01" },
+                        releasedTo = toYear?.let { "$it-12-31" },
+                        minRating = rating,
+                        minVotes = minVotes,
+                        minRuntime = minMin,
+                        maxRuntime = maxMin,
+                        originalLanguage = langCode,
+                        sortBy = "vote_average.desc",
+                        page = page
+                    )
+                }
+                else -> {
+                    val minVotes = if (langCode == "tl") 5 else 100
+                    api.discover(
+                        withGenres = withGenre,
+                        releasedFrom = fromYear?.let { "$it-01-01" },
+                        releasedTo = toYear?.let { "$it-12-31" },
+                        minRating = minRating,
+                        minVotes = minVotes,
+                        minRuntime = minMin,
+                        maxRuntime = maxMin,
+                        originalLanguage = langCode,
+                        sortBy = "popularity.desc",
+                        page = page
+                    )
+                }
             }
         }
         response.toMoviePage(page)
