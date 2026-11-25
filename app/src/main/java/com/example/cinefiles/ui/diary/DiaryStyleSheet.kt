@@ -1,6 +1,7 @@
 package com.example.cinefiles.ui.diary
 
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,13 +12,14 @@ import com.example.cinefiles.R
 import com.example.cinefiles.databinding.ItemDiaryStyleOptionBinding
 import com.example.cinefiles.databinding.SheetDiaryStyleBinding
 import com.example.cinefiles.logic.DiaryFont
+import com.example.cinefiles.logic.DiaryTextSize
 import com.example.cinefiles.logic.DiaryTheme
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
- * The style of a diary page: four fonts and five background themes as small cards. A tap changes the page behind the sheet at
+ * The style of a diary page: five fonts, three text sizes and five canvas themes as small cards. A tap changes the page behind the sheet at
  * once (it talks to the editor's own ViewModel, because it is shown from the editor's child fragment manager). The chosen font
- * and theme have a red edge. Open it with [show].
+ * font, size and theme have a red edge. Open it with [show].
  */
 class DiaryStyleSheet : BottomSheetDialogFragment() {
 
@@ -27,6 +29,7 @@ class DiaryStyleSheet : BottomSheetDialogFragment() {
     private val editorViewModel: DiaryEditorViewModel by viewModels(ownerProducer = { requireParentFragment() })
 
     private val fontCards = HashMap<DiaryFont, ItemDiaryStyleOptionBinding>()
+    private val sizeCards = HashMap<DiaryTextSize, ItemDiaryStyleOptionBinding>()
     private val themeCards = HashMap<DiaryTheme, ItemDiaryStyleOptionBinding>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -42,6 +45,12 @@ class DiaryStyleSheet : BottomSheetDialogFragment() {
             card.optionCard.setOnClickListener { editorViewModel.setFont(font) }
             fontCards[font] = card
         }
+        for (size in DiaryTextSize.values()) {
+            val card = addCard(binding.sizeOptions, size.label)
+            card.optionSample.setTextSize(TypedValue.COMPLEX_UNIT_SP, size.bodySp) // "Aa" grows with the size
+            card.optionCard.setOnClickListener { editorViewModel.setSize(size) }
+            sizeCards[size] = card
+        }
         for (theme in DiaryTheme.values()) {
             val card = addCard(binding.themeOptions, theme.label)
             // The card shows the theme itself: its page color and its words
@@ -54,6 +63,9 @@ class DiaryStyleSheet : BottomSheetDialogFragment() {
 
         editorViewModel.font.observe(viewLifecycleOwner) { selected ->
             for ((font, card) in fontCards) mark(card, font == selected)
+        }
+        editorViewModel.size.observe(viewLifecycleOwner) { selected ->
+            for ((size, card) in sizeCards) mark(card, size == selected)
         }
         editorViewModel.theme.observe(viewLifecycleOwner) { selected ->
             for ((theme, card) in themeCards) mark(card, theme == selected)
@@ -80,6 +92,7 @@ class DiaryStyleSheet : BottomSheetDialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         fontCards.clear()
+        sizeCards.clear()
         themeCards.clear()
         _binding = null
     }

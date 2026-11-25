@@ -10,7 +10,8 @@ import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.data.DiaryEntry
-import com.example.cinefiles.logic.DiaryBlocks
+import com.example.cinefiles.logic.DiaryCover
+import com.example.cinefiles.logic.ImageSource
 import com.example.cinefiles.util.ARG_MOVIE_ID
 import com.example.cinefiles.util.Event
 import kotlinx.coroutines.launch
@@ -46,11 +47,11 @@ class DiaryListViewModel(app: Application, handle: SavedStateHandle) : AndroidVi
         viewModelScope.launch { _newPage.value = Event(repository.canWriteDiary(movieId)) }
     }
 
-    /** Deletes the page, and the gallery pictures that only it was using. */
+    /** Deletes the page, and its cover picture when that is a copy of a gallery picture kept in the app. */
     fun delete(entry: DiaryEntry) {
         viewModelScope.launch {
             repository.deleteDiaryEntry(entry.id)
-            diaryImages.delete(DiaryBlocks.localImages(DiaryBlocks.fromJson(entry.blocksJson)))
+            DiaryCover.parse(entry.coverImageUri)?.takeIf { it.source == ImageSource.LOCAL }?.let { diaryImages.delete(listOf(it.ref)) }
         }
     }
 }

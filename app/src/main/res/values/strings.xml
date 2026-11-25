@@ -288,7 +288,7 @@
     <string name="profile_tmdb_notice">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
     <string name="profile_clear">Clear my data</string>
     <string name="profile_clear_title">Clear all your data?</string>
-    <string name="profile_clear_message">This deletes your liked, watchlist and watched movies, favorites, diary entries, personal ratings and your name. It cannot be undone.</string>
+    <string name="profile_clear_message">This deletes your liked, watchlist and watched movies, favorites, diary entries, personal ratings, your profile photo and your name. It cannot be undone.</string>
     <string name="profile_clear_confirm">Clear</string>
     <string name="profile_cleared">Your data was cleared</string>
     <string name="profile_stat_swiped">Discovered</string>
@@ -447,27 +447,35 @@
     <string name="diary_no_words">No words yet</string>
     <string name="diary_page_description">%1$s. Diary page. Opens it.</string>
     <string name="diary_delete_title">Delete this page?</string>
-    <string name="diary_delete_message">The page and the pictures you added to it are deleted. This cannot be undone.</string>
+    <string name="diary_delete_message">The page and its cover picture are deleted. This cannot be undone.</string>
     <string name="diary_delete">Delete</string>
     <string name="diary_deleted">Diary page deleted</string>
 
-    <!-- The Movie Diary: the editor (blocks) -->
+    <!-- The Movie Diary: the editor (one page, like a post) -->
     <string name="diary_editor_title">Diary page</string>
     <string name="diary_save">Save</string>
     <string name="diary_saved">Diary page saved</string>
     <string name="diary_style">Style</string>
-    <string name="diary_add_text">Paragraph</string>
-    <string name="diary_add_image">Picture</string>
-    <string name="diary_add_text_description">Add a paragraph</string>
-    <string name="diary_add_image_description">Add a picture</string>
-    <string name="diary_block_deleted">Picture deleted</string>
     <string name="diary_missing_title">Page not found</string>
     <string name="diary_meta_rated">%1$s · Rated %2$s</string>
+    <string name="diary_headline_hint">Headline (optional)</string>
+    <string name="diary_cover_add">Add a cover picture</string>
+    <string name="diary_cover_description">The cover picture of this page</string>
+    <string name="diary_cover_replace">Replace the cover picture</string>
+    <string name="diary_cover_remove">Remove the cover picture</string>
+    <string name="diary_open_movie_description">Open the details of %1$s</string>
+    <string name="diary_format_underline">Underline</string>
+    <string name="diary_format_underline_letter">U</string>
+    <string name="diary_format_heading">Heading</string>
+    <string name="diary_format_heading_letter">H</string>
+    <string name="diary_format_quote">Pull-quote</string>
+    <string name="diary_align_justify">Justify</string>
+    <string name="diary_nothing_to_save">Write something first, then save.</string>
+    <string name="diary_empty_page_title">This page is empty</string>
+    <string name="diary_empty_page_message">Delete it, or keep writing?</string>
+    <string name="diary_empty_page_delete">Delete page</string>
+    <string name="diary_empty_page_keep">Keep writing</string>
     <string name="diary_text_hint">Tell your story… a thought, a quote, a memory.</string>
-    <string name="diary_move_up">Move picture up</string>
-    <string name="diary_move_down">Move picture down</string>
-    <string name="diary_drag_block">Drag to move this picture</string>
-    <string name="diary_delete_picture">Delete this picture</string>
     <string name="diary_format_bold">Bold</string>
     <string name="diary_format_bold_letter">B</string>
     <string name="diary_format_italic">Italic</string>
@@ -475,9 +483,8 @@
     <string name="diary_align_left">Align left</string>
     <string name="diary_align_center">Align center</string>
     <string name="diary_align_right">Align right</string>
-    <string name="diary_image_description">A picture on your diary page</string>
     <string name="diary_image_failed">Could not add that picture.</string>
-    <string name="diary_image_source_title">Add a picture</string>
+    <string name="diary_image_source_title">Cover picture</string>
     <string name="diary_image_from_phone">From my photos</string>
     <string name="diary_image_from_movie">A still from the movie</string>
     <string name="diary_stills_title">Movie stills</string>
@@ -488,17 +495,22 @@
     <!-- The Movie Diary: the look of a page -->
     <string name="diary_style_title">Style of this page</string>
     <string name="diary_style_font">Font</string>
-    <string name="diary_style_theme">Background</string>
-    <string name="diary_font_sans">Sans · Modern</string>
-    <string name="diary_font_serif">Serif · Editorial</string>
-    <string name="diary_font_mono">Typewriter</string>
-    <string name="diary_font_display">Bold Display</string>
+    <string name="diary_font_sans">Modern Sans</string>
+    <string name="diary_font_serif">Editorial Serif</string>
+    <string name="diary_font_mono">Classic Typewriter</string>
+    <string name="diary_font_display">Cinema Display</string>
+    <string name="diary_font_light">Clean Light</string>
+    <string name="diary_style_size">Text size</string>
+    <string name="diary_style_canvas">Canvas</string>
+    <string name="diary_size_compact">Compact</string>
+    <string name="diary_size_standard">Standard</string>
+    <string name="diary_size_large">Large</string>
+    <string name="diary_theme_charcoal">Editorial Warm Charcoal</string>
+    <string name="diary_theme_navy">Deep Navy Ink</string>
     <string name="diary_font_sample">Aa</string>
     <string name="diary_theme_midnight">Midnight Obsidian</string>
-    <string name="diary_theme_crimson">Cinema Crimson</string>
-    <string name="diary_theme_parchment">Warm Parchment</string>
-    <string name="diary_theme_slate">Deep Slate</string>
-    <string name="diary_theme_sepia">Vintage Sepia</string>
+    <string name="diary_theme_crimson">Cinema Crimson Tint</string>
+    <string name="diary_theme_sepia">Vintage Sepia Dark</string>
 
     <!-- Profile & Stats -->
     <string name="profile_favorites_title">Favorites</string>
@@ -594,4 +606,11 @@
     <string name="sort_longest">Longest first</string>
     <string name="sort_shortest">Shortest first</string>
     <string name="sort_field_description">%1$s, %2$s</string>
+    <!-- The profile photo -->
+    <string name="profile_photo_title">Profile photo</string>
+    <string name="profile_photo_gallery">Choose from gallery</string>
+    <string name="profile_photo_remove">Remove photo</string>
+    <string name="profile_photo_change_description">Change your profile photo</string>
+    <string name="profile_photo_failed">Could not use that picture.</string>
+    <string name="profile_photo_description">Your profile photo</string>
 </resources>

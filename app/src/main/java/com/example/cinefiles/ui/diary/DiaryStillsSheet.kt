@@ -23,7 +23,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
- * The movie's own stills (TMDB: GET /movie/{id}/images) as a picture grid, to put one on the diary page. It shares the editor's
+ * The movie's own stills (TMDB: GET /movie/{id}/images) as a picture grid, to make one the cover of the diary page. It shares the editor's
  * ViewModel (it is shown from the editor's child fragment manager), which asks TMDB and hands the chosen still to the page.
  * Open it with [show].
  */
@@ -49,7 +49,7 @@ class DiaryStillsSheet : BottomSheetDialogFragment() {
         }
 
         val adapter = StillAdapter { path ->
-            editorViewModel.addStill(path)
+            editorViewModel.setStillAsCover(path)
             dismiss()
         }
         binding.stillsList.adapter = adapter

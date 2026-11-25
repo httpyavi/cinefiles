@@ -1,5 +1,6 @@
 package com.example.cinefiles.data
 
+import com.example.cinefiles.logic.hasWatchDependents
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -141,6 +142,74 @@ class WatchRulesRepositoryTest {
         assertEquals(listOf(1, 3, 9), repo.getFavorites().map { it.id })
     }
 
+    private suspend fun favoritePlaces() = dao.getFavorites().map { it.favoriteOrder }
+
+    @Test
+    fun theFavoritesAreAlwaysNumberedFromZeroWithNoGap() = runBlocking {
+        for (id in 1..4) {
+            repo.markWatched(movie(id))
+            repo.addFavorite(movie(id))
+        }
+        assertEquals(listOf(0, 1, 2, 3), favoritePlaces())
+
+        repo.removeFavorite(2)
+        assertEquals(listOf(1, 3, 4), repo.getFavorites().map { it.id })
+        assertEquals(listOf(0, 1, 2), favoritePlaces())
+
+        repo.unmarkWatched(1) // un-watching a favorite takes it out of the favorites too
+        assertEquals(listOf(3, 4), repo.getFavorites().map { it.id })
+        assertEquals(listOf(0, 1), favoritePlaces())
+
+        repo.addToWatchlist(movie(3)) // so does moving it back to the watchlist
+        assertEquals(listOf(4), repo.getFavorites().map { it.id })
+        assertEquals(listOf(0), favoritePlaces())
+
+        repo.markWatched(movie(7))
+        repo.addFavorite(movie(7))
+        assertEquals(listOf(0, 1), favoritePlaces())
+    }
+
+    @Test
+    fun aFavoriteThatUndoPutsBackTakesItsOldPlaceAndTheOthersMakeRoom() = runBlocking {
+        for (id in 1..3) {
+            repo.markWatched(movie(id))
+            repo.addFavorite(movie(id))
+        }
+        val first = dao.saved(1)!!
+        repo.unmarkWatched(1)
+        assertEquals(listOf(2, 3), repo.getFavorites().map { it.id })
+
+        repo.restoreState(first)
+
+        assertEquals(listOf(1, 2, 3), repo.getFavorites().map { it.id })
+        assertEquals(listOf(0, 1, 2), favoritePlaces())
+    }
+
+    @Test
+    fun theDatabaseItselfRefusesAFifthFavoriteAndAnUnwatchedOne() = runBlocking {
+        for (id in 1..4) {
+            repo.markWatched(movie(id))
+            repo.addFavorite(movie(id))
+        }
+        repo.markWatched(movie(5))
+        assertEquals("no room", 0, dao.addFavorite(5, 1L))
+        repo.unmarkWatched(5)
+        repo.removeFavorite(4)
+        assertEquals("not watched", 0, dao.addFavorite(5, 1L))
+        assertEquals("already a favorite", 0, dao.addFavorite(1, 1L))
+        assertEquals(3, dao.countFavorites())
+    }
+
+    @Test
+    fun theDatabaseItselfRefusesALikeAndARatingOnAMovieThatIsNotWatched() = runBlocking {
+        repo.addToWatchlist(movie(1))
+        assertEquals(0, dao.like(1, 1L))
+        assertEquals(0, dao.setUserRating(1, 4.0f, 1L))
+        repo.markWatched(movie(1))
+        assertEquals(1, dao.like(1, 1L))
+        assertEquals(1, dao.setUserRating(1, 4.0f, 1L))
+    }
+
     // ---------- Rate ----------
 
     @Test
@@ -280,6 +349,25 @@ class WatchRulesRepositoryTest {
     }
 
     @Test
+    fun undoNeverBringsBackALikeARatingOrAFavoriteOnAMovieThatWasNotWatched() = runBlocking {
+        repo.markWatched(movie(1))
+        // A stale or hand-made "before" that says not watched but still carries a like, a rating and a favorite
+        val impossible = dao.saved(1)!!.copy(
+            isWatched = false, watchedAt = 0L, reaction = Reaction.LIKED, reactedAt = 5L,
+            userRating = 4.5f, ratedAt = 6L, isFavorite = true, favoritedAt = 7L, favoriteOrder = 0
+        )
+
+        repo.restoreState(impossible)
+
+        val row = dao.saved(1)!!
+        assertFalse(row.isWatched)
+        assertEquals(Reaction.NONE, row.reaction)
+        assertNull(row.userRating)
+        assertFalse(row.isFavorite)
+        assertFalse(row.hasWatchDependents())
+    }
+
+    @Test
     fun undoDoesNotBreakTheLimitOfFourFavorites() = runBlocking {
         for (id in 1..4) {
             repo.markWatched(movie(id))
@@ -300,7 +388,7 @@ class WatchRulesRepositoryTest {
 
     // ---------- Diary pages ----------
 
-    private fun page(movieId: Int, text: String = "[]") = DiaryEntry(movieId = movieId, movieTitle = "Movie $movieId", blocksJson = text)
+    private fun page(movieId: Int, text: String = "") = DiaryEntry(movieId = movieId, movieTitle = "Movie $movieId", bodyHtml = text)
 
     @Test
     fun aNewDiaryPageIsInsertedAndASavedOneIsUpdated() = runBlocking {
@@ -310,9 +398,9 @@ class WatchRulesRepositoryTest {
         assertTrue(created.createdAt > 0)
         assertEquals(created.createdAt, created.updatedAt)
 
-        repo.saveDiaryEntry(created.copy(blocksJson = "second", createdAt = 1L))
+        repo.saveDiaryEntry(created.copy(bodyHtml = "second", createdAt = 1L))
         val updated = repo.diaryEntry(id)!!
-        assertEquals("second", updated.blocksJson)
+        assertEquals("second", updated.bodyHtml)
         assertEquals(1L, updated.createdAt) // the caller's createdAt is kept, only updatedAt is stamped
         assertTrue(updated.updatedAt >= created.updatedAt)
         assertEquals(1, repo.observeDiaryCount().first())
@@ -353,7 +441,7 @@ class WatchRulesRepositoryTest {
 
         repo.markWatched(movie(1))
         assertTrue(repo.canWriteDiary(1))
-        val pageId = repo.saveDiaryEntry(DiaryEntry(movieId = 1, movieTitle = "Movie 1", blocksJson = "[]"))
+        val pageId = repo.saveDiaryEntry(DiaryEntry(movieId = 1, movieTitle = "Movie 1", bodyHtml = "<p>words</p>"))
 
         repo.unmarkWatched(1)
         assertFalse("no NEW page for a movie that is not watched", repo.canWriteDiary(1))

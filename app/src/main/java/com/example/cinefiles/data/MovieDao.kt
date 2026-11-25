@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.cinefiles.logic.MAX_FAVORITES
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -21,9 +22,11 @@ import kotlinx.coroutines.flow.Flow
  * The enum names in the queries ('LIKED', 'NONE') are how Room stores [Reaction]: as its name.
  *
  * THE WATCH RULE (logic/WatchRules.kt): a like, a rating and a favorite only belong on a WATCHED movie. The queries that
- * take "watched" away ([unmarkWatched], [addToWatchlist]) clear them in the SAME statement, so the table can never hold
- * a liked, rated or favorited movie that is not watched. (The rule that refuses NEW likes, ratings and favorites is
- * in MovieRepository, which looks at the saved copy.)
+ * take "watched" away ([unmarkWatched], [addToWatchlist]) clear them in the SAME statement, and the queries that give a
+ * NEW like, rating or favorite ([like], [setUserRating], [addFavorite]) only touch a movie that is watched (and a favorite
+ * only while there is room), in the same statement too, so the table can never hold a liked, rated or favorited movie that is
+ * not watched, or more than [MAX_FAVORITES] favorites, however fast the taps come. They return how many rows they changed (0 = refused).
+ * The favorites are numbered 0, 1, 2... with no gaps: [reindexFavorites] closes a gap after a favorite goes.
  */
 
 /** The SQL that goes with taking "watched" away: no like (a pass stays), no rating, no favorite. */
@@ -43,8 +46,13 @@ interface MovieDao {
 
     // ---------- Changing the user's state (each query only touches the columns it names) ----------
 
+    /** Sets a reaction. For a PASS or for taking a reaction back; a LIKE goes through [like], which keeps THE WATCH RULE. */
     @Query("UPDATE movies SET reaction = :reaction, reactedAt = :at WHERE id = :id")
     suspend fun setReaction(id: Int, reaction: Reaction, at: Long)
+
+    /** Likes the movie, but only when it is WATCHED (THE WATCH RULE). Returns 1, or 0 when it was refused. */
+    @Query("UPDATE movies SET reaction = 'LIKED', reactedAt = :at WHERE id = :id AND isWatched = 1")
+    suspend fun like(id: Int, at: Long): Int
 
     /**
      * Puts the movie on the watchlist. A movie is on the watchlist OR watched, so this also clears "watched", and
@@ -129,24 +137,47 @@ interface MovieDao {
 
     // ---------- The popcorn rating ----------
 
-    /** The column is still called personalRating (see Movie.userRating). The repository only calls this on a watched movie. */
-    @Query("UPDATE movies SET personalRating = :rating, ratedAt = :at WHERE id = :id")
-    suspend fun setUserRating(id: Int, rating: Float?, at: Long)
+    /**
+     * The column is still called personalRating (see Movie.userRating). Only a WATCHED movie takes a rating (THE WATCH RULE):
+     * returns 1, or 0 when it was refused.
+     */
+    @Query("UPDATE movies SET personalRating = :rating, ratedAt = :at WHERE id = :id AND isWatched = 1")
+    suspend fun setUserRating(id: Int, rating: Float?, at: Long): Int
 
     @Query("UPDATE movies SET personalRating = NULL, ratedAt = 0 WHERE id = :id")
     suspend fun clearUserRating(id: Int)
 
     // ---------- The favorites (at most 4, in the order the user dragged them to) ----------
 
-    /** Makes the movie the LAST favorite. The repository only calls this on a watched movie, and when there is room. */
+    /**
+     * Makes the movie the LAST favorite, but only when it is WATCHED, not a favorite yet, and there is room for it (at most
+     * [MAX_FAVORITES]): one statement, so two quick taps can never make a fifth. Returns 1, or 0 when it was refused.
+     */
     @Query(
         "UPDATE movies SET isFavorite = 1, favoritedAt = :at, " +
-            "favoriteOrder = COALESCE((SELECT MAX(favoriteOrder) FROM movies WHERE isFavorite = 1), -1) + 1 WHERE id = :id"
+            "favoriteOrder = COALESCE((SELECT MAX(favoriteOrder) FROM movies WHERE isFavorite = 1), -1) + 1 " +
+            "WHERE id = :id AND isWatched = 1 AND isFavorite = 0 AND (SELECT COUNT(*) FROM movies WHERE isFavorite = 1) < " + MAX_FAVORITES
     )
-    suspend fun addFavorite(id: Int, at: Long)
+    suspend fun addFavorite(id: Int, at: Long): Int
 
     @Query("UPDATE movies SET isFavorite = 0, favoritedAt = 0, favoriteOrder = 0 WHERE id = :id")
     suspend fun removeFavorite(id: Int)
+
+    /**
+     * Numbers the favorites 0, 1, 2... again in their present order, so there is no gap after one was removed or un-watched.
+     * (Ties, which only an old database could have, are broken by the time they were added, then by id.)
+     */
+    @Query(
+        "UPDATE movies SET favoriteOrder = (SELECT COUNT(*) FROM movies AS other WHERE other.isFavorite = 1 AND " +
+            "(other.favoriteOrder < movies.favoriteOrder OR (other.favoriteOrder = movies.favoriteOrder AND " +
+            "(other.favoritedAt < movies.favoritedAt OR (other.favoritedAt = movies.favoritedAt AND other.id < movies.id))))) " +
+            "WHERE isFavorite = 1"
+    )
+    suspend fun reindexFavorites()
+
+    /** Moves every favorite from place [from] on one place later, except [exceptId]: room for a favorite that Undo puts back at [from]. */
+    @Query("UPDATE movies SET favoriteOrder = favoriteOrder + 1 WHERE isFavorite = 1 AND favoriteOrder >= :from AND id <> :exceptId")
+    suspend fun makeRoomForFavorite(from: Int, exceptId: Int)
 
     /**
      * Saves the order of the favorites in ONE statement (so a list that is watching the table never sees a half-moved

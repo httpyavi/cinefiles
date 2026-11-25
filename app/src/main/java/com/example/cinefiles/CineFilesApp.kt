@@ -4,11 +4,13 @@ import android.app.Application
 import android.os.StrictMode
 import android.util.Log
 import com.example.cinefiles.data.AppDatabase
+import com.example.cinefiles.data.AvatarStore
 import com.example.cinefiles.data.DiaryImageStore
 import com.example.cinefiles.data.MovieRepository
 import com.example.cinefiles.data.TmdbApi
 import com.example.cinefiles.data.UserSettings
 import kotlin.concurrent.thread
+import kotlinx.coroutines.runBlocking
 
 /**
  * The Application class. Android creates it once when the app process starts, before any screen.
@@ -26,6 +28,9 @@ class CineFilesApp : Application() {
 
     /** The private folder with the copies of the gallery pictures that diary pages use (see data/DiaryImageStore.kt). */
     val diaryImages: DiaryImageStore by lazy { DiaryImageStore(this) }
+
+    /** The private copy of the user's profile photo (see data/AvatarStore.kt). */
+    val avatarStore: AvatarStore by lazy { AvatarStore(this) }
 
     /**
      * The only way to get movies: from TMDB and from the database. It makes the TMDB API (one network client for
@@ -65,6 +70,13 @@ class CineFilesApp : Application() {
             userSettings
             movieRepository
             diaryImages.prepare()
+            // Tidy up the diary's picture folder: pictures no page uses as its cover any more are deleted. If the database cannot be
+            // read, nothing is deleted (a page must never lose its picture because of a hiccup).
+            try {
+                runBlocking { diaryImages.deleteUnused(database.diaryDao().coverAddresses()) }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not tidy the diary pictures", e)
+            }
         }
     }
 

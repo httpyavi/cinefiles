@@ -1,6 +1,7 @@
 package com.example.cinefiles.ui.profile
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,6 +9,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
+import com.example.cinefiles.data.AvatarLook
 import com.example.cinefiles.data.CollectionCounts
 import com.example.cinefiles.data.FavoriteResult
 import com.example.cinefiles.data.Movie
@@ -19,7 +21,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Holds data for the Profile tab: the name, the numbers, your taste, the 4 favorites (in the order you dragged them to),
+ * Holds data for the Profile tab: the name and the profile photo, the numbers, your taste, the 4 favorites (in the order you dragged them to),
  * the watched movies the favorites picker offers, and the number of diary pages.
  */
 class ProfileViewModel(app: Application) : AndroidViewModel(app) {
@@ -27,9 +29,13 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     private val settings = (app as CineFilesApp).userSettings
     private val repository = (app as CineFilesApp).movieRepository
     private val diaryImages = (app as CineFilesApp).diaryImages
+    private val avatarStore = (app as CineFilesApp).avatarStore
 
     /** The user's display name ("Movie Lover" until they edit it). */
     val name: LiveData<String> = settings.name
+
+    /** The avatar: the profile photo, or the first letter of the name until the user picks one. */
+    val avatarLook: LiveData<AvatarLook> = settings.avatarLook
 
     /** Top genre and liked movies count from the database. */
     val taste: LiveData<Taste> = repository.observeLiked().map { tasteOf(it) }.asLiveData()
@@ -52,6 +58,11 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     private val _dataCleared = MutableLiveData<Event<Unit>>()
     val dataCleared: LiveData<Event<Unit>> = _dataCleared
 
+    private val _photoFailed = MutableLiveData<Event<Unit>>()
+
+    /** The picture the user picked could not be used (shown once: see [Event]). */
+    val photoFailed: LiveData<Event<Unit>> = _photoFailed
+
     private val _undo = MutableLiveData<Event<UndoInfo>>()
 
     /** "Removed from your favorites. Undo" (shown once: see [Event]). */
@@ -63,6 +74,21 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     val favoriteRefused: LiveData<Event<FavoriteResult>> = _favoriteRefused
 
     fun rename(typed: String): Boolean = settings.rename(typed)
+
+    /** Makes the picture at [uri] (picked from the gallery) the profile photo: it is copied into the app first, so it never breaks. */
+    fun setPhoto(uri: Uri) {
+        viewModelScope.launch {
+            if (avatarStore.import(uri)) settings.setAvatar(avatarStore.file().path) else _photoFailed.value = Event(Unit)
+        }
+    }
+
+    /** Goes back to the first letter of the name. */
+    fun removePhoto() {
+        viewModelScope.launch {
+            settings.removeAvatar()
+            avatarStore.delete()
+        }
+    }
 
     /** Makes [movie] the next favorite. */
     fun addFavorite(movie: Movie) {
@@ -91,11 +117,12 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repository.reorderFavorites(orderedIds) }
     }
 
-    /** Clears all database data, the diary pictures and the user settings. */
+    /** Clears all database data, the diary pictures, the profile photo and the user settings. */
     fun clearMyData() {
         viewModelScope.launch {
             repository.clearAllData()
             diaryImages.deleteAll()
+            avatarStore.delete()
             settings.clear()
             _dataCleared.value = Event(Unit)
         }

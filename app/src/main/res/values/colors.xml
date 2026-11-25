@@ -85,36 +85,41 @@
     <color name="face_tear">#9ADBFF</color>     <!-- tears -->
     <color name="face_heart">#D4174A</color>    <!-- heart eyes -->
 
-    <!-- ===== Movie Diary page themes (all dark and cinematic: light text on a dark page, so the words stay readable) ===== -->
-    <!-- bg = the screen behind the page, card = a cell (block), text / text_2 = the words, accent = small details -->
+    <!-- ===== Movie Diary canvas themes (all dark and cinematic: light text on a dark page, so the words stay readable) ===== -->
+    <!-- bg = the screen behind the page, card = the page's card in the list, text / text_2 = the words, accent = small details, divider = thin lines -->
     <color name="diary_midnight_bg">#0A0A0D</color>        <!-- Midnight Obsidian -->
     <color name="diary_midnight_card">#16161C</color>
     <color name="diary_midnight_text">#F4F2EE</color>
     <color name="diary_midnight_text_2">#9B9BA8</color>
     <color name="diary_midnight_accent">#9DB0D0</color>
+    <color name="diary_midnight_divider">#2A2A33</color>
 
-    <color name="diary_crimson_bg">#1A070C</color>         <!-- Cinema Crimson -->
+    <color name="diary_charcoal_bg">#1B1917</color>        <!-- Editorial Warm Charcoal -->
+    <color name="diary_charcoal_card">#292623</color>
+    <color name="diary_charcoal_text">#EEE9E2</color>
+    <color name="diary_charcoal_text_2">#A59E94</color>
+    <color name="diary_charcoal_accent">#DDA66B</color>
+    <color name="diary_charcoal_divider">#3A3631</color>
+
+    <color name="diary_navy_bg">#0A1224</color>            <!-- Deep Navy Ink -->
+    <color name="diary_navy_card">#141E3A</color>
+    <color name="diary_navy_text">#E8ECF8</color>
+    <color name="diary_navy_text_2">#8D9AC0</color>
+    <color name="diary_navy_accent">#7C9CFF</color>
+    <color name="diary_navy_divider">#243157</color>
+
+    <color name="diary_crimson_bg">#1A070C</color>         <!-- Cinema Crimson Tint -->
     <color name="diary_crimson_card">#2A0E16</color>
     <color name="diary_crimson_text">#FBEDEE</color>
     <color name="diary_crimson_text_2">#C99AA2</color>
     <color name="diary_crimson_accent">#FF5A6E</color>
+    <color name="diary_crimson_divider">#4A1B27</color>
 
-    <color name="diary_parchment_bg">#1D1710</color>       <!-- Warm Parchment (dark) -->
-    <color name="diary_parchment_card">#2B2217</color>
-    <color name="diary_parchment_text">#F1E6D0</color>
-    <color name="diary_parchment_text_2">#B5A58A</color>
-    <color name="diary_parchment_accent">#E3B567</color>
-
-    <color name="diary_slate_bg">#0E151C</color>           <!-- Deep Slate -->
-    <color name="diary_slate_card">#19232D</color>
-    <color name="diary_slate_text">#E6EDF3</color>
-    <color name="diary_slate_text_2">#8FA1B2</color>
-    <color name="diary_slate_accent">#5FB4D6</color>
-
-    <color name="diary_sepia_bg">#21170F</color>           <!-- Vintage Sepia -->
+    <color name="diary_sepia_bg">#21170F</color>           <!-- Vintage Sepia Dark -->
     <color name="diary_sepia_card">#33261A</color>
     <color name="diary_sepia_text">#EBD9BC</color>
     <color name="diary_sepia_text_2">#AD9672</color>
     <color name="diary_sepia_accent">#D08A4E</color>
+    <color name="diary_sepia_divider">#4D3A28</color>
 
 </resources>

@@ -188,7 +188,7 @@ class HomeFragment : Fragment() {
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
         viewModel.greeting.observe(viewLifecycleOwner) { binding.greetingText.setText(it) }
         viewModel.userName.observe(viewLifecycleOwner) { binding.userNameText.text = it }
-        viewModel.avatarInitial.observe(viewLifecycleOwner) { binding.avatarButton.text = it }
+        viewModel.avatarLook.observe(viewLifecycleOwner) { binding.avatarButton.show(it.letter, it.photo) }
         viewModel.counts.observe(viewLifecycleOwner) { counts ->
             // Written the way the phone's language does
             binding.likedCount.text = counts.liked.formatted()

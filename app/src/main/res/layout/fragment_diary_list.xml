@@ -47,6 +47,8 @@
                 android:layout_marginStart="@dimen/space_12"
                 android:layout_weight="1"
                 android:accessibilityHeading="true"
+                android:background="?attr/selectableItemBackground"
+                android:drawablePadding="@dimen/space_4"
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="@string/diary_list_title"

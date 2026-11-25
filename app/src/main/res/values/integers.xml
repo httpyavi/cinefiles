@@ -2,4 +2,6 @@
 <resources>
     <!-- The longest display name: the Edit dialog's text field stops here, and UserSettings cuts to it too -->
     <integer name="name_max_length">20</integer>
+    <!-- The longest headline of a diary page -->
+    <integer name="diary_headline_max_length">120</integer>
 </resources>

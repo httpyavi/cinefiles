@@ -71,17 +71,35 @@
             </LinearLayout>
 
             <!-- ===== User Profile Header ===== -->
-            <TextView
-                android:id="@+id/profileAvatar"
+            <!-- The photo (or the first letter of the name); tapping it opens the photo chooser. The small camera says so. -->
+            <FrameLayout
+                android:id="@+id/profileAvatarFrame"
                 android:layout_width="@dimen/avatar_large_size"
                 android:layout_height="@dimen/avatar_large_size"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/space_20"
-                android:background="@drawable/bg_avatar"
-                android:gravity="center"
-                android:importantForAccessibility="no"
-                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
-                tools:text="M" />
+                android:clickable="true"
+                android:contentDescription="@string/profile_photo_change_description"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                <com.example.cinefiles.ui.components.AvatarView
+                    android:id="@+id/profileAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:avatarTextAppearance="@style/TextAppearance.CineFiles.LargeTitle" />
+
+                <ImageView
+                    android:id="@+id/profileAvatarBadge"
+                    android:layout_width="@dimen/avatar_badge_size"
+                    android:layout_height="@dimen/avatar_badge_size"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/bg_avatar_badge"
+                    android:importantForAccessibility="no"
+                    android:padding="@dimen/space_4"
+                    android:src="@drawable/ic_camera"
+                    app:tint="@color/text_primary" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

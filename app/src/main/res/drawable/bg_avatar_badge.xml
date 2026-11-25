@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The round red plate behind the little camera on the profile photo, with a dark edge that separates it from the photo -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/accent" />
+    <stroke
+        android:width="@dimen/avatar_badge_edge"
+        android:color="@color/background" />
+</shape>

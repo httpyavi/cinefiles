@@ -1,75 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- THE STYLE OF A PAGE (DiaryStyleSheet): a bottom sheet with the four fonts and the five backgrounds as small cards. Tapping
-     one changes the page behind the sheet at once. The cards are made from code (item_diary_style_option). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- THE STYLE OF A PAGE (DiaryStyleSheet): a bottom sheet with the five fonts, the three text sizes and the five canvases as small cards.
+     Tapping one changes the page behind the sheet at once. The cards are made from code (item_diary_style_option). -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingTop="@dimen/space_8"
-    android:paddingBottom="@dimen/space_24">
+    android:overScrollMode="never">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:accessibilityHeading="true"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingEnd="@dimen/screen_margin"
-        android:text="@string/diary_style_title"
-        android:textAppearance="@style/TextAppearance.CineFiles.Title"
-        tools:targetApi="28" />
+        android:orientation="vertical"
+        android:paddingTop="@dimen/space_8"
+        android:paddingBottom="@dimen/space_24">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="@dimen/space_20"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="@dimen/space_8"
-        android:text="@string/diary_style_font"
-        android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
-        android:textColor="@color/accent_soft" />
-
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:overScrollMode="never"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingEnd="@dimen/screen_margin"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/fontOptions"
-            android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
+            android:accessibilityHeading="true"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:text="@string/diary_style_title"
+            android:textAppearance="@style/TextAppearance.CineFiles.Title"
+            tools:targetApi="28" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="@dimen/space_20"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="@dimen/space_8"
-        android:text="@string/diary_style_theme"
-        android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
-        android:textColor="@color/accent_soft" />
-
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:overScrollMode="never"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingEnd="@dimen/screen_margin"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/themeOptions"
-            android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
-</LinearLayout>
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_20"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8"
+            android:text="@string/diary_style_font"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/fontOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_20"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8"
+            android:text="@string/diary_style_size"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/sizeOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_20"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8"
+            android:text="@string/diary_style_canvas"
+            android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+            android:textColor="@color/accent_soft" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/themeOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

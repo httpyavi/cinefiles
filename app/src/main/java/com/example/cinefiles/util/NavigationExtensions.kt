@@ -89,14 +89,24 @@ fun NavController.openScreen(
  * Opens the Details screen for one movie.
  * A different movie opens ON TOP of the one you are looking at (tap a similar movie, then Back returns to the
  * first one). Tapping the SAME movie again while its Details is already open does nothing, so a double tap
- * cannot open it twice.
+ * cannot open it twice. With [returnIfOpenBelow] (the Diary's movie link) a Details of the same movie that is already further down the
+ * back stack is returned to, not opened again.
  */
-fun NavController.openMovieDetails(movieId: Int) {
+fun NavController.openMovieDetails(movieId: Int, returnIfOpenBelow: Boolean = false) {
     val alreadyOpen = currentDestination?.id == R.id.detailsFragment &&
         currentBackStackEntry?.arguments?.getInt(ARG_MOVIE_ID) == movieId
     if (alreadyOpen) return
+
+    // The Diary reaches Details from a page that Details itself opened (Details -> Diary -> Details): go BACK to that Details instead of
+    // stacking a second copy of it, so Back never walks through the same movie twice
+    if (returnIfOpenBelow && hasMovieDetailsBelow(movieId) && popBackStack(R.id.detailsFragment, false)) return
+
     openScreen(R.id.detailsFragment, bundleOf(ARG_MOVIE_ID to movieId), singleTop = false)
 }
+
+/** Is the nearest Details screen in the back stack the one of [movieId]? (False when there is no Details at all.) */
+private fun NavController.hasMovieDetailsBelow(movieId: Int): Boolean =
+    runCatching { getBackStackEntry(R.id.detailsFragment) }.getOrNull()?.arguments?.getInt(ARG_MOVIE_ID) == movieId
 
 /**
  * Opens the Person screen (an actor, a director or another crew member) for one TMDB person id.

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A pull-quote: a bar and two lines of quoted text. 24 dp icon. Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="true"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="2.25"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M5,5 L5,19" />
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M10,8 L20,8 M10,12.5 L20,12.5 M10,17 L16,17" />
+</vector>

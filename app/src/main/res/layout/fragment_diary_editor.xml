@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- THE DIARY EDITOR (DiaryEditorFragment): one continuous page, like an article on Substack. No boxes: the movie's name is the headline, then
-     paragraphs and pictures flow down the page (a RecyclerView: DiaryHeaderAdapter + DiaryBlockAdapter). A top bar (back, Style, Save), a
-     formatting strip that appears while a paragraph is being edited (bold, italic, left / center / right) and a bottom bar that adds a paragraph or
-     a picture. The page's background, text colors and font come from its theme and font (set from code).
+<!-- THE DIARY EDITOR (DiaryEditorFragment): one page written like a post on Substack. No boxes and no cells: the movie's name (a link to its
+     Details), the date and the rating, an optional headline, an optional cover picture, then ONE continuous body that fills the page.
+     A top bar (back, Style, Save) and a formatting strip that shows while the body or the headline is being written (bold, italic, underline,
+     heading, pull-quote and the four alignments). The page's background, text colors, font and size come from its look (set from code).
      There is no tab bar on this screen. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -68,24 +68,190 @@
         app:indicatorColor="@color/accent"
         app:trackColor="@color/glass_fill" />
 
-    <!-- ===== The page ===== -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/blockList"
+        <!-- ===== The page ===== -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/editorScroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingStart="@dimen/space_24"
-            android:paddingTop="@dimen/space_8"
-            android:paddingEnd="@dimen/space_24"
-            android:paddingBottom="@dimen/space_24"
+            android:fillViewport="true"
+            android:overScrollMode="never"
             android:scrollbars="none"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_diary_block_text" />
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/space_24"
+                android:paddingTop="@dimen/space_8"
+                android:paddingEnd="@dimen/space_24"
+                android:paddingBottom="@dimen/space_32">
+
+                <!-- The movie: a link to its Details, with the date and the rating the page was written with -->
+                <LinearLayout
+                    android:id="@+id/movieLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/touch_target"
+                    android:orientation="horizontal"
+                    android:paddingTop="@dimen/space_4"
+                    android:paddingBottom="@dimen/space_4">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/moviePoster"
+                        android:layout_width="@dimen/diary_poster_thumb_width"
+                        android:layout_height="@dimen/diary_poster_thumb_height"
+                        android:background="@color/surface"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Small" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/movieTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:drawablePadding="@dimen/space_4"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                            app:drawableEndCompat="@drawable/ic_chevron_right"
+                            tools:text="Emergency Declaration" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/pageDate"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                                tools:text="Nov 25, 2026" />
+
+                            <com.example.cinefiles.ui.components.PopcornRatingView
+                                android:id="@+id/pageRating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_12"
+                                android:visibility="gone"
+                                app:interactive="false"
+                                app:popcornGap="@dimen/popcorn_gap_small"
+                                app:popcornSize="@dimen/popcorn_size_small"
+                                tools:visibility="visible" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- The headline (optional) -->
+                <EditText
+                    android:id="@+id/headlineInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@null"
+                    android:hint="@string/diary_headline_hint"
+                    android:imeOptions="actionNext"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapSentences"
+                    android:maxLength="@integer/diary_headline_max_length"
+                    android:padding="0dp"
+                    tools:ignore="LabelFor"
+                    tools:text="A film about trust" />
+
+                <!-- The cover (optional): a picture across the page with a quiet pill to replace or remove it, or the way to add one -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/coverAdd"
+                    style="@style/Widget.CineFiles.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:text="@string/diary_cover_add"
+                    app:icon="@drawable/ic_image"
+                    app:iconTint="@color/text_secondary" />
+
+                <FrameLayout
+                    android:id="@+id/coverBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/coverImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/diary_cover_height"
+                        android:background="@color/surface"
+                        android:contentDescription="@string/diary_cover_description"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Small" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="@dimen/space_8"
+                        android:background="@drawable/bg_image_tools"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_4">
+
+                        <ImageButton
+                            android:id="@+id/coverReplace"
+                            style="@style/Widget.CineFiles.ImageTool"
+                            android:contentDescription="@string/diary_cover_replace"
+                            android:src="@drawable/ic_image" />
+
+                        <ImageButton
+                            android:id="@+id/coverRemove"
+                            style="@style/Widget.CineFiles.ImageTool"
+                            android:contentDescription="@string/diary_cover_remove"
+                            android:src="@drawable/ic_delete" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/headerRule"
+                    android:layout_width="@dimen/diary_rule_width"
+                    android:layout_height="@dimen/diary_rule_height"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:importantForAccessibility="no" />
+
+                <!-- The body: one continuous canvas, no border -->
+                <com.example.cinefiles.ui.diary.RichEditText
+                    android:id="@+id/bodyInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@null"
+                    android:gravity="top"
+                    android:hint="@string/diary_text_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:minHeight="@dimen/diary_body_min_height"
+                    android:padding="0dp" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
         <FrameLayout
             android:id="@+id/editorStates"
@@ -109,96 +275,91 @@
         </FrameLayout>
     </FrameLayout>
 
-    <!-- ===== Formatting strip: only while a paragraph is being edited ===== -->
-    <LinearLayout
+    <!-- ===== Formatting strip: while the page is being written ===== -->
+    <HorizontalScrollView
         android:id="@+id/formatBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/glass_dark"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="@dimen/space_8"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="@dimen/space_4"
+        android:overScrollMode="never"
+        android:scrollbars="none"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <TextView
-            android:id="@+id/formatBold"
-            style="@style/Widget.CineFiles.FormatButton"
-            android:contentDescription="@string/diary_format_bold"
-            android:text="@string/diary_format_bold_letter"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/formatItalic"
-            style="@style/Widget.CineFiles.FormatButton"
-            android:contentDescription="@string/diary_format_italic"
-            android:text="@string/diary_format_italic_letter"
-            android:textStyle="italic" />
-
-        <View
-            android:layout_width="@dimen/glass_stroke_width"
-            android:layout_height="@dimen/icon_size"
-            android:layout_marginStart="@dimen/space_8"
-            android:layout_marginEnd="@dimen/space_8"
-            android:background="@color/glass_stroke"
-            android:importantForAccessibility="no" />
-
-        <ImageButton
-            android:id="@+id/alignLeft"
-            style="@style/Widget.CineFiles.FormatButton"
-            android:contentDescription="@string/diary_align_left"
-            android:src="@drawable/ic_align_left" />
-
-        <ImageButton
-            android:id="@+id/alignCenter"
-            style="@style/Widget.CineFiles.FormatButton"
-            android:contentDescription="@string/diary_align_center"
-            android:src="@drawable/ic_align_center" />
-
-        <ImageButton
-            android:id="@+id/alignRight"
-            style="@style/Widget.CineFiles.FormatButton"
-            android:contentDescription="@string/diary_align_right"
-            android:src="@drawable/ic_align_right" />
-    </LinearLayout>
-
-    <!-- ===== Add a paragraph or a picture ===== -->
-    <LinearLayout
-        android:id="@+id/editorAddBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/glass_dark"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="@dimen/space_8"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="@dimen/space_12">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addText"
-            style="@style/Widget.CineFiles.Button.Tonal.Fit"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/space_4"
-            android:layout_weight="1"
-            android:contentDescription="@string/diary_add_text_description"
-            android:text="@string/diary_add_text"
-            app:icon="@drawable/ic_text_lines"
-            app:iconGravity="textStart" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addImage"
-            style="@style/Widget.CineFiles.Button.Tonal.Fit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/space_4"
-            android:layout_weight="1"
-            android:contentDescription="@string/diary_add_image_description"
-            android:text="@string/diary_add_image"
-            app:icon="@drawable/ic_image"
-            app:iconGravity="textStart" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/formatBold"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_format_bold"
+                android:text="@string/diary_format_bold_letter"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/formatItalic"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_format_italic"
+                android:text="@string/diary_format_italic_letter"
+                android:textStyle="italic" />
+
+            <TextView
+                android:id="@+id/formatUnderline"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_format_underline"
+                android:text="@string/diary_format_underline_letter" />
+
+            <TextView
+                android:id="@+id/formatHeading"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_format_heading"
+                android:text="@string/diary_format_heading_letter"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/formatQuote"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_format_quote"
+                android:src="@drawable/ic_quote" />
+
+            <View
+                android:layout_width="@dimen/glass_stroke_width"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/space_4"
+                android:layout_marginEnd="@dimen/space_8"
+                android:background="@color/glass_stroke"
+                android:importantForAccessibility="no" />
+
+            <ImageButton
+                android:id="@+id/alignLeft"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_align_left"
+                android:src="@drawable/ic_align_left" />
+
+            <ImageButton
+                android:id="@+id/alignCenter"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_align_center"
+                android:src="@drawable/ic_align_center" />
+
+            <ImageButton
+                android:id="@+id/alignRight"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_align_right"
+                android:src="@drawable/ic_align_right" />
+
+            <ImageButton
+                android:id="@+id/alignJustify"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_align_justify"
+                android:src="@drawable/ic_align_justify" />
+        </LinearLayout>
+    </HorizontalScrollView>
 </LinearLayout>

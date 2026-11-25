@@ -5,55 +5,109 @@ import android.text.Editable
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.style.QuoteSpan
+import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import androidx.core.text.HtmlCompat
-import com.example.cinefiles.logic.DiaryBlock
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * The bold and italic of a diary paragraph, with no library: a bold word is a [StyleSpan] on the text, and a block saves its text as HTML with
- * `HtmlCompat.toHtml` (and reads it back with `HtmlCompat.fromHtml`). Only bold and italic are ever written, so the HTML stays tiny.
+ * The rich text of a diary page, with no library: words are written with Android's own spans and saved as HTML with `HtmlCompat.toHtml`
+ * (read back with `HtmlCompat.fromHtml`). Only a handful of things are ever written, so the HTML stays tiny and reads back the same:
+ *
+ *  - INLINE: bold ([Typeface.BOLD]), italic ([Typeface.ITALIC]) and [UNDERLINE]: `<b>`, `<i>`, `<u>`;
+ *  - one KIND per paragraph ([Block]): a plain paragraph `<p>`, a HEADING (a bold, larger paragraph: `<h2>`) or a PULL-QUOTE (a bar and an
+ *    indent: `<blockquote>`). toHtml of the framework does not know a heading, so every paragraph is written on its own and given its tag here.
  *
  * Toggling works like any editor: with words selected, the style is switched on (or off, when all of them already have it); with only a cursor,
  * it is switched for what is typed next (a zero-length span at the cursor grows as letters are typed into it).
  */
 object RichText {
 
+    /** The "style" of the underline, next to [Typeface.BOLD] and [Typeface.ITALIC] (they are all passed to [toggle] and [isActive]). */
+    const val UNDERLINE = 100
+
+    /** The kind of a paragraph. */
+    enum class Block { BODY, HEADING, QUOTE }
+
+    private const val HEADING_SIZE = 1.4f      // what an <h2> is in HtmlCompat.fromHtml
+    private const val HEADING_MIN_SIZE = 1.2f  // a paragraph covered by a bigger span than this is a heading
+    private const val INLINE_START_END = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+
+    private val OPEN_PARAGRAPH = Regex("^<p[^>]*>")
+    private const val CLOSE_PARAGRAPH = "</p>"
+    private const val EMPTY_PARAGRAPH = "<p dir=\"ltr\"><br></p>"
+
     // ---------- Saving and loading ----------
 
-    /** What an editor shows for [block]: styled for a rich block, plain words with their line breaks otherwise. */
-    fun toSpanned(block: DiaryBlock): SpannableStringBuilder {
-        if (!block.html) return SpannableStringBuilder(block.text)
-        val spanned = SpannableStringBuilder(HtmlCompat.fromHtml(block.text, HtmlCompat.FROM_HTML_MODE_COMPACT))
+    /**
+     * What an editor shows for [html]: styled text. The plain blue [QuoteSpan] that fromHtml makes for a `<blockquote>` becomes a [PullQuoteSpan]
+     * in [quoteColor], and the spans are tidied (one bold span per heading, no twin spans) so that saving and loading again never changes them.
+     */
+    fun toSpanned(html: String, quoteColor: Int, quoteBar: Int, quoteGap: Int): SpannableStringBuilder {
+        val spanned = SpannableStringBuilder(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT))
         // fromHtml ends every paragraph with a line break: the last one is not the user's
         while (spanned.isNotEmpty() && spanned[spanned.length - 1] == '\n') spanned.delete(spanned.length - 1, spanned.length)
+        tidy(spanned)
+        restyleQuotes(spanned, quoteColor, quoteBar, quoteGap)
         return spanned
     }
 
-    /** The HTML to save for what is typed: only the bold and italic spans are kept (an input method may leave its own spans in the text). */
+    /** The HTML to save for [text]: one tag per paragraph, only bold, italic and underline inside (an input method may leave its own spans). */
     fun toHtml(text: Spanned): String {
-        val clean = SpannableStringBuilder(text.toString())
-        for (span in text.getSpans(0, text.length, StyleSpan::class.java)) {
-            val start = text.getSpanStart(span)
-            val end = text.getSpanEnd(span)
-            if (end > start && (span.style == Typeface.BOLD || span.style == Typeface.ITALIC || span.style == Typeface.BOLD_ITALIC)) {
-                clean.setSpan(StyleSpan(span.style), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val whole = text.toString()
+        val ranges = ArrayList<IntRange>()
+        var start = 0
+        while (true) {
+            val newline = whole.indexOf('\n', start)
+            val end = if (newline < 0) whole.length else newline
+            ranges += start until end
+            if (newline < 0) break
+            start = newline + 1
+        }
+        while (ranges.isNotEmpty() && ranges.last().isEmpty()) ranges.removeAt(ranges.lastIndex) // trailing blank lines are not worth keeping
+        return ranges.joinToString("") { paragraphHtml(text, it.first, it.last + 1) }
+    }
+
+    private fun paragraphHtml(text: Spanned, start: Int, end: Int): String {
+        if (start == end) return EMPTY_PARAGRAPH
+        val block = blockOf(text, start, end)
+        val slice = SpannableStringBuilder(text.subSequence(start, end)) // the spans are cut to the paragraph
+        val clean = SpannableStringBuilder(slice.toString())
+        for (span in slice.getSpans(0, slice.length, Any::class.java)) {
+            val s = slice.getSpanStart(span)
+            val e = slice.getSpanEnd(span)
+            if (e <= s) continue
+            when {
+                span is StyleSpan && span.style in INLINE_STYLES -> {
+                    // a heading is bold by itself
+                    val style = if (block == Block.HEADING) span.style and Typeface.BOLD.inv() else span.style
+                    if (style != Typeface.NORMAL) clean.setSpan(StyleSpan(style), s, e, INLINE_START_END)
+                }
+                span is UnderlineSpan && !isComposing(slice, span) -> clean.setSpan(UnderlineSpan(), s, e, INLINE_START_END)
             }
         }
-        return HtmlCompat.toHtml(clean, HtmlCompat.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE).trim()
+        val inner = HtmlCompat.toHtml(clean, HtmlCompat.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE).trim()
+            .replace(OPEN_PARAGRAPH, "").removeSuffix(CLOSE_PARAGRAPH)
+        return when (block) {
+            Block.BODY -> "<p dir=\"ltr\">$inner</p>"
+            Block.HEADING -> "<h2>$inner</h2>"
+            Block.QUOTE -> "<blockquote><p dir=\"ltr\">$inner</p></blockquote>"
+        }
     }
 
     // ---------- Asking ----------
 
     /**
-     * Does [style] ([Typeface.BOLD] or [Typeface.ITALIC]) apply to the selection from [start] to [end]? For words: all of them have it.
-     * For a cursor ([start] == [end]): the next letter typed will have it.
+     * Does [style] ([Typeface.BOLD], [Typeface.ITALIC] or [UNDERLINE]) apply to the selection from [start] to [end]? For words: all of them
+     * have it. For a cursor ([start] == [end]): the next letter typed will have it.
      */
     fun isActive(text: Spanned, style: Int, start: Int, end: Int): Boolean {
         val from = min(start, end)
         val to = max(start, end)
-        val spans = styleSpans(text, style)
+        val spans = spansOf(text, style)
         if (from == to) {
             return spans.any { span ->
                 val s = text.getSpanStart(span)
@@ -74,6 +128,12 @@ object RichText {
         return reached >= to
     }
 
+    /** The kind of the paragraph that has the cursor (or the one the selection starts in). */
+    fun blockAt(text: Spanned, start: Int): Block {
+        val from = paragraphStart(text, start)
+        return blockOf(text, from, paragraphEnd(text, start))
+    }
+
     // ---------- Changing ----------
 
     /** Switches [style] for the selection from [start] to [end] (see the class comment). */
@@ -86,12 +146,58 @@ object RichText {
             removeStyle(text, style, from, to)
         } else {
             removeStyle(text, style, from, to) // one clean span instead of overlapping pieces
-            text.setSpan(StyleSpan(style), from, to, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            text.setSpan(newSpan(style), from, to, INLINE_START_END)
         }
     }
 
+    /**
+     * Makes the paragraphs of the selection from [start] to [end] a [target] paragraph. When the paragraph with the cursor already is one,
+     * they all go back to plain paragraphs (so the same button switches it on and off).
+     */
+    fun toggleBlock(text: Editable, target: Block, start: Int, end: Int, quoteColor: Int, quoteBar: Int, quoteGap: Int) {
+        val from = paragraphStart(text, min(start, end))
+        val to = paragraphEnd(text, max(start, end))
+        val result = if (blockAt(text, min(start, end)) == target) Block.BODY else target
+
+        removeBlocks(text, from, to)
+        when (result) {
+            Block.HEADING -> {
+                text.setSpan(RelativeSizeSpan(HEADING_SIZE), from, to, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+                text.setSpan(StyleSpan(Typeface.BOLD), from, to, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+            }
+            Block.QUOTE -> splitIntoQuotes(text, from, to, quoteColor, quoteBar, quoteGap)
+            Block.BODY -> Unit
+        }
+    }
+
+    /** Gives every pull-quote the bar of [color] (the page's accent changes with its theme). */
+    fun restyleQuotes(text: Editable, color: Int, bar: Int, gap: Int) {
+        for (span in text.getSpans(0, text.length, QuoteSpan::class.java)) {
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            text.removeSpan(span)
+            setQuote(text, s, e, color, bar, gap)
+        }
+    }
+
+    // ---------- Inside: inline styles ----------
+
+    private val INLINE_STYLES = intArrayOf(Typeface.BOLD, Typeface.ITALIC, Typeface.BOLD_ITALIC)
+
+    private fun newSpan(style: Int): Any = if (style == UNDERLINE) UnderlineSpan() else StyleSpan(style)
+
+    private fun spansOf(text: Spanned, style: Int): List<Any> =
+        if (style == UNDERLINE) {
+            text.getSpans(0, text.length, UnderlineSpan::class.java).filter { !isComposing(text, it) }
+        } else {
+            text.getSpans(0, text.length, StyleSpan::class.java).filter { it.style == style }
+        }
+
+    /** The keyboard underlines the word it is composing with an UnderlineSpan flagged "composing": that one is not the user's. */
+    private fun isComposing(text: Spanned, span: Any) = text.getSpanFlags(span) and Spanned.SPAN_COMPOSING != 0
+
     private fun toggleAtCursor(text: Editable, style: Int, position: Int) {
-        val spans = styleSpans(text, style)
+        val spans = spansOf(text, style)
         val marker = spans.firstOrNull { text.getSpanStart(it) == position && text.getSpanEnd(it) == position }
         if (marker != null) {
             text.removeSpan(marker) // the style was switched on for the next letters: switch it off again
@@ -103,26 +209,115 @@ object RichText {
             val s = text.getSpanStart(inside)
             val e = text.getSpanEnd(inside)
             text.removeSpan(inside)
-            text.setSpan(StyleSpan(style), s, position, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            text.setSpan(StyleSpan(style), position, e, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            text.setSpan(newSpan(style), s, position, INLINE_START_END)
+            text.setSpan(newSpan(style), position, e, INLINE_START_END)
             return
         }
         // Switched on: an empty span at the cursor that grows with every letter typed into it
-        text.setSpan(StyleSpan(style), position, position, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+        text.setSpan(newSpan(style), position, position, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
     }
 
     /** Takes [style] away from [from] to [to], keeping it on the parts of the spans that stick out. */
     private fun removeStyle(text: Editable, style: Int, from: Int, to: Int) {
-        for (span in styleSpans(text, style)) {
+        for (span in spansOf(text, style)) {
             val s = text.getSpanStart(span)
             val e = text.getSpanEnd(span)
             if (e <= from || s >= to) continue
             text.removeSpan(span)
-            if (s < from) text.setSpan(StyleSpan(style), s, from, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            if (e > to) text.setSpan(StyleSpan(style), to, e, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (s < from) text.setSpan(newSpan(style), s, from, INLINE_START_END)
+            if (e > to) text.setSpan(newSpan(style), to, e, INLINE_START_END)
         }
     }
 
-    private fun styleSpans(text: Spanned, style: Int): List<StyleSpan> =
-        text.getSpans(0, text.length, StyleSpan::class.java).filter { it.style == style }
+    // ---------- Inside: paragraphs ----------
+
+    private fun paragraphStart(text: CharSequence, position: Int): Int {
+        val before = min(position, text.length)
+        return if (before == 0) 0 else text.lastIndexOf('\n', before - 1) + 1
+    }
+
+    private fun paragraphEnd(text: CharSequence, position: Int): Int {
+        val newline = text.indexOf('\n', min(position, text.length))
+        return if (newline < 0) text.length else newline
+    }
+
+    private fun blockOf(text: Spanned, start: Int, end: Int): Block {
+        val quoted = text.getSpans(0, text.length, QuoteSpan::class.java).any { span ->
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            s <= start && (e > start || (end == start && s == start && e == start))
+        }
+        if (quoted) return Block.QUOTE
+        val heading = text.getSpans(start, end, RelativeSizeSpan::class.java).any { span ->
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            span.sizeChange >= HEADING_MIN_SIZE && s <= start && e >= end && (end > start || s == start)
+        }
+        return if (heading) Block.HEADING else Block.BODY
+    }
+
+    /** Takes the heading and the pull-quote away from the paragraphs between [from] and [to], keeping them on the parts that stick out. */
+    private fun removeBlocks(text: Editable, from: Int, to: Int) {
+        for (span in text.getSpans(from, to, RelativeSizeSpan::class.java)) {
+            if (span.sizeChange < HEADING_MIN_SIZE) continue
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            text.removeSpan(span)
+            if (s < from) text.setSpan(RelativeSizeSpan(span.sizeChange), s, from, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+            if (e > to) text.setSpan(RelativeSizeSpan(span.sizeChange), to, e, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+        }
+        // A heading is bold by itself, so its bold goes with it
+        if (blockAt(text, from) != Block.QUOTE) removeStyle(text, Typeface.BOLD, from, to)
+        for (span in text.getSpans(0, text.length, PullQuoteSpan::class.java)) {
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            if (e < from || s > to) continue
+            text.removeSpan(span)
+            if (s < from) setQuote(text, s, from, span.color, span.barWidth, span.gap)
+            if (e > to + 1) setQuote(text, to + 1, e, span.color, span.barWidth, span.gap)
+        }
+    }
+
+    private fun splitIntoQuotes(text: Editable, from: Int, to: Int, color: Int, bar: Int, gap: Int) {
+        // One quote span per paragraph: the paragraph's own text, and its line break when it has one
+        var start = from
+        while (start <= to) {
+            val end = paragraphEnd(text, start)
+            setQuote(text, start, min(end + 1, text.length), color, bar, gap)
+            if (end >= to) break
+            start = end + 1
+        }
+    }
+
+    /** A pull-quote from [start] to [end]; the ends are moved to the borders of their paragraphs (a paragraph span needs that). */
+    private fun setQuote(text: Editable, start: Int, end: Int, color: Int, bar: Int, gap: Int) {
+        val from = paragraphStart(text, start)
+        var to = if (end >= text.length) text.length else paragraphEnd(text, max(end - 1, 0)).let { min(it + 1, text.length) }
+        if (to < from) to = from
+        // An empty last line has nothing yet for a paragraph span to hold on to: it grows with what is typed there instead
+        val flags = if (from == to && to == text.length) Spannable.SPAN_INCLUSIVE_INCLUSIVE else Spanned.SPAN_PARAGRAPH
+        text.setSpan(PullQuoteSpan(color, bar, gap), from, to, flags)
+    }
+
+    /** Keeps one bold span per heading and no twins: what fromHtml made of `<h2><b>..</b></h2>` would otherwise grow with every save. */
+    private fun tidy(text: Spannable) {
+        val seen = HashSet<Triple<Int, Int, Int>>()
+        for (span in text.getSpans(0, text.length, StyleSpan::class.java)) {
+            val key = Triple(span.style, text.getSpanStart(span), text.getSpanEnd(span))
+            if (!seen.add(key)) text.removeSpan(span)
+        }
+        // Headings and their bold type like the user's own (a new letter at either end stays in the heading)
+        for (span in text.getSpans(0, text.length, RelativeSizeSpan::class.java)) {
+            if (span.sizeChange < HEADING_MIN_SIZE) continue
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            text.setSpan(span, s, e, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+            for (bold in text.getSpans(s, e, StyleSpan::class.java)) {
+                if (bold.style == Typeface.BOLD && text.getSpanStart(bold) == s && text.getSpanEnd(bold) == e) {
+                    text.setSpan(bold, s, e, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+                }
+            }
+        }
+    }
+
 }

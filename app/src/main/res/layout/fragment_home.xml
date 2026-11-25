@@ -211,19 +211,16 @@
                         app:tint="@color/text_primary" />
 
                     <!-- The ring is drawn by bg_avatar (40 dp); the view is 48 dp so it is easy to tap -->
-                    <TextView
+                    <com.example.cinefiles.ui.components.AvatarView
                         android:id="@+id/avatarButton"
                         android:layout_width="@dimen/touch_target"
                         android:layout_height="@dimen/touch_target"
                         android:layout_marginStart="@dimen/space_4"
-                        android:background="@drawable/bg_avatar"
                         android:clickable="true"
                         android:contentDescription="@string/nav_profile"
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless"
-                        android:gravity="center"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Headline"
-                        tools:text="M" />
+                        app:avatarTextAppearance="@style/TextAppearance.CineFiles.Headline" />
 
                 </LinearLayout>
             </FrameLayout>

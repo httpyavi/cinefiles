@@ -34,6 +34,8 @@ class FakeDiaryDao : DiaryDao {
 
     override suspend fun getAll(): List<DiaryEntry> = newestFirst(rows.value)
 
+    override suspend fun coverAddresses(): List<String> = rows.value.mapNotNull { it.coverImageUri }
+
     override fun observeCount(): Flow<Int> = rows.map { it.size }
 
     override suspend fun count(): Int = rows.value.size

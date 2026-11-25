@@ -5,15 +5,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
+import com.example.cinefiles.data.AvatarLook
 import com.example.cinefiles.data.CollectionCounts
 import com.example.cinefiles.data.friendlyError
 import com.example.cinefiles.logic.DayPart
 import com.example.cinefiles.logic.dayPartForHour
-import com.example.cinefiles.logic.initialOf
 import com.example.cinefiles.logic.pickFeatured
 import com.example.cinefiles.util.currentDayOfYear
 import com.example.cinefiles.util.currentHour
@@ -42,9 +41,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     // change your watchlist anywhere in the app, the numbers change by themselves. They work offline.
     val counts: LiveData<CollectionCounts> = repository.observeCounts().asLiveData()
 
-    // The name from the Profile screen ("Movie Lover" until the user edits it), and its first letter for the avatar
+    // The name from the Profile screen ("Movie Lover" until the user edits it), and the avatar: the photo, or the name's first letter
     val userName: LiveData<String> = settings.name
-    val avatarInitial: LiveData<String> = settings.name.map { initialOf(it) }
+    val avatarLook: LiveData<AvatarLook> = settings.avatarLook
 
     private var loadJob: Job? = null
 

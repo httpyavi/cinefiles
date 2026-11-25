@@ -4,12 +4,16 @@ import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.signature.ObjectKey
 import com.example.cinefiles.R
+import com.example.cinefiles.data.Avatar
 import com.example.cinefiles.ui.components.ShimmerDrawable
+import java.io.File
 
 /**
  * Loads a picture from the web into this ImageView with Glide.
@@ -61,4 +65,38 @@ fun ImageView.loadImage(
         })
     }
     request.into(this)
+}
+
+/**
+ * Loads the user's profile photo ([avatar]) into this ImageView, cropped to a circle, or clears the view when there is none.
+ * [onResult] is told true when the photo is showing, or false when there is none or the file cannot be read (the caller then shows
+ * the first letter of the name instead). The photo is a file of the app's own storage, so nothing is cached on the disk: the
+ * [Avatar.version] is the cache key, so a new photo always replaces the old one on the screen.
+ */
+fun ImageView.loadUserAvatar(avatar: Avatar?, onResult: (loaded: Boolean) -> Unit) {
+    if (avatar == null) {
+        Glide.with(this).clear(this)
+        setImageDrawable(null)
+        onResult(false)
+        return
+    }
+    Glide.with(this)
+        .load(File(avatar.path))
+        .signature(ObjectKey(avatar.version))
+        .diskCacheStrategy(DiskCacheStrategy.NONE)
+        .circleCrop()
+        .listener(object : RequestListener<Drawable> {
+            override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
+                onResult(false)
+                return false
+            }
+
+            override fun onResourceReady(
+                resource: Drawable, model: Any, target: Target<Drawable>?, dataSource: DataSource, isFirstResource: Boolean
+            ): Boolean {
+                onResult(true)
+                return false
+            }
+        })
+        .into(this)
 }

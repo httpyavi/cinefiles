@@ -15,6 +15,7 @@ import com.example.cinefiles.databinding.FragmentDiaryListBinding
 import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openDiaryEditor
+import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.openTab
 import com.example.cinefiles.util.shake
 import com.example.cinefiles.util.show
@@ -60,6 +61,7 @@ class DiaryListFragment : Fragment() {
 
         val adapter = DiaryEntryAdapter(
             onOpen = { entry -> findNavController().openDiaryEditor(entryId = entry.id, movieId = entry.movieId) },
+            onOpenMovie = { entry -> findNavController().openMovieDetails(entry.movieId, returnIfOpenBelow = true) },
             onDelete = { entry -> confirmDelete(entry) }
         )
         binding.diaryList.adapter = adapter
@@ -68,6 +70,12 @@ class DiaryListFragment : Fragment() {
         // "Diary: Interstellar" for one movie, "My Diary" for all of them
         viewModel.movieTitle.observe(viewLifecycleOwner) { title ->
             binding.diaryTitle.text = if (title != null) getString(R.string.diary_list_movie_title, title) else getString(R.string.diary_list_title)
+        }
+        if (forOneMovie) {
+            // "Diary: Interstellar" is a link to that movie's Details, like the movie's name on a page
+            binding.diaryTitle.isClickable = true
+            binding.diaryTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_chevron_right, 0)
+            binding.diaryTitle.setOnClickListener { findNavController().openMovieDetails(viewModel.movieId, returnIfOpenBelow = true) }
         }
 
         binding.stateEmpty.show(

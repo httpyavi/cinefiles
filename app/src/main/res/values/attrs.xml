@@ -11,4 +11,9 @@
         <attr name="popcornGap" format="dimension" />
         <attr name="interactive" format="boolean" />
     </declare-styleable>
+
+    <!-- The user's avatar (photo or first letter): the text style of the letter -->
+    <declare-styleable name="AvatarView">
+        <attr name="avatarTextAppearance" format="reference" />
+    </declare-styleable>
 </resources>

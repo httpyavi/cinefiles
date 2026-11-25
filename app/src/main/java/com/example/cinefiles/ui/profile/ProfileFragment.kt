@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -20,7 +22,6 @@ import com.example.cinefiles.databinding.FragmentProfileBinding
 import com.example.cinefiles.logic.CollectionTab
 import com.example.cinefiles.logic.MAX_FAVORITES
 import com.example.cinefiles.logic.Taste
-import com.example.cinefiles.logic.initialOf
 import com.example.cinefiles.ui.collection.CollectionViewModel
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.applySystemBarsPadding
@@ -48,6 +49,11 @@ class ProfileFragment : Fragment() {
 
     private lateinit var favoritesAdapter: FavoritesAdapter
 
+    /** The phone's own photo picker (it falls back to the system file picker on phones that do not have one). */
+    private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) viewModel.setPhoto(uri)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -66,6 +72,7 @@ class ProfileFragment : Fragment() {
 
         binding.aboutVersion.text = getString(R.string.profile_about_version, BuildConfig.VERSION_NAME)
         binding.profileEdit.setOnClickListener { showEditNameDialog() }
+        binding.profileAvatarFrame.setOnClickListener { showPhotoChooser() }
         binding.clearData.setOnClickListener { showClearDataDialog() }
 
         setUpFavorites()
@@ -79,9 +86,10 @@ class ProfileFragment : Fragment() {
     }
 
     private fun observeData() {
-        viewModel.name.observe(viewLifecycleOwner) { name ->
-            binding.profileName.text = name
-            binding.profileAvatar.text = initialOf(name)
+        viewModel.name.observe(viewLifecycleOwner) { binding.profileName.text = it }
+        viewModel.avatarLook.observe(viewLifecycleOwner) { binding.profileAvatar.show(it.letter, it.photo) }
+        viewModel.photoFailed.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { showMessage(R.string.profile_photo_failed, aboveTabBar = true) }
         }
 
         viewModel.taste.observe(viewLifecycleOwner) { showTaste(it) }
@@ -183,7 +191,22 @@ class ProfileFragment : Fragment() {
     private fun likedMovies(count: Int): String =
         resources.getQuantityString(R.plurals.profile_taste_liked, count, count)
 
-    // ---------- Edit Name & Clear Data Dialogs ----------
+    // ---------- Profile photo, Edit Name & Clear Data Dialogs ----------
+
+    /** A small chooser: a picture from the gallery, and (when there is a photo) going back to the first letter of the name. */
+    private fun showPhotoChooser() {
+        val hasPhoto = viewModel.avatarLook.value?.photo != null
+        val options = buildList {
+            add(getString(R.string.profile_photo_gallery))
+            if (hasPhoto) add(getString(R.string.profile_photo_remove))
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.profile_photo_title)
+            .setItems(options) { _, which ->
+                if (which == 0) pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) else viewModel.removePhoto()
+            }
+            .show()
+    }
 
     private fun showEditNameDialog() {
         val dialogBinding = DialogEditNameBinding.inflate(layoutInflater)

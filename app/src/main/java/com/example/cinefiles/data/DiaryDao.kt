@@ -33,6 +33,10 @@ interface DiaryDao {
     @Query("SELECT * FROM diary_entries ORDER BY updatedAt DESC, id DESC")
     suspend fun getAll(): List<DiaryEntry>
 
+    /** The cover of every page that has one (to find the pictures in the app's storage that no page uses any more). */
+    @Query("SELECT coverImageUri FROM diary_entries WHERE coverImageUri IS NOT NULL")
+    suspend fun coverAddresses(): List<String>
+
     @Query("SELECT COUNT(*) FROM diary_entries")
     fun observeCount(): Flow<Int>
 

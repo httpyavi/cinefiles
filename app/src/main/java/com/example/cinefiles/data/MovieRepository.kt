@@ -2,6 +2,7 @@ package com.example.cinefiles.data
 
 import com.example.cinefiles.data.dto.MovieListResponse
 import com.example.cinefiles.data.dto.toMovies
+import com.example.cinefiles.data.dto.toStillPaths
 import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
@@ -9,14 +10,12 @@ import com.example.cinefiles.logic.DiscoverySource
 import com.example.cinefiles.logic.Languages
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.RecommendationEngine
-import com.example.cinefiles.data.dto.toStillPaths
 import com.example.cinefiles.logic.MAX_FAVORITES
 import com.example.cinefiles.logic.PopcornRating
 import com.example.cinefiles.logic.canFavorite
-import com.example.cinefiles.logic.canLike
-import com.example.cinefiles.logic.canRate
 import com.example.cinefiles.logic.canWriteDiary
 import com.example.cinefiles.logic.trendingSince
+import com.example.cinefiles.logic.withoutWatched
 import com.example.cinefiles.util.currentYear
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
@@ -314,9 +313,7 @@ class MovieRepository(
      */
     suspend fun like(movie: Movie): Boolean {
         saveIfMissing(movie)
-        if (!canLike(dao.get(movie.id))) return false
-        dao.setReaction(movie.id, Reaction.LIKED, now())
-        return true
+        return dao.like(movie.id, now()) > 0 // the query itself refuses a movie that is not watched
     }
 
     suspend fun pass(movie: Movie) {
@@ -334,6 +331,7 @@ class MovieRepository(
     suspend fun addToWatchlist(movie: Movie) {
         saveIfMissing(movie)
         dao.addToWatchlist(movie.id, now())
+        dao.reindexFavorites() // it may have been a favorite: the others close the gap
     }
 
     suspend fun removeFromWatchlist(movieId: Int) = dao.removeFromWatchlist(movieId)
@@ -345,7 +343,10 @@ class MovieRepository(
     }
 
     /** Marks as not watched. THE WATCH RULE: the like, the rating and the favorite of the movie go away with it. */
-    suspend fun unmarkWatched(movieId: Int) = dao.unmarkWatched(movieId)
+    suspend fun unmarkWatched(movieId: Int) {
+        dao.unmarkWatched(movieId)
+        dao.reindexFavorites() // it may have been a favorite: the others close the gap
+    }
 
     /**
      * Undo: puts the state of [before] back exactly as it was (the lists, and the rating and favorite that un-watching
@@ -353,22 +354,26 @@ class MovieRepository(
      * without the favorite (the limit of four wins).
      */
     suspend fun restoreState(before: Movie) {
-        val savedNow = dao.get(before.id)
-        val favoriteFits = before.isFavorite && (savedNow?.isFavorite == true || dao.countFavorites() < MAX_FAVORITES)
+        // A movie that was not watched had no like, rating or favorite: whatever the copy says, the database must not get them back
+        val state = if (before.isWatched) before else before.withoutWatched()
+        val savedNow = dao.get(state.id)
+        val favoriteFits = state.isFavorite && (savedNow?.isFavorite == true || dao.countFavorites() < MAX_FAVORITES)
+        if (favoriteFits && savedNow?.isFavorite != true) dao.makeRoomForFavorite(state.favoriteOrder, state.id) // back in its own place
         dao.restoreState(
-            id = before.id,
-            reaction = before.reaction,
-            reactedAt = before.reactedAt,
-            inWatchlist = before.inWatchlist,
-            watchlistAddedAt = before.watchlistAddedAt,
-            isWatched = before.isWatched,
-            watchedAt = before.watchedAt,
-            userRating = before.userRating,
-            ratedAt = before.ratedAt,
+            id = state.id,
+            reaction = state.reaction,
+            reactedAt = state.reactedAt,
+            inWatchlist = state.inWatchlist,
+            watchlistAddedAt = state.watchlistAddedAt,
+            isWatched = state.isWatched,
+            watchedAt = state.watchedAt,
+            userRating = state.userRating,
+            ratedAt = state.ratedAt,
             isFavorite = favoriteFits,
-            favoritedAt = if (favoriteFits) before.favoritedAt else 0L,
-            favoriteOrder = if (favoriteFits) before.favoriteOrder else 0
+            favoritedAt = if (favoriteFits) state.favoritedAt else 0L,
+            favoriteOrder = if (favoriteFits) state.favoriteOrder else 0
         )
+        dao.reindexFavorites()
     }
 
     /** Deletes every saved movie, every state and every diary page. (The gallery pictures of the pages: DiaryImageStore.) */
@@ -401,9 +406,7 @@ class MovieRepository(
             return true
         }
         saveIfMissing(movie)
-        if (!canRate(dao.get(movie.id))) return false
-        dao.setUserRating(movie.id, value, now())
-        return true
+        return dao.setUserRating(movie.id, value, now()) > 0 // the query itself refuses a movie that is not watched
     }
 
     fun observeRated(): Flow<List<Movie>> = dao.observeRated()
@@ -423,7 +426,7 @@ class MovieRepository(
     suspend fun toggleFavorite(movie: Movie): FavoriteResult {
         saveIfMissing(movie)
         if (dao.get(movie.id)?.isFavorite == true) {
-            dao.removeFavorite(movie.id)
+            removeFavorite(movie.id)
             return FavoriteResult.REMOVED
         }
         return addFavorite(movie)
@@ -435,13 +438,13 @@ class MovieRepository(
         val saved = dao.get(movie.id)
         if (saved?.isFavorite == true) return FavoriteResult.ADDED // already there
         if (!canFavorite(saved)) return FavoriteResult.NOT_WATCHED
-        if (dao.countFavorites() >= MAX_FAVORITES) return FavoriteResult.LIMIT_REACHED
-        dao.addFavorite(movie.id, now())
-        return FavoriteResult.ADDED
+        // One statement checks "watched", "not a favorite yet" and "there is room", so two quick taps can never make a fifth favorite
+        return if (dao.addFavorite(movie.id, now()) > 0) FavoriteResult.ADDED else FavoriteResult.LIMIT_REACHED
     }
 
     suspend fun removeFavorite(movieId: Int) {
         dao.removeFavorite(movieId)
+        dao.reindexFavorites()
     }
 
     /**

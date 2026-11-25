@@ -10,11 +10,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
 import com.example.cinefiles.data.DiaryEntry
-import com.example.cinefiles.logic.DiaryBlock
-import com.example.cinefiles.logic.DiaryBlocks
+import com.example.cinefiles.logic.DiaryCover
 import com.example.cinefiles.logic.DiaryFont
+import com.example.cinefiles.logic.DiaryText
+import com.example.cinefiles.logic.DiaryTextSize
 import com.example.cinefiles.logic.DiaryTheme
 import com.example.cinefiles.logic.ImageSource
+import com.example.cinefiles.logic.TextAlign
 import com.example.cinefiles.util.ARG_DIARY_ENTRY_ID
 import com.example.cinefiles.util.ARG_MOVIE_ID
 import com.example.cinefiles.util.Event
@@ -33,15 +35,19 @@ sealed class EditorState {
     /** The movie of a new page is not known (not saved, not seen in a list, TMDB cannot be reached), or the page was deleted. */
     object Missing : EditorState()
 
-    /** The page is ready (a new page starts with one empty paragraph run). */
+    /** The page is ready. [headline] and [bodyHtml] are what the screen fills its two text fields with (once). */
     data class Ready(
+        val movieId: Int,
         val movieTitle: String,
+        val posterPath: String?,
         val ratingSnapshot: Float?,
-        val date: Long
+        val date: Long,
+        val headline: String,
+        val bodyHtml: String
     ) : EditorState()
 }
 
-/** The movie stills the picture picker can offer. */
+/** The movie stills the cover picker can offer. */
 sealed class StillsState {
     object Loading : StillsState()
     object Error : StillsState()
@@ -52,10 +58,11 @@ sealed class StillsState {
  * Holds one diary page while it is edited (the navigation arguments: "entryId" of a saved page, or 0 and a "movieId" for a
  * new one). It survives a screen turn, so nothing typed is lost.
  *
- * The block list is edited by DiaryBlockAdapter, which tells [onBlocksChanged] after every change (a letter typed, a block
- * moved...). The ViewModel does not push the list back, so typing never fights with the cursor. Saving is [saveIfNeeded]:
- * the editor saves when you leave it, when the app goes to the background and when you press Save. A NEW page with nothing
- * on it is never saved. The gallery pictures that the page no longer uses are deleted after a save.
+ * The page is a headline, a body (HTML), a cover and a look (font, size, alignment, theme). The screen's two text fields are the
+ * editor itself: they tell [onHeadlineChanged] and [onBodyChanged] what they hold, and the ViewModel never pushes the text back, so typing
+ * never fights with the cursor. Saving is [saveIfNeeded]: the editor saves when you leave it, when the app goes to the background and when you
+ * press Save. A NEW page with nothing on it is never saved, and an old page that was emptied is not overwritten (the screen asks whether to
+ * delete it: [isEmptiedPage], [deletePage]). The cover files the page no longer uses are deleted after a save.
  */
 class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : AndroidViewModel(app) {
 
@@ -68,22 +75,28 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     private var posterPath: String? = null
     private var createdAt = 0L
 
-    /** The blocks as the adapter last reported them. */
-    private var blocks: List<DiaryBlock> = emptyList()
+    private var headline = ""
+    private var bodyHtml = ""
 
     private val _state = MutableLiveData<EditorState>(EditorState.Loading)
     val state: LiveData<EditorState> = _state
 
-    private val _font = MutableLiveData(DiaryFont.SANS)
+    private val _font = MutableLiveData(DiaryFont.DEFAULT)
     val font: LiveData<DiaryFont> = _font
 
-    private val _theme = MutableLiveData(DiaryTheme.MIDNIGHT)
+    private val _size = MutableLiveData(DiaryTextSize.DEFAULT)
+    val size: LiveData<DiaryTextSize> = _size
+
+    private val _align = MutableLiveData(TextAlign.DEFAULT)
+    val align: LiveData<TextAlign> = _align
+
+    private val _theme = MutableLiveData(DiaryTheme.DEFAULT)
     val theme: LiveData<DiaryTheme> = _theme
 
-    private val _newBlock = MutableLiveData<Event<DiaryBlock>>()
+    private val _cover = MutableLiveData<DiaryCover?>(null)
 
-    /** A block the user just made with a picture (from the phone or a movie still): the screen adds it to the page. */
-    val newBlock: LiveData<Event<DiaryBlock>> = _newBlock
+    /** The page's cover picture, or null. */
+    val cover: LiveData<DiaryCover?> = _cover
 
     private val _message = MutableLiveData<Event<Int>>()
 
@@ -99,8 +112,8 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     val stills: LiveData<StillsState> = _stills
 
     private var savedSnapshot = ""
-    private var loadedImages: Set<String> = emptySet()      // gallery pictures the saved page uses
-    private val importedThisTime = HashSet<String>()         // gallery pictures copied while editing, not saved yet
+    private var loadedLocalCover: String? = null           // the gallery picture the saved page uses
+    private val importedThisTime = HashSet<String>()        // gallery pictures copied while editing, not saved yet
     private val saveLock = Mutex()
 
     init {
@@ -119,12 +132,16 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
                 movieTitle = entry.movieTitle
                 posterPath = entry.posterPath
                 createdAt = entry.createdAt
-                blocks = DiaryBlocks.fromJson(entry.blocksJson)
+                headline = entry.headline
+                bodyHtml = entry.bodyHtml
+                _cover.value = DiaryCover.parse(entry.coverImageUri)
                 _font.value = DiaryFont.of(entry.fontStyle)
-                _theme.value = DiaryTheme.of(entry.backgroundTheme)
+                _size.value = DiaryTextSize.of(entry.textSize)
+                _align.value = TextAlign.of(entry.textAlignment)
+                _theme.value = DiaryTheme.of(entry.canvasTheme)
                 savedSnapshot = snapshot()
-                loadedImages = DiaryBlocks.localImages(blocks)
-                _state.value = EditorState.Ready(movieTitle, entry.ratingSnapshot, entry.updatedAt)
+                loadedLocalCover = localName(_cover.value)
+                _state.value = ready(entry.ratingSnapshot, entry.updatedAt)
             } else {
                 if (!repository.canWriteDiary(movieId)) {
                     _state.value = EditorState.Blocked
@@ -139,33 +156,50 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
                 }
                 movieTitle = movie.title
                 posterPath = movie.posterPath
-                blocks = listOf(DiaryBlocks.newText(html = true)) // a fresh page starts with one empty paragraph run
                 savedSnapshot = snapshot()
-                _state.value = EditorState.Ready(movieTitle, repository.savedMovie(movieId)?.userRating, System.currentTimeMillis())
+                _state.value = ready(repository.savedMovie(movieId)?.userRating, System.currentTimeMillis())
             }
         }
     }
 
+    private fun ready(rating: Float?, date: Long) =
+        EditorState.Ready(movieId, movieTitle, posterPath, rating, date, headline, bodyHtml)
+
     // ---------- Editing ----------
 
-    /** The adapter reports the blocks after every change. */
-    fun onBlocksChanged(list: List<DiaryBlock>) {
-        blocks = list
+    /** The headline field says [text] now. */
+    fun onHeadlineChanged(text: String) {
+        headline = text
     }
 
-    /** The page's blocks as they are now (what a new screen after a screen turn starts from). */
-    fun currentBlocks(): List<DiaryBlock> = blocks
+    /** The body field says [html] now (see ui/diary/RichText.kt). */
+    fun onBodyChanged(html: String) {
+        bodyHtml = html
+    }
+
+    /** What the screen starts a new view from after a screen turn: the latest words. */
+    fun currentHeadline(): String = headline
+
+    fun currentBodyHtml(): String = bodyHtml
 
     fun setFont(font: DiaryFont) {
         if (_font.value != font) _font.value = font
+    }
+
+    fun setSize(size: DiaryTextSize) {
+        if (_size.value != size) _size.value = size
+    }
+
+    fun setAlign(align: TextAlign) {
+        if (_align.value != align) _align.value = align
     }
 
     fun setTheme(theme: DiaryTheme) {
         if (_theme.value != theme) _theme.value = theme
     }
 
-    /** Copies a picture from the phone's gallery into the app, then offers it to the page as a new block. */
-    fun importImage(uri: Uri) {
+    /** Copies a picture from the phone's gallery into the app, then makes it the page's cover. */
+    fun importCover(uri: Uri) {
         viewModelScope.launch {
             _importing.value = true
             val name = diaryImages.import(uri)
@@ -174,14 +208,18 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
                 _message.value = Event(R.string.diary_image_failed)
             } else {
                 importedThisTime += name
-                _newBlock.value = Event(DiaryBlocks.newImage(ImageSource.LOCAL, name))
+                _cover.value = DiaryCover.local(name)
             }
         }
     }
 
-    /** Offers a still of the movie (a TMDB path) to the page as a new block. */
-    fun addStill(path: String) {
-        _newBlock.value = Event(DiaryBlocks.newImage(ImageSource.TMDB, path))
+    /** Makes a still of the movie (a TMDB path) the page's cover. */
+    fun setStillAsCover(path: String) {
+        _cover.value = DiaryCover.tmdb(path)
+    }
+
+    fun removeCover() {
+        _cover.value = null
     }
 
     /** Asks TMDB for the movie's official stills (once; the picker calls this when it opens). */
@@ -197,12 +235,23 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
 
     // ---------- Saving ----------
 
-    private fun snapshot(): String =
-        DiaryBlocks.toJson(DiaryBlocks.withoutBlank(blocks)) + "|" + (_font.value ?: DiaryFont.SANS).name + "|" + (_theme.value ?: DiaryTheme.MIDNIGHT).name
+    private fun snapshot(): String = listOf(
+        headline.trim(), bodyHtml, _cover.value?.encode().orEmpty(),
+        (_font.value ?: DiaryFont.DEFAULT).name, (_size.value ?: DiaryTextSize.DEFAULT).name,
+        (_align.value ?: TextAlign.DEFAULT).name, (_theme.value ?: DiaryTheme.DEFAULT).name
+    ).joinToString("\u0000")
+
+    private fun isBlank() = DiaryText.isBlank(headline, bodyHtml, _cover.value?.encode())
+
+    /** The page has nothing on it (no headline, no words, no cover): there is nothing to save. */
+    val isBlankPage: Boolean get() = _state.value is EditorState.Ready && isBlank()
+
+    /** A page that was saved before and now has nothing on it: it is not saved empty (that would erase it); the screen offers to delete it. */
+    val isEmptiedPage: Boolean get() = _state.value is EditorState.Ready && entryId != 0L && isBlank()
 
     /**
      * Saves the page when something changed ([onDone] is called afterwards, also when there was nothing to save).
-     * Empty text cells are left out. A NEW page with nothing on it is not saved at all.
+     * A page with nothing on it is not saved (a NEW one is simply dropped).
      */
     fun saveIfNeeded(onDone: () -> Unit = {}) {
         if (_state.value !is EditorState.Ready) {
@@ -218,9 +267,12 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     private suspend fun saveNow() {
         val current = snapshot()
         if (current == savedSnapshot) return
-        val toSave = DiaryBlocks.withoutBlank(blocks)
-        if (entryId == 0L && toSave.isEmpty()) return // a new page with nothing on it
+        if (isBlank()) {
+            if (entryId == 0L) dropImportedPictures() // a new page with nothing on it
+            return
+        }
 
+        val cover = _cover.value
         val entry = DiaryEntry(
             id = entryId,
             movieId = movieId,
@@ -228,17 +280,42 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
             posterPath = posterPath,
             createdAt = createdAt,
             ratingSnapshot = repository.savedMovie(movieId)?.userRating, // the rating as it is when the page is written
-            fontStyle = (_font.value ?: DiaryFont.SANS).name,
-            backgroundTheme = (_theme.value ?: DiaryTheme.MIDNIGHT).name,
-            blocksJson = DiaryBlocks.toJson(toSave)
+            headline = headline.trim(),
+            bodyHtml = bodyHtml,
+            coverImageUri = cover?.encode(),
+            fontStyle = (_font.value ?: DiaryFont.DEFAULT).name,
+            textAlignment = (_align.value ?: TextAlign.DEFAULT).name,
+            textSize = (_size.value ?: DiaryTextSize.DEFAULT).name,
+            canvasTheme = (_theme.value ?: DiaryTheme.DEFAULT).name
         )
         entryId = repository.saveDiaryEntry(entry)
         savedSnapshot = current
 
-        // The gallery pictures this page does not use any more (deleted blocks, or pictures added and removed again)
-        val used = DiaryBlocks.localImages(toSave)
-        diaryImages.delete((loadedImages + importedThisTime) - used)
-        loadedImages = used
+        // The gallery picture this page does not use any more (a replaced or removed cover, or a picture added and given up)
+        val used = localName(cover)
+        diaryImages.delete((setOfNotNull(loadedLocalCover) + importedThisTime) - setOfNotNull(used))
+        loadedLocalCover = used
         importedThisTime.clear()
     }
+
+    /** Deletes this page (the screen asked first) and its cover picture. */
+    fun deletePage(onDone: () -> Unit) {
+        viewModelScope.launch {
+            saveLock.withLock {
+                if (entryId != 0L) repository.deleteDiaryEntry(entryId)
+                diaryImages.delete(setOfNotNull(loadedLocalCover) + importedThisTime)
+                loadedLocalCover = null
+                importedThisTime.clear()
+                entryId = 0L
+            }
+            onDone()
+        }
+    }
+
+    private suspend fun dropImportedPictures() {
+        diaryImages.delete(importedThisTime)
+        importedThisTime.clear()
+    }
+
+    private fun localName(cover: DiaryCover?): String? = cover?.takeIf { it.source == ImageSource.LOCAL }?.ref
 }
