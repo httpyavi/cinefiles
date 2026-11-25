@@ -8,12 +8,15 @@ import androidx.navigation.navOptions
 import com.example.cinefiles.R
 
 /**
- * Every screen change in the app goes through the three functions below, so all
+ * Every screen change in the app goes through the functions below, so all
  * navigation looks and behaves the same way. Fragments never build NavOptions themselves.
  */
 
 /** The key under which a movie id travels to the Details screen. Must match nav_graph.xml. */
 const val ARG_MOVIE_ID = "movieId"
+
+/** The key under which a person id travels to the Person screen. Must match nav_graph.xml. */
+const val ARG_PERSON_ID = "personId"
 
 /**
  * How a screen change moves. FADE_THROUGH (old screen fades out, new one fades in and grows a little) is for tabs,
@@ -90,4 +93,16 @@ fun NavController.openMovieDetails(movieId: Int) {
         currentBackStackEntry?.arguments?.getInt(ARG_MOVIE_ID) == movieId
     if (alreadyOpen) return
     openScreen(R.id.detailsFragment, bundleOf(ARG_MOVIE_ID to movieId), singleTop = false)
+}
+
+/**
+ * Opens the Person screen (an actor, a director or another crew member) for one TMDB person id.
+ * Like Details, a different person opens ON TOP (movie -> person -> movie -> another person...), and tapping the SAME
+ * person again while that screen is already open does nothing.
+ */
+fun NavController.openPerson(personId: Int) {
+    val alreadyOpen = currentDestination?.id == R.id.personFragment &&
+        currentBackStackEntry?.arguments?.getInt(ARG_PERSON_ID) == personId
+    if (alreadyOpen) return
+    openScreen(R.id.personFragment, bundleOf(ARG_PERSON_ID to personId), singleTop = false)
 }

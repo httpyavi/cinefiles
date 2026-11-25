@@ -190,7 +190,7 @@ class SwipeDeckViewTest {
         var passId = 0
         onMain {
             val actions = deck.createAccessibilityNodeInfo().actionList
-            val like = deck.context.getString(R.string.action_like)
+            val like = deck.context.getString(R.string.swipe_popcorn)
             val pass = deck.context.getString(R.string.swipe_pass)
             likeId = actions.first { it.label == like }.id
             passId = actions.first { it.label == pass }.id
@@ -198,7 +198,7 @@ class SwipeDeckViewTest {
 
         var accepted = false
         onMain { accepted = deck.performAccessibilityAction(likeId, null) }
-        assertTrue("the Like action must be accepted", accepted)
+        assertTrue("the Popcorn (swipe right) action must be accepted", accepted)
         waitUntil { swipes.size == 1 }
 
         onMain { deck.setCards(movies[1], movies[2], movies[3]) } // the screen shows the next cards after a swipe

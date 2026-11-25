@@ -2,8 +2,10 @@ package com.example.cinefiles.data
 
 import com.example.cinefiles.data.dto.MovieDto
 import com.example.cinefiles.data.dto.MovieListResponse
+import com.example.cinefiles.data.dto.PersonDto
 import com.example.cinefiles.data.dto.toMovie
 import com.example.cinefiles.data.dto.toMovies
+import com.example.cinefiles.logic.CrewRole
 import com.google.gson.Gson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -144,16 +146,24 @@ class MovieMappingTest {
           "id": 157336, "title": "Interstellar", "poster_path": "/poster.jpg", "release_date": "2014-11-05",
           "vote_average": 8.4, "vote_count": 35000, "runtime": 169,
           "genres": [ { "id": 12, "name": "Adventure" }, { "id": 878, "name": "Science Fiction" } ],
+          "tagline": "  Mankind was born on Earth. It was never meant to die here.  ", "status": "Released",
+          "production_countries": [ { "iso_3166_1": "US", "name": "United States of America" }, { "name": "United Kingdom" } ],
           "credits": {
             "cast": [
-              { "name": "Matthew McConaughey", "character": "Cooper", "profile_path": "/m.jpg" },
-              { "name": "", "character": "Nobody" },
-              { "name": "Anne Hathaway", "character": "Brand" }
+              { "id": 10297, "name": "Matthew McConaughey", "character": "Cooper", "profile_path": "/m.jpg" },
+              { "id": 99, "name": "", "character": "Nobody" },
+              { "name": "No id", "character": "Cannot be opened" },
+              { "id": 1813, "name": "Anne Hathaway", "character": "Brand" }
             ],
             "crew": [
-              { "name": "Christopher Nolan", "job": "Director" },
-              { "name": "Emma Thomas", "job": "Producer" },
-              { "name": "Christopher Nolan", "job": "Director" }
+              { "id": 525, "name": "Christopher Nolan", "job": "Director" },
+              { "id": 525, "name": "Christopher Nolan", "job": "Screenplay" },
+              { "id": 7, "name": "Jonathan Nolan", "job": "Writer" },
+              { "id": 1, "name": "Emma Thomas", "job": "Producer" },
+              { "id": 5, "name": "Hoyte van Hoytema", "job": "Director of Photography" },
+              { "id": 947, "name": "Hans Zimmer", "job": "Original Music Composer" },
+              { "id": 8, "name": "Somebody", "job": "Best Boy" },
+              { "id": 525, "name": "Christopher Nolan", "job": "Director" }
             ]
           },
           "videos": { "results": [
@@ -177,8 +187,115 @@ class MovieMappingTest {
         val details = gson.fromJson(detailsJson, MovieDto::class.java).toDetails()!!
         assertEquals(listOf("Matthew McConaughey", "Anne Hathaway"), details.cast.map { it.name }) // the nameless one is gone
         assertEquals("Cooper", details.cast.first().character)
-        assertEquals(listOf("Christopher Nolan"), details.directors) // listed once
+        assertEquals(listOf("Christopher Nolan"), details.directors.map { it.name }) // listed once
         assertEquals("trailer1", details.trailerKey) // not the teaser, not the Vimeo one
+    }
+
+    @Test
+    fun everyoneInTheCastCarriesTheirPersonIdAndPeopleWithoutOneAreLeftOut() {
+        val cast = gson.fromJson(detailsJson, MovieDto::class.java).toDetails()!!.cast
+        assertEquals(listOf(10297, 1813), cast.map { it.id }) // "No id" cannot be opened, so it is not shown
+        assertEquals("/m.jpg", cast.first().profilePath)
+        assertNull(cast.last().profilePath)
+    }
+
+    @Test
+    fun theCrewIsGroupedByWhatTheDetailsScreenShows() {
+        val details = gson.fromJson(detailsJson, MovieDto::class.java).toDetails()!!
+
+        assertEquals(525, details.directors.single().id)
+        assertEquals(
+            listOf(CrewRole.WRITER, CrewRole.PRODUCER, CrewRole.CINEMATOGRAPHY, CrewRole.COMPOSER),
+            details.crew.keys.toList() // the director is shown on his own, and "Best Boy" is not shown at all
+        )
+        assertEquals(listOf("Christopher Nolan", "Jonathan Nolan"), details.crew.getValue(CrewRole.WRITER).map { it.name })
+        assertEquals(listOf("Hans Zimmer"), details.crew.getValue(CrewRole.COMPOSER).map { it.name })
+    }
+
+    @Test
+    fun theDetailsHaveTheTaglineStatusAndCountries() {
+        val details = gson.fromJson(detailsJson, MovieDto::class.java).toDetails()!!
+        assertEquals("Mankind was born on Earth. It was never meant to die here.", details.tagline)
+        assertEquals("Released", details.status)
+        assertEquals(listOf("United States of America", "United Kingdom"), details.productionCountries)
+    }
+
+    @Test
+    fun aBlankTaglineAndStatusAreNull() {
+        val details = MovieDto(id = 1, title = "Quiet", tagline = "  ", status = "").toDetails()!!
+        assertNull(details.tagline)
+        assertNull(details.status)
+        assertTrue(details.productionCountries.isEmpty())
+        assertTrue(details.crew.isEmpty())
+    }
+
+    // ---------- The person answer ----------
+
+    private val personJson = """
+        {
+          "id": 525, "name": "  Christopher Nolan ", "biography": "British-American filmmaker.",
+          "profile_path": "/nolan.jpg", "known_for_department": "Directing",
+          "movie_credits": {
+            "cast": [
+              { "id": 1, "title": "Quiet cameo", "poster_path": "/c.jpg", "release_date": "2001-01-01", "popularity": 3.0, "character": "Self" }
+            ],
+            "crew": [
+              { "id": 10, "title": "Old one", "poster_path": "/old.jpg", "release_date": "1998-01-01", "popularity": 20.0, "job": "Director" },
+              { "id": 20, "title": "Big one", "poster_path": "/big.jpg", "release_date": "2014-11-05", "popularity": 90.0, "job": "Director" },
+              { "id": 20, "title": "Big one", "poster_path": "/big.jpg", "release_date": "2014-11-05", "popularity": 90.0, "job": "Producer" },
+              { "id": 30, "title": "Same popularity, newer", "poster_path": "/n.jpg", "release_date": "2020-01-01", "popularity": 20.0, "job": "Writer" },
+              { "id": 40, "title": "No poster", "poster_path": null, "release_date": "2010-01-01", "popularity": 99.0, "job": "Writer" },
+              { "id": 50, "title": "Adult film", "poster_path": "/a.jpg", "popularity": 50.0, "job": "Writer", "adult": true }
+            ]
+          }
+        }
+    """.trimIndent()
+
+    private fun person() = gson.fromJson(personJson, PersonDto::class.java).toPersonDetails()!!
+
+    @Test
+    fun thePersonHasANameAPhotoABiographyAndWhatTheyAreKnownFor() {
+        val person = person()
+        assertEquals(525, person.id)
+        assertEquals("Christopher Nolan", person.name) // trimmed
+        assertEquals("/nolan.jpg", person.profilePath)
+        assertEquals("British-American filmmaker.", person.biography)
+        assertEquals("Directing", person.knownFor)
+    }
+
+    @Test
+    fun aPersonsMoviesAreOnePosterEachMostPopularFirstAndNewestFirstBetweenEquals() {
+        val crew = person().crew
+        assertEquals(listOf(20, 30, 10), crew.map { it.id }) // 90, then 20 (2020) before 20 (1998); no repeat of "Big one"
+    }
+
+    @Test
+    fun moviesWithoutAPosterOrThatAreAdultNeverShow() {
+        val ids = person().crew.map { it.id }
+        assertFalse(40 in ids) // no poster
+        assertFalse(50 in ids) // adult
+    }
+
+    @Test
+    fun actingAndCrewAreTwoSeparateLists() {
+        val person = person()
+        assertEquals(listOf(1), person.acting.map { it.id })
+        assertEquals(3, person.crew.size)
+    }
+
+    @Test
+    fun aPersonWithoutAnIdOrANameIsNotUsable() {
+        assertNull(PersonDto(name = "Nobody").toPersonDetails())
+        assertNull(PersonDto(id = 1, name = "  ").toPersonDetails())
+    }
+
+    @Test
+    fun aPersonWithoutMoviesHasEmptyLists() {
+        val person = PersonDto(id = 1, name = "New face").toPersonDetails()!!
+        assertTrue(person.acting.isEmpty())
+        assertTrue(person.crew.isEmpty())
+        assertEquals("", person.biography)
+        assertNull(person.knownFor)
     }
 
     @Test

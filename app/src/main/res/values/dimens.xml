@@ -66,7 +66,14 @@
     <dimen name="picks_progress_width">220dp</dimen>        <!-- the thin bar of the "building your picks" moment -->
 
     <!-- Movie Details: the backdrop picture at the top, a little shorter than Home's hero -->
-    <dimen name="detail_hero_height">340dp</dimen>
+    <dimen name="detail_hero_height">360dp</dimen>
+    <dimen name="detail_poster_width">104dp</dimen>       <!-- the tappable poster in the hero (the height follows the 2:3 shape) -->
+    <dimen name="detail_poster_zoom_size">28dp</dimen>    <!-- the small "see it bigger" plate in its corner -->
+    <dimen name="cast_item_width">100dp</dimen>           <!-- one actor in the Cast row (wide enough that a long surname does not break at 130% text) -->
+    <dimen name="cast_photo_size">72dp</dimen>
+
+    <!-- Person screen -->
+    <dimen name="person_photo_size">96dp</dimen>
     <!-- Poster rows: 112 dp wide, so on most phones three posters fit and a bit of the 4th peeks in,
          which tells you the row scrolls. The height is 1.5 x the width (posters are 2:3). -->
     <dimen name="poster_row_width">112dp</dimen>
@@ -85,7 +92,7 @@
     <dimen name="swipe_next_card_offset">24dp</dimen>     <!-- the card behind sits this much lower -->
     <dimen name="swipe_scrim_height">300dp</dimen>
     <dimen name="swipe_progress_height">4dp</dimen>
-    <dimen name="swipe_feedback_icon_size">96dp</dimen>   <!-- the heart / X in the middle of a dragged card (at full size) -->
+    <dimen name="swipe_feedback_icon_size">96dp</dimen>   <!-- the popcorn / X in the middle of a dragged card (at full size) -->
     <dimen name="swipe_fling_velocity">600dp</dimen>      <!-- a flick faster than 600 dp per second counts as a swipe -->
     <dimen name="icon_size_large">32dp</dimen>
     <dimen name="round_button_large_size">72dp</dimen>    <!-- Pass and Like -->

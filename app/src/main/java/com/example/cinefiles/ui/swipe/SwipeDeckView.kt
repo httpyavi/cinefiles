@@ -116,10 +116,10 @@ class SwipeDeckView @JvmOverloads constructor(
         }
         for (role in 0 until CARD_COUNT) placeAtRest(cards[role], role)
 
-        // Screen readers: the deck reads out the movie on top and offers "Like" and "Pass" as actions, so swiping
-        // is possible without a finger gesture (the same animated swipe as the buttons)
+        // Screen readers: the deck reads out the movie on top and offers "Popcorn" (swipe right) and "Pass" as actions,
+        // so swiping is possible without a finger gesture (the same animated swipe as the buttons)
         isFocusable = true
-        ViewCompat.addAccessibilityAction(this, context.getString(R.string.action_like)) { _, _ -> swipeTop(SwipeDirection.LIKE) }
+        ViewCompat.addAccessibilityAction(this, context.getString(R.string.swipe_popcorn)) { _, _ -> swipeTop(SwipeDirection.LIKE) }
         ViewCompat.addAccessibilityAction(this, context.getString(R.string.swipe_pass)) { _, _ -> swipeTop(SwipeDirection.PASS) }
     }
 
@@ -297,7 +297,7 @@ class SwipeDeckView @JvmOverloads constructor(
 
         listener?.onDrag((dx / (cardWidth * SwipeGesture.COMMIT_FRACTION)).coerceIn(-1f, 1f))
 
-        // A red veil and a heart (right) or a slate veil and an X (left) grow with the distance, up to the "swipe" line
+        // A red veil and a popcorn (right) or a slate veil and an X (left) grow with the distance, up to the "swipe" line
         val feedback = (abs(dx) / (cardWidth * SwipeGesture.COMMIT_FRACTION)).coerceAtMost(1f)
         if (dx > 0f) top.setFeedback(feedback, 0f) else top.setFeedback(0f, feedback)
 

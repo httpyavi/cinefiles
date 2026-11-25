@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 24 dp icon: a bucket of popcorn. The "swipe right" icon of the swipe screen (it is NOT the Likes heart).
+     Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- the popcorn: five soft puffs heaped over the bucket -->
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6,11 A2.4,2.4 0 0 1 5.3,6.4 A2.8,2.8 0 0 1 10.3,4.4 A2.8,2.8 0 0 1 15.2,4.6 A2.4,2.4 0 0 1 18.6,6.8 A2.4,2.4 0 0 1 18,11" />
+    <!-- the bucket and its two stripes -->
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6,11 L7.2,20.2 Q7.3,21 8.1,21 L15.9,21 Q16.7,21 16.8,20.2 L18,11 Z M10,11.5 L10.4,20.6 M14,11.5 L13.6,20.6" />
+</vector>

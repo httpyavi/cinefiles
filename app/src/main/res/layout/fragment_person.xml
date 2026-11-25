@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PERSON: an actor, a director or another crew member. One scrolling three-column poster grid whose first item is the
+     header (photo, name, biography, the Acting / Directing & Crew tabs: item_person_header). A soft glow of light sits
+     behind it, like on Collection. Loading and error take the place of the page. The round back button floats on top.
+     There is no tab bar on this screen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/personGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- ===== The page: header + poster grid (the layout manager is set in code: the header spans all three columns) ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/personList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/space_16"
+        android:paddingEnd="@dimen/space_16"
+        android:paddingBottom="@dimen/space_24"
+        android:scrollbars="none"
+        tools:listitem="@layout/item_poster_grid" />
+
+    <!-- ===== Loading and error take the place of the page. The top padding keeps them clear of the back button. ===== -->
+    <FrameLayout
+        android:id="@+id/personStates"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="@dimen/touch_target"
+        android:visibility="gone">
+
+        <include
+            android:id="@+id/stateLoading"
+            layout="@layout/view_state_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/stateError"
+            layout="@layout/view_state_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- ===== The round back button, on top of everything ===== -->
+    <FrameLayout
+        android:id="@+id/personTopBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start">
+
+        <ImageButton
+            android:id="@+id/personBack"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:layout_marginStart="@dimen/space_12"
+            android:layout_marginTop="@dimen/space_8"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/action_back"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text_primary" />
+    </FrameLayout>
+
+</FrameLayout>

@@ -16,6 +16,10 @@ import com.example.cinefiles.logic.canLike
 import com.example.cinefiles.logic.trendingSince
 import com.example.cinefiles.util.currentYear
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.max
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -115,30 +119,82 @@ class MovieRepository(
     // ====================================================================================
 
     /**
-     * The movies the engine may choose from. [genreIds] are the user's best genres (joined with | = OR).
-     * It asks /discover for page 1, and page 2 if that gave too few, with the user's preferences and at least
-     * 100 votes. If there are still fewer than 10 candidates, it asks again ONCE without the preferences (the genres
-     * stay). Movies that already have a state in the database (liked, passed, watchlist, watched) and movies without
-     * a poster never come back.
+     * The movies the engine may choose from, in three kinds of answers that are merged:
+     *  - /discover for the user's best [genreIds] (joined with | = OR) and the [preferences], asked twice: best rated
+     *    first (`vote_average.desc`) and most popular first (`popularity.desc`), two pages each;
+     *  - /movie/{id}/similar for each of the [seeds] (the swiped-right movies, the engine chooses up to 3), kept when
+     *    they pass the quality floor and the preferences.
+     * The QUALITY FLOOR is a rating of 6.5 and 500 votes (300 for the "similar" movies). Only when that leaves fewer
+     * than 10 valid candidates does the floor drop to 6.0 and 200 votes, and if there are still too few, the
+     * preferences are forgotten too (the genres stay).
+     * Movies that already have a state in the database (liked, passed, watchlist, watched), the ids in [exclude]
+     * (this sitting's swipes) and movies without a poster never come back.
+     * A failed "similar" call is no problem (it is a bonus); a failed /discover call fails the whole answer.
      */
-    suspend fun picksCandidates(genreIds: List<Int>, preferences: Preferences): Result<List<Movie>> = call {
-        val hidden = dao.idsWithState().toSet()
+    suspend fun picksCandidates(
+        genreIds: List<Int>,
+        preferences: Preferences,
+        seeds: List<Movie> = emptyList(),
+        exclude: Set<Int> = emptySet()
+    ): Result<PicksPool> = call {
+        val hidden = dao.idsWithState().toSet() + exclude
         val found = LinkedHashMap<Int, Movie>()
+        val similarTo = HashMap<Int, Int>()
+        var similarAnswers: Map<Int, List<Movie>>? = null // asked once: the floor is applied to it again at every step
 
-        for (relax in listOf(NO_RELAXING, DROP_PREFERENCES)) {
-            // relax 0 keeps every preference; DROP_PREFERENCES forgets language, length, release period and rating but keeps the genres
-            val pref = if (relax == DROP_PREFERENCES) Preferences() else preferences
-            val picksMinVotes = if (pref.language == Language.FILIPINO) 3 else PICKS_MIN_VOTES
-            val request = Discovery.plan(genreIds, pref, 0).first().copy(minVotes = picksMinVotes)
-            for (page in 1..PICKS_PAGES) {
-                for (movie in discover(request, page).getOrThrow()) {
-                    if (movie.id !in hidden) found.putIfAbsent(movie.id, movie)
+        for (step in PICKS_STEPS) {
+            val pref = if (step.dropPreferences) Preferences() else preferences
+            val (discoverRequests, similarFilter) = picksRequests(genreIds, pref, step.floor)
+
+            val askSimilar = similarAnswers == null
+            val (discovered, similarAsked) = coroutineScope {
+                val lists = discoverRequests.flatMap { request ->
+                    (1..PICKS_PAGES).map { page -> async { discover(request, page).getOrThrow() } }
                 }
-                if (found.size >= RecommendationEngine.MAX_PICKS) break
+                val similarLists = if (askSimilar) {
+                    seeds.take(RecommendationEngine.SIMILAR_SEED_COUNT)
+                        .map { seed -> async { seed.id to (similar(seed.id).getOrNull() ?: emptyList()) } }
+                } else {
+                    emptyList()
+                }
+                lists.awaitAll().flatten() to similarLists.awaitAll()
+            }
+            val answers = similarAnswers ?: similarAsked.toMap().also { similarAnswers = it }
+
+            for (movie in discovered) if (movie.id !in hidden) found.putIfAbsent(movie.id, movie)
+            for ((seedId, movies) in answers) {
+                for (movie in movies) {
+                    if (movie.id in hidden || !similarFilter.matches(movie)) continue
+                    found.putIfAbsent(movie.id, movie)
+                    similarTo.putIfAbsent(movie.id, seedId)
+                }
             }
             if (found.size >= RecommendationEngine.MAX_PICKS) break
         }
-        found.values.toList()
+        PicksPool(found.values.toList(), similarTo.filterKeys { it in found })
+    }
+
+    /**
+     * The questions of one step of [picksCandidates]: the two /discover requests (best rated first, most popular first)
+     * and the filter that "similar" movies must pass. The floor never lowers what the user's own preferences ask
+     * (a minimum rating of 8 stays 8). Filipino movies have few votes on TMDB, so their vote limits stay tiny.
+     */
+    private fun picksRequests(genreIds: List<Int>, preferences: Preferences, floor: QualityFloor): Pair<List<DiscoveryRequest>, DiscoveryRequest> {
+        val base = Discovery.plan(genreIds, preferences, NO_RELAXING).first()
+        val rating = max(base.minRating ?: 0.0, floor.minRating)
+        val few = preferences.language == Language.FILIPINO
+        val discoverBase = base.copy(minRating = rating, minVotes = if (few) FILIPINO_MIN_VOTES else floor.minVotes)
+        return listOf(
+            discoverBase.copy(source = DiscoverySource.TOP_RATED),  // /discover sorted by vote_average.desc
+            discoverBase                                            // /discover sorted by popularity.desc
+        ) to discoverBase.copy(genreIds = emptyList(), minVotes = if (few) FILIPINO_MIN_VOTES else floor.minSimilarVotes)
+    }
+
+    /** The TMDB person with their movies, for the Person screen. */
+    suspend fun person(personId: Int): Result<PersonDetails> = call {
+        val details = api.person(personId).toPersonDetails() ?: error("TMDB sent no usable person for id $personId")
+        remember(details.acting + details.crew) // opening one of their movies then shows its title and poster at once
+        details
     }
 
     // ====================================================================================
@@ -529,9 +585,23 @@ class MovieRepository(
         const val MAX_SEEN = 500
 
         // Your picks
-        const val PICKS_MIN_VOTES = 100  // ignore movies that only a handful of people rated
-        const val PICKS_PAGES = 2        // at most two pages of 20 for each try
-        const val NO_RELAXING = 0        // Discovery.plan: keep every preference
-        const val DROP_PREFERENCES = 4   // Discovery.plan: drop the preferences, keep the genres
+        const val PICKS_PAGES = 2            // two pages of 20 for each way of sorting
+        const val FILIPINO_MIN_VOTES = 3     // few people vote on Filipino movies on TMDB
+        const val NO_RELAXING = 0            // Discovery.plan: keep every preference
+
+        /** The quality a candidate must have: a rating, the votes of a /discover movie and the votes of a "similar" movie. */
+        class QualityFloor(val minRating: Double, val minVotes: Int, val minSimilarVotes: Int)
+
+        val STRICT_FLOOR = QualityFloor(minRating = 6.5, minVotes = 500, minSimilarVotes = 300)
+        val RELAXED_FLOOR = QualityFloor(minRating = 6.0, minVotes = 200, minSimilarVotes = 200)
+
+        /** What [picksCandidates] tries, in this order, until it has 10 candidates. */
+        class PicksStep(val floor: QualityFloor, val dropPreferences: Boolean)
+
+        val PICKS_STEPS = listOf(
+            PicksStep(STRICT_FLOOR, dropPreferences = false),
+            PicksStep(RELAXED_FLOOR, dropPreferences = false),
+            PicksStep(RELAXED_FLOOR, dropPreferences = true)
+        )
     }
 }

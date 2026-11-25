@@ -1,8 +1,11 @@
 package com.example.cinefiles.ui.detail
 
 import com.example.cinefiles.data.ApiError
+import com.example.cinefiles.data.CastMember
+import com.example.cinefiles.data.CrewMember
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.MovieDetails
+import com.example.cinefiles.logic.CrewRole
 import com.example.cinefiles.logic.withStateOf
 
 /** Everything the Details screen can be showing. DetailFragment draws whichever one it is given. */
@@ -18,15 +21,25 @@ sealed class DetailState {
      * The screen can be drawn. [movie] is the best information we have (saved, seen in a list, or fresh from TMDB),
      * with the user's own state (liked, watchlist, watched) from the database on it.
      *
-     * [isLoadingMore]: the trailer and the similar movies are still on their way.
+     * [isLoadingMore]: the trailer, the credits and the similar movies are still on their way.
      * [loadError]: TMDB could not be reached, so only the saved or already-seen information is shown.
+     *
+     * The credits and the extra facts only come from TMDB's details answer, so they are empty (and their sections
+     * hidden) until it arrives, and when it never does: [directors], [cast], [crew] (writers, producers, cinematography,
+     * composers), [tagline], [status] ("Released") and the [countries] the movie was made in.
      */
     data class Content(
         val movie: Movie,
         val trailerKey: String?,
         val similar: List<Movie>,
         val isLoadingMore: Boolean,
-        val loadError: ApiError?
+        val loadError: ApiError?,
+        val directors: List<CrewMember> = emptyList(),
+        val cast: List<CastMember> = emptyList(),
+        val crew: Map<CrewRole, List<CrewMember>> = emptyMap(),
+        val tagline: String? = null,
+        val status: String? = null,
+        val countries: List<String> = emptyList()
     ) : DetailState()
 }
 
@@ -62,11 +75,18 @@ fun buildDetailState(saved: Movie?, seen: Movie?, remote: DetailRemote): DetailS
         ).withStateOf(saved) // the user's own state always comes from the database
     }
 
+    val details = remote.details
     return DetailState.Content(
         movie = movie,
-        trailerKey = remote.details?.trailerKey,
+        trailerKey = details?.trailerKey,
         similar = remote.similar.orEmpty(),
         isLoadingMore = remote.isLoading,
-        loadError = if (remote.isLoading) null else remote.error
+        loadError = if (remote.isLoading) null else remote.error,
+        directors = details?.directors.orEmpty(),
+        cast = details?.cast.orEmpty(),
+        crew = details?.crew.orEmpty(),
+        tagline = details?.tagline,
+        status = details?.status,
+        countries = details?.productionCountries.orEmpty()
     )
 }

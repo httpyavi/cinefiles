@@ -1,9 +1,12 @@
 package com.example.cinefiles.ui.detail
 
 import com.example.cinefiles.data.ApiError
+import com.example.cinefiles.data.CastMember
+import com.example.cinefiles.data.CrewMember
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.MovieDetails
 import com.example.cinefiles.data.Reaction
+import com.example.cinefiles.logic.CrewRole
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -119,5 +122,44 @@ class DetailStateTest {
 
         val without = content(buildDetailState(movie(), null, DetailRemote(isLoading = true)))
         assertTrue(without.similar.isEmpty())
+    }
+
+    // ---------- credits ----------
+
+    @Test
+    fun theCreditsAndFactsOfTheFreshAnswerReachTheScreen() {
+        val nolan = CrewMember(525, "Christopher Nolan", "Director", null)
+        val writer = CrewMember(7, "Jonathan Nolan", "Writer", null)
+        val fresh = MovieDetails(
+            movie = movie(),
+            cast = listOf(CastMember(10297, "Matthew McConaughey", "Cooper", "/m.jpg")),
+            directors = listOf(nolan),
+            trailerKey = null,
+            crew = mapOf(CrewRole.WRITER to listOf(writer)),
+            tagline = "Go further.",
+            status = "Released",
+            productionCountries = listOf("United States of America")
+        )
+
+        val state = content(buildDetailState(null, null, DetailRemote(details = fresh, isLoading = false)))
+
+        assertEquals(listOf(nolan), state.directors)
+        assertEquals(listOf(10297), state.cast.map { it.id })
+        assertEquals(listOf(writer), state.crew.getValue(CrewRole.WRITER))
+        assertEquals("Go further.", state.tagline)
+        assertEquals("Released", state.status)
+        assertEquals(listOf("United States of America"), state.countries)
+    }
+
+    @Test
+    fun withoutTmdbsAnswerThereAreNoCreditsAndNoFacts() {
+        val state = content(buildDetailState(movie(), null, DetailRemote(error = ApiError.NO_INTERNET, isLoading = false)))
+
+        assertTrue(state.directors.isEmpty())
+        assertTrue(state.cast.isEmpty())
+        assertTrue(state.crew.isEmpty())
+        assertNull(state.tagline)
+        assertNull(state.status)
+        assertTrue(state.countries.isEmpty())
     }
 }

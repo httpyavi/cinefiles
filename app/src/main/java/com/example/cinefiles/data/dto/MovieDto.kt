@@ -40,23 +40,36 @@ data class MovieDto(
     val runtime: Int? = null,
     val credits: CreditsDto? = null,
     val videos: VideosDto? = null,
-    val adult: Boolean? = null
+    val adult: Boolean? = null,
+    // The details answer also has these (a list answer does not)
+    val tagline: String? = null,
+    val status: String? = null,
+    @SerializedName("production_countries") val productionCountries: List<CountryDto>? = null
 )
 
 data class GenreDto(val id: Int? = null, val name: String? = null)
+
+data class CountryDto(val name: String? = null)
 
 data class CreditsDto(
     val cast: List<CastDto>? = null,
     val crew: List<CrewDto>? = null
 )
 
+/** [id] is the PERSON's id (what the Person screen asks TMDB for). */
 data class CastDto(
+    val id: Int? = null,
     val name: String? = null,
     val character: String? = null,
     @SerializedName("profile_path") val profilePath: String? = null
 )
 
-data class CrewDto(val name: String? = null, val job: String? = null)
+data class CrewDto(
+    val id: Int? = null,
+    val name: String? = null,
+    val job: String? = null,
+    @SerializedName("profile_path") val profilePath: String? = null
+)
 
 data class VideosDto(val results: List<VideoDto>? = null)
 

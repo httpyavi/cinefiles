@@ -129,6 +129,12 @@
         <item name="cornerSize">@dimen/radius_large</item>
     </style>
 
+    <!-- A round picture (the profile photo of an actor) -->
+    <style name="ShapeAppearance.CineFiles.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <style name="ShapeAppearance.CineFiles.Pill" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
@@ -266,6 +272,11 @@
         <item name="checkedIconVisible">false</item>
         <item name="chipIconVisible">false</item>
         <item name="android:stateListAnimator">@animator/press_scale</item>
+    </style>
+
+    <!-- A tappable name (a writer, a producer...) that opens the Person screen: the same glass pill, but it is a button, not a choice -->
+    <style name="Widget.CineFiles.Chip.Person">
+        <item name="android:checkable">false</item>
     </style>
 
     <!-- One part of a segmented control (inside a MaterialButtonToggleGroup, for example the tabs of My Collection).

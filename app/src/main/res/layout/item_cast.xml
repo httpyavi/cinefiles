@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One actor in the Cast row of Movie Details (CastAdapter): a round photo, the name and the character.
+     A quiet profile icon sits behind the photo, so an actor without a photo still has a picture. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/cast_item_width"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_8"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_4"
+    android:paddingTop="@dimen/space_4"
+    android:paddingEnd="@dimen/space_4"
+    android:paddingBottom="@dimen/space_8">
+
+    <FrameLayout
+        android:layout_width="@dimen/cast_photo_size"
+        android:layout_height="@dimen/cast_photo_size"
+        android:background="@drawable/bg_glass_circle">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:padding="@dimen/space_20"
+            android:src="@drawable/ic_profile"
+            app:tint="@color/text_secondary" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/castPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Circle" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/castName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:ellipsize="end"
+        android:gravity="center_horizontal"
+        android:maxLines="2"
+        android:textAppearance="@style/TextAppearance.CineFiles.Label"
+        tools:text="Matthew McConaughey" />
+
+    <TextView
+        android:id="@+id/castCharacter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:ellipsize="end"
+        android:gravity="center_horizontal"
+        android:maxLines="2"
+        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+        tools:text="Cooper" />
+</LinearLayout>

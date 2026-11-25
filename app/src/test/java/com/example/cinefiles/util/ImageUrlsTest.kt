@@ -22,9 +22,22 @@ class ImageUrlsTest {
     }
 
     @Test
+    fun hdPosterUrlUsesTheSharpestSizeThatIsStillLight() {
+        // w780, never "original": the full-screen poster must not cost several megabytes
+        assertEquals("https://image.tmdb.org/t/p/w780/abc.jpg", ImageUrls.hdPoster("/abc.jpg"))
+    }
+
+    @Test
+    fun profileUrlUsesTheSmallPhotoSize() {
+        assertEquals("https://image.tmdb.org/t/p/w185/abc.jpg", ImageUrls.profile("/abc.jpg"))
+    }
+
+    @Test
     fun missingPathGivesNoUrl() {
         assertNull(ImageUrls.poster(null))
         assertNull(ImageUrls.bigPoster(null))
+        assertNull(ImageUrls.hdPoster(null))
+        assertNull(ImageUrls.profile(null))
         assertNull(ImageUrls.backdrop(null))
     }
 }

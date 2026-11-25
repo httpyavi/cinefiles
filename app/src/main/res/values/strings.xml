@@ -441,4 +441,39 @@
     <string name="dialog_close">Close</string>
     <string name="profile_no_ratings">No rated movies yet. Rate movies from 0.5 to 5 stars on movie details.</string>
     <string name="profile_no_diary">No diary entries yet. Write your personal reflections on movie details.</string>
+
+    <!-- Swipe screen: swiping right is a "popcorn" (it is not the Likes heart) -->
+    <string name="swipe_popcorn">Popcorn: I\'d watch this</string>
+
+    <!-- Your Picks: the reason of a very well rated pick -->
+    <string name="picks_reason_top_rated">Top-rated pick</string>
+    <string name="picks_reason_top_rated_mood">Top-rated %1$s pick</string>
+
+    <!-- Movie Details: credits (director, cast, crew) -->
+    <string name="credits_directors">Director</string>
+    <string name="credits_writers">Writers</string>
+    <string name="credits_producers">Producers</string>
+    <string name="credits_cinematography">Cinematography</string>
+    <string name="credits_composers">Composers</string>
+    <string name="detail_directed_by">Directed by</string>
+    <string name="detail_cast_title">Cast</string>
+    <string name="detail_crew_title">Crew</string>
+    <string name="detail_info_title">Details</string>
+    <string name="detail_info_status">Status</string>
+    <string name="detail_info_language">Original language</string>
+    <string name="detail_info_countries">Made in</string>
+    <string name="detail_open_person">Open %1$s</string>
+
+    <!-- Movie Details: the full-screen poster -->
+    <string name="detail_poster_description">%1$s poster. Opens it full screen.</string>
+    <string name="poster_viewer_description">%1$s poster. Pinch to zoom, tap to close.</string>
+    <string name="poster_viewer_error">Could not load the poster.</string>
+
+    <!-- Person screen -->
+    <string name="person_label">Person</string>
+    <string name="person_known_for">Known for %1$s</string>
+    <string name="person_tab_acting">Acting</string>
+    <string name="person_tab_crew">Directing &amp; Crew</string>
+    <string name="person_empty_title">No movies listed</string>
+    <string name="person_empty_message">TMDB has no movies for this person yet.</string>
 </resources>

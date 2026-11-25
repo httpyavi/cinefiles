@@ -90,7 +90,7 @@
                     android:paddingEnd="@dimen/space_16"
                     android:textAppearance="@style/TextAppearance.CineFiles.Label"
                     android:visibility="invisible"
-                    app:icon="@drawable/ic_heart_filled"
+                    app:icon="@drawable/ic_popcorn"
                     app:iconSize="@dimen/icon_size_small"
                     app:iconTint="@color/like"
                     tools:text="Picks (3)"
@@ -167,7 +167,7 @@
 
                 </FrameLayout>
 
-                <!-- Undo, Pass, Like, Info. They do exactly what the gestures do. -->
+                <!-- Undo, Pass, Popcorn (swipe right), Info. They do exactly what the gestures do. -->
                 <LinearLayout
                     android:id="@+id/swipeButtons"
                     android:layout_width="match_parent"
@@ -201,8 +201,8 @@
                         android:layout_width="@dimen/round_button_large_size"
                         android:layout_height="@dimen/round_button_large_size"
                         android:layout_marginStart="@dimen/space_16"
-                        android:contentDescription="@string/action_like"
-                        app:icon="@drawable/ic_heart_filled" />
+                        android:contentDescription="@string/swipe_popcorn"
+                        app:icon="@drawable/ic_popcorn" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/actionInfo"

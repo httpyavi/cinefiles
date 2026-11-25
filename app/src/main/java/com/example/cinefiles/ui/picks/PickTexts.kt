@@ -8,9 +8,14 @@ import com.example.cinefiles.logic.PickReason
 import com.example.cinefiles.util.ratingText
 import com.example.cinefiles.util.yearAndGenres
 
-/** "Similar to La La Land" or "Matches your Happy mood". (The engine only says WHY; the words are made here.) */
+/** "Similar to La La Land", "Top-rated Happy pick" or "Matches your Happy mood". (The engine only says WHY; the words are made here.) */
 fun Context.reasonText(reason: PickReason): String = when (reason) {
     is PickReason.SimilarTo -> getString(R.string.picks_reason_similar, reason.likedTitle)
+    is PickReason.TopRated -> {
+        // Surprise Me is no real mood to name: "Top-rated pick" says it better
+        val mood = Moods.all.firstOrNull { it.id == reason.moodId }?.takeIf { !it.isSurprise }
+        if (mood != null) getString(R.string.picks_reason_top_rated_mood, getString(mood.shortLabel)) else getString(R.string.picks_reason_top_rated)
+    }
     is PickReason.MoodMatch -> {
         val mood = Moods.all.firstOrNull { it.id == reason.moodId }
         if (mood != null) getString(R.string.picks_reason_mood, getString(mood.shortLabel)) else getString(R.string.picks_reason_generic)

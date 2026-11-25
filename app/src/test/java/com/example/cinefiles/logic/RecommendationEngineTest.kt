@@ -8,8 +8,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The three rules of "Your Picks". The tests check what the rules MEAN (liked genres rank higher, passed ones lower,
- * excluded movies never appear...), not the exact weights, so a small change of a weight does not break them.
+ * The rules of "Your Picks". The tests check what the rules MEAN (acclaimed movies beat noisy ones, liked genres rank
+ * higher, passed ones lower, excluded movies never appear...), not the exact weights, so a small change of a weight
+ * does not break them.
  */
 class RecommendationEngineTest {
 
@@ -31,13 +32,18 @@ class RecommendationEngineTest {
         rating: Double = 7.0,
         year: Int = 2010,
         title: String = "Movie $id",
-        poster: String? = "/p$id.jpg"
+        poster: String? = "/p$id.jpg",
+        votes: Int = 500,
+        language: String = "en"
     ) = Movie(
         id = id, title = title, posterPath = poster, backdropPath = null, voteAverage = rating,
-        releaseYear = year, genreIds = genres, voteCount = 500
+        releaseYear = year, genreIds = genres, voteCount = votes, originalLanguage = language
     )
 
     private fun ids(picks: List<Recommendation>) = picks.map { it.movie.id }
+
+    private fun breakdown(candidate: Movie, moods: List<Mood> = emptyList(), liked: List<Movie> = emptyList(), passed: List<Movie> = emptyList()) =
+        engine.breakdown(candidate, engine.tasteOf(moods, liked, passed))
 
     // ---------- the genre profile ----------
 
@@ -51,21 +57,33 @@ class RecommendationEngineTest {
     }
 
     @Test
-    fun likedGenresRaiseTheProfile() {
-        val noLikes = engine.genreProfile(listOf(happy, romantic), emptyList(), emptyList())
-        val likedAComedy = engine.genreProfile(listOf(happy, romantic), liked = listOf(movie(1, listOf(comedy))), passed = emptyList())
+    fun aSwipedRightMovieCountsDoubleWhatAMoodDoes() {
+        val noSwipes = engine.genreProfile(listOf(happy, romantic), emptyList(), emptyList())
+        val swipedAComedy = engine.genreProfile(listOf(happy, romantic), liked = listOf(movie(1, listOf(comedy))), passed = emptyList())
 
-        // Both moods weigh the same, until the user likes a comedy: then comedy leads
-        assertEquals(noLikes.getValue(comedy), noLikes.getValue(romance), 1e-9)
-        assertTrue(likedAComedy.getValue(comedy) > likedAComedy.getValue(romance))
+        // Both moods weigh the same, until the user swipes right on a comedy: then comedy (1 + 2) leads romance (1)
+        assertEquals(noSwipes.getValue(comedy), noSwipes.getValue(romance), 1e-9)
+        assertEquals(1.0, swipedAComedy.getValue(comedy), 1e-9)
+        assertEquals(1.0 / 3.0, swipedAComedy.getValue(romance), 1e-9)
     }
 
     @Test
-    fun passedGenresLowerTheProfile() {
-        val passedAComedy = engine.genreProfile(listOf(happy, romantic), liked = emptyList(), passed = listOf(movie(1, listOf(comedy))))
+    fun aPassedMovieTakesBackWhatAMoodGaveItsGenre() {
+        // comedy: +1 (mood) -1 (passed) = 0, romance: +1
+        val profile = engine.genreProfile(listOf(happy, romantic), liked = emptyList(), passed = listOf(movie(1, listOf(comedy))))
 
-        assertTrue(passedAComedy.getValue(comedy) < passedAComedy.getValue(romance))
-        assertTrue(passedAComedy.getValue(comedy) > 0.0) // lowered, not erased: the mood still asked for it
+        assertFalse(comedy in profile)
+        assertEquals(1.0, profile.getValue(romance), 1e-9)
+    }
+
+    @Test
+    fun aSwipeRightOutweighsOnePass() {
+        val profile = engine.genreProfile(
+            listOf(happy, romantic), liked = listOf(movie(1, listOf(comedy))), passed = listOf(movie(2, listOf(comedy)))
+        )
+        // comedy: +1 +2 -1 = 2, romance: +1
+        assertEquals(1.0, profile.getValue(comedy), 1e-9)
+        assertEquals(0.5, profile.getValue(romance), 1e-9)
     }
 
     @Test
@@ -92,55 +110,180 @@ class RecommendationEngineTest {
         assertTrue(engine.topGenres(emptyMap()).isEmpty())
     }
 
+    @Test
+    fun theLatestThreeSwipedRightMoviesAreAskedForSimilarOnesNewestFirst() {
+        val liked = (1..5).map { movie(it) }
+        assertEquals(listOf(5, 4, 3), engine.similarSeeds(liked).map { it.id })
+        assertEquals(listOf(2, 1), engine.similarSeeds(liked.take(2)).map { it.id })
+        assertTrue(engine.similarSeeds(emptyList()).isEmpty())
+        assertEquals(listOf(1), engine.similarSeeds(listOf(movie(1), movie(1))).map { it.id }) // a movie once
+    }
+
+    // ---------- the quality: IMDb's weighted rating ----------
+
+    @Test
+    fun theWeightedRatingIsPulledTowardTheAverageMovieWhenFewPeopleVoted() {
+        assertEquals(6.8, engine.weightedRating(9.4, 0), 1e-9)               // nobody voted: the average movie
+        assertEquals(7.9, engine.weightedRating(9.0, 500), 1e-9)            // as many votes as the weight: halfway
+        assertEquals(8.0, engine.weightedRating(8.0, 1_000_000), 0.01)      // lots of votes: the rating itself
+        assertTrue(engine.weightedRating(9.4, 12) < engine.weightedRating(8.2, 12_000))
+    }
+
+    @Test
+    fun theQualityScoreStaysBetweenZeroAndOneAndRisesWithTheRating() {
+        val best = engine.quality(movie(1, rating = 10.0, votes = 1_000_000))
+        val worst = engine.quality(movie(2, rating = 1.0, votes = 1_000_000))
+        val unrated = engine.quality(movie(3).copy(voteAverage = null, voteCount = 0))
+
+        assertEquals(1.0, best, 1e-9)
+        assertEquals(0.0, worst, 1e-9)
+        assertTrue(unrated in 0.0..1.0)
+        assertTrue(engine.quality(movie(4, rating = 8.0, votes = 5000)) > engine.quality(movie(5, rating = 7.0, votes = 5000)))
+    }
+
+    @Test
+    fun aNoisyHighRatingIsWorthLessThanASolidOne() {
+        assertTrue(engine.quality(movie(1, rating = 8.2, votes = 12_000)) > engine.quality(movie(2, rating = 9.4, votes = 12)))
+    }
+
+    @Test
+    fun credibilityGrowsWithTheNumberOfVotes() {
+        assertEquals(0.0, engine.credibility(movie(1, votes = 0)), 1e-9)
+        assertTrue(engine.credibility(movie(2, votes = 300)) < engine.credibility(movie(3, votes = 3000)))
+        assertEquals(1.0, engine.credibility(movie(4, votes = 500_000)), 1e-9)
+    }
+
+    // ---------- the genre match ----------
+
+    @Test
+    fun aMovieOfALikedGenreMatchesBetterThanOneOfAnotherGenre() {
+        val liked = listOf(movie(1, listOf(horror)))
+
+        val horrorMatch = breakdown(movie(2, listOf(horror)), liked = liked).genreMatch
+        val comedyMatch = breakdown(movie(3, listOf(comedy)), liked = liked).genreMatch
+
+        assertEquals(1.0, horrorMatch, 1e-9)
+        assertEquals(0.0, comedyMatch, 1e-9)
+    }
+
+    @Test
+    fun matchingMoreOfTheProfileMatchesBetter() {
+        val liked = listOf(movie(1, listOf(comedy, romance)))
+
+        val both = breakdown(movie(2, listOf(comedy, romance)), liked = liked).genreMatch
+        val one = breakdown(movie(3, listOf(comedy)), liked = liked).genreMatch
+        val oneAmongMany = breakdown(movie(4, listOf(comedy, action, horror, drama)), liked = liked).genreMatch
+
+        assertTrue(both > one)
+        assertTrue(one > oneAmongMany)
+    }
+
+    @Test
+    fun withNoProfileEveryGenreIsNeutral() {
+        assertEquals(0.5, breakdown(movie(1, listOf(horror))).genreMatch, 1e-9)
+        assertEquals(0.5, breakdown(movie(2, listOf(comedy)), moods = listOf(surprise)).genreMatch, 1e-9)
+    }
+
+    // ---------- the era and the language ----------
+
+    @Test
+    fun aMovieOfTheSameDecadeAsYourLikesMatchesBetterThanAFarOneAndTheNextDecadeIsHalfway() {
+        val liked = listOf(movie(100, year = 1995))
+
+        val same = breakdown(movie(1, year = 1999), liked = liked).eraAndLanguage
+        val next = breakdown(movie(2, year = 2004), liked = liked).eraAndLanguage
+        val far = breakdown(movie(3, year = 2022), liked = liked).eraAndLanguage
+
+        assertTrue(same > next)
+        assertTrue(next > far)
+    }
+
+    @Test
+    fun aMovieInTheLanguageOfYourLikesMatchesBetter() {
+        val liked = listOf(movie(100, language = "ko"), movie(101, language = "ko"))
+
+        val korean = breakdown(movie(1, language = "ko"), liked = liked).eraAndLanguage
+        val english = breakdown(movie(2, language = "en"), liked = liked).eraAndLanguage
+
+        assertTrue(korean > english)
+    }
+
+    @Test
+    fun withoutSwipedRightMoviesEraAndLanguageAreNeutral() {
+        assertEquals(0.5, breakdown(movie(1, year = 1970, language = "ja")).eraAndLanguage, 1e-9)
+        assertEquals(0.5, breakdown(movie(2, year = 2023, language = "en")).eraAndLanguage, 1e-9)
+    }
+
+    @Test
+    fun anUnknownYearOrLanguageIsNeutralToo() {
+        val liked = listOf(movie(100, year = 1995, language = "ko"))
+        val unknown = movie(1).copy(releaseYear = null, originalLanguage = null)
+        assertEquals(0.5, breakdown(unknown, liked = liked).eraAndLanguage, 1e-9)
+    }
+
+    // ---------- the pass penalty ----------
+
+    @Test
+    fun aGenrePassedClearlyMoreOftenThanLikedPenalisesMoviesThatStartWithIt() {
+        val passed = listOf(movie(100, listOf(horror)), movie(101, listOf(horror, drama)))
+
+        assertEquals(0.10, breakdown(movie(1, listOf(horror)), passed = passed).passPenalty, 1e-9)
+        assertEquals(0.0, breakdown(movie(2, listOf(drama, horror)), passed = passed).passPenalty, 1e-9) // its FIRST genre is drama
+    }
+
+    @Test
+    fun theBiggerTheNetPassesTheBiggerThePenaltyUpToAMaximum() {
+        fun penaltyAfter(passes: Int) =
+            breakdown(movie(1, listOf(horror)), passed = (1..passes).map { movie(100 + it, listOf(horror)) }).passPenalty
+
+        assertEquals(0.0, penaltyAfter(1), 1e-9) // one pass is not "heavy"
+        assertTrue(penaltyAfter(3) > penaltyAfter(2))
+        assertEquals(0.20, penaltyAfter(4), 1e-9)
+        assertEquals(0.20, penaltyAfter(9), 1e-9)
+    }
+
+    @Test
+    fun likesOfTheSameGenreCancelPasses() {
+        val passed = listOf(movie(100, listOf(horror)), movie(101, listOf(horror)))
+        val liked = listOf(movie(102, listOf(horror)))
+        assertEquals(0.0, breakdown(movie(1, listOf(horror)), liked = liked, passed = passed).passPenalty, 1e-9)
+    }
+
+    @Test
+    fun thePenaltyIsTakenOffTheScore() {
+        val candidate = movie(1, listOf(horror, comedy))
+        val passed = listOf(movie(100, listOf(horror)), movie(101, listOf(horror)))
+        val parts = breakdown(candidate, moods = listOf(happy), passed = passed)
+        val without = ScoreBreakdown(parts.genreMatch, parts.quality, parts.credibility, parts.eraAndLanguage, passPenalty = 0.0)
+
+        assertEquals(without.total - 0.10, parts.total, 1e-9)
+    }
+
     // ---------- the score ----------
 
     @Test
-    fun aMovieOfALikedGenreScoresHigherThanOneOfAnotherGenre() {
-        val profile = engine.genreProfile(emptyList(), liked = listOf(movie(1, listOf(horror))), passed = emptyList())
-
-        val horrorScore = engine.score(movie(2, listOf(horror)), profile, averageLikedYear = 2010.0)
-        val comedyScore = engine.score(movie(3, listOf(comedy)), profile, averageLikedYear = 2010.0)
-
-        assertTrue(horrorScore > comedyScore)
-    }
-
-    @Test
-    fun aBetterRatedMovieScoresHigherAllElseEqual() {
-        val profile = mapOf(comedy to 1.0)
-        assertTrue(
-            engine.score(movie(1, rating = 8.5), profile, null) > engine.score(movie(2, rating = 6.0), profile, null)
-        )
-    }
-
-    @Test
-    fun aMovieCloserToTheYearOfYourLikesScoresHigher() {
-        val profile = mapOf(comedy to 1.0)
-        val near = engine.score(movie(1, year = 1996), profile, averageLikedYear = 1995.0)
-        val far = engine.score(movie(2, year = 2022), profile, averageLikedYear = 1995.0)
-
-        assertTrue(near > far)
-    }
-
-    @Test
-    fun withoutLikesTheEraDoesNotFavourAnyYear() {
-        val profile = mapOf(comedy to 1.0)
-        val old = engine.score(movie(1, year = 1970), profile, averageLikedYear = null)
-        val recent = engine.score(movie(2, year = 2023), profile, averageLikedYear = null)
-
-        assertEquals(old, recent, 1e-9)
+    fun theScoreIsMadeOfTheFourPartsWithTheirWeights() {
+        val parts = ScoreBreakdown(genreMatch = 1.0, quality = 0.5, credibility = 0.2, eraAndLanguage = 0.0, passPenalty = 0.0)
+        assertEquals(0.40 * 1.0 + 0.35 * 0.5 + 0.15 * 0.2, parts.total, 1e-9)
     }
 
     @Test
     fun theScoreStaysBetweenZeroAndOne() {
-        val profile = mapOf(comedy to 1.0)
+        val liked = listOf(movie(100, listOf(comedy), year = 2012))
+        val taste = engine.tasteOf(listOf(happy), liked, emptyList())
 
-        val best = engine.score(movie(1, rating = 10.0, year = 2000), profile, averageLikedYear = 2000.0)
-        val worst = engine.score(movie(2, genres = listOf(horror), rating = 0.0, year = 1900), profile, averageLikedYear = 2020.0)
-        val unknown = engine.score(movie(3, genres = emptyList()).copy(voteAverage = null, releaseYear = null), profile, 2000.0)
+        val best = engine.score(movie(1, rating = 10.0, votes = 50_000, year = 2014), taste)
+        val worst = engine.score(movie(2, genres = listOf(horror), rating = 0.0, votes = 0, year = 1900, language = "ja"), taste)
+        val unknown = engine.score(movie(3, genres = emptyList()).copy(voteAverage = null, releaseYear = null, voteCount = 0), taste)
 
         assertEquals(1.0, best, 1e-9)
         assertTrue(worst in 0.0..1.0)
         assertTrue(unknown in 0.0..1.0)
+    }
+
+    @Test
+    fun aPenaltyBiggerThanTheScoreStopsAtZero() {
+        assertEquals(0.0, ScoreBreakdown(0.0, 0.0, 0.0, 0.0, passPenalty = 0.2).total, 1e-9)
     }
 
     @Test
@@ -152,15 +295,57 @@ class RecommendationEngineTest {
         assertEquals(0, Recommendation(any, -0.2, PickReason.Generic).matchPercent)
     }
 
-    // ---------- the picks ----------
+    // ---------- the picks: quality wins when the genres are the same ----------
 
     @Test
-    fun theMoodDecidesWhenNothingWasLiked() {
-        val candidates = listOf(movie(1, listOf(horror), rating = 9.0), movie(2, listOf(comedy), rating = 6.0))
+    fun acclaimedWellVotedMoviesOutrankLowRatedOrLowVoteMoviesOfTheSameGenres() {
+        val solid = movie(1, rating = 8.2, votes = 12_000)
+        val decent = movie(2, rating = 6.9, votes = 600)
+        val noisy = movie(3, rating = 9.4, votes = 12)   // a great rating from twelve people
+        val poor = movie(4, rating = 5.1, votes = 80)
+
+        // All four are comedies: the "three of a kind" limit would hide the last one, and here the whole order is the point
+        val picks = RecommendationEngine(maxPerFirstGenre = 10)
+            .recommend(listOf(poor, noisy, decent, solid), listOf(happy), liked = listOf(movie(100)), passed = emptyList())
+
+        assertEquals(1, picks.first().movie.id)
+        assertTrue(ids(picks).indexOf(1) < ids(picks).indexOf(2))
+        assertTrue(ids(picks).indexOf(2) < ids(picks).indexOf(3)) // the noisy 9.4 is not worth the decent 6.9
+        assertTrue(ids(picks).indexOf(1) < ids(picks).indexOf(4))
+    }
+
+    @Test
+    fun aHighVoteCountAloneDoesNotBeatARealRatingDifference() {
+        val loved = movie(1, rating = 8.6, votes = 8_000)
+        val famousButMediocre = movie(2, rating = 6.3, votes = 30_000)
+
+        val picks = engine.recommend(listOf(famousButMediocre, loved), listOf(happy), emptyList(), emptyList())
+
+        assertEquals(listOf(1, 2), ids(picks))
+    }
+
+    @Test
+    fun theStrongMatchOfYourSwipesComesBeforeTheWeakOneOfTheSameGenres() {
+        val liked = listOf(movie(100, listOf(drama), year = 1995, language = "ko"))
+        val passed = listOf(movie(101, listOf(horror)), movie(102, listOf(horror)))
+        val strong = movie(1, listOf(drama), rating = 8.3, votes = 9_000, year = 1992, language = "ko")
+        val weak = movie(2, listOf(drama), rating = 5.4, votes = 90, year = 2021, language = "en")
+        val otherGenre = movie(3, listOf(horror), rating = 8.5, votes = 20_000, year = 1994, language = "ko")
+
+        val picks = engine.recommend(listOf(weak, otherGenre, strong), moods = emptyList(), liked = liked, passed = passed)
+
+        assertEquals(1, picks.first().movie.id)
+        assertTrue(ids(picks).indexOf(1) < ids(picks).indexOf(2))
+        assertTrue(ids(picks).indexOf(1) < ids(picks).indexOf(3))
+    }
+
+    @Test
+    fun theMoodDecidesWhenNothingWasLikedAndTheQualityIsTheSame() {
+        val candidates = listOf(movie(1, listOf(horror)), movie(2, listOf(comedy)))
 
         val picks = engine.recommend(candidates, listOf(happy), liked = emptyList(), passed = emptyList())
 
-        assertEquals(listOf(2, 1), ids(picks)) // the comedy fits the Happy mood, even with the lower rating
+        assertEquals(listOf(2, 1), ids(picks)) // the comedy fits the Happy mood
     }
 
     @Test
@@ -178,15 +363,19 @@ class RecommendationEngineTest {
         val moods = listOf(happy, romantic)
 
         val withoutPass = engine.recommend(candidates, moods, emptyList(), emptyList())
-        val afterPassingAComedy = engine.recommend(candidates, moods, emptyList(), passed = listOf(movie(100, listOf(comedy))))
+        val afterPassingTwoComedies = engine.recommend(
+            candidates, moods, emptyList(), passed = listOf(movie(100, listOf(comedy)), movie(101, listOf(comedy)))
+        )
 
-        assertEquals(1, withoutPass.first().movie.id)        // an even tie: the smaller id
-        assertEquals(2, afterPassingAComedy.first().movie.id) // the romance now leads
+        assertEquals(1, withoutPass.first().movie.id)               // an even tie: the smaller id
+        assertEquals(2, afterPassingTwoComedies.first().movie.id)   // the romance now leads
     }
+
+    // ---------- the list ----------
 
     @Test
     fun excludedMoviesNeverAppear() {
-        val candidates = (1..15).map { movie(it) }
+        val candidates = (1..15).map { movie(it, genres = listOf(it)) }
 
         val picks = engine.recommend(candidates, listOf(happy), emptyList(), emptyList(), excludeIds = setOf(1, 2, 3))
 
@@ -216,15 +405,17 @@ class RecommendationEngineTest {
     }
 
     @Test
-    fun atMostFourPicksShareTheSameFirstGenre() {
+    fun atMostThreePicksShareTheSameFirstGenre() {
         val comedies = (1..12).map { movie(it, listOf(comedy), rating = 8.0) }
         val dramas = (21..23).map { movie(it, listOf(drama), rating = 5.0) }
+        val actions = (31..32).map { movie(it, listOf(action), rating = 5.0) }
 
-        val picks = engine.recommend(comedies + dramas, listOf(happy), emptyList(), emptyList())
+        val picks = engine.recommend(comedies + dramas + actions, listOf(happy), emptyList(), emptyList())
 
-        assertEquals(4, picks.count { it.movie.genreIds.first() == comedy })
+        assertEquals(3, picks.count { it.movie.genreIds.first() == comedy })
         assertEquals(3, picks.count { it.movie.genreIds.first() == drama }) // the lower scores still make it in
-        assertEquals(7, picks.size)
+        assertEquals(2, picks.count { it.movie.genreIds.first() == action })
+        assertEquals(8, picks.size)
     }
 
     @Test
@@ -235,7 +426,7 @@ class RecommendationEngineTest {
         val picks = engine.recommend(candidates, listOf(happy), emptyList(), emptyList())
 
         assertEquals(10, picks.size)
-        assertTrue(genres.all { genre -> picks.count { it.movie.genreIds.first() == genre } <= 4 })
+        assertTrue(genres.all { genre -> picks.count { it.movie.genreIds.first() == genre } <= 3 })
     }
 
     @Test
@@ -250,7 +441,6 @@ class RecommendationEngineTest {
         val picks = engine.recommend(candidates, emptyList(), emptyList(), emptyList())
 
         assertEquals(listOf(2, 3, 1), ids(picks))
-        assertTrue(picks.all { it.reason == PickReason.Generic })
     }
 
     @Test
@@ -258,9 +448,10 @@ class RecommendationEngineTest {
         // Three movies with exactly the same score: only the id can tell them apart
         val candidates = listOf(movie(5), movie(3), movie(9), movie(1, rating = 6.0))
 
-        val first = engine.recommend(candidates, listOf(happy), emptyList(), emptyList())
-        val again = engine.recommend(candidates, listOf(happy), emptyList(), emptyList())
-        val shuffled = engine.recommend(candidates.reversed(), listOf(happy), emptyList(), emptyList())
+        val all = RecommendationEngine(maxPerFirstGenre = 10) // the limit of three comedies would cut the fourth
+        val first = all.recommend(candidates, listOf(happy), emptyList(), emptyList())
+        val again = all.recommend(candidates, listOf(happy), emptyList(), emptyList())
+        val shuffled = all.recommend(candidates.reversed(), listOf(happy), emptyList(), emptyList())
 
         assertEquals(listOf(3, 5, 9, 1), ids(first))
         assertEquals(first, again)
@@ -273,13 +464,24 @@ class RecommendationEngineTest {
 
         val picks = engine.recommend(candidates, emptyList(), liked = listOf(movie(100, listOf(drama), year = 1995)), passed = emptyList())
 
-        assertEquals(2, picks.first().movie.id) // 1996 is next to 1995
+        assertEquals(2, picks.first().movie.id) // 1996 is in the decade of 1995
     }
 
     // ---------- the reason ----------
 
     @Test
-    fun theReasonNamesTheLikedMovieItIsMostSimilarTo() {
+    fun aMovieTmdbCallsSimilarNamesTheMovieItIsSimilarTo() {
+        val liked = listOf(movie(100, listOf(horror), title = "Scary One"), movie(101, listOf(drama), title = "Quiet One"))
+
+        val picks = engine.recommend(
+            listOf(movie(1, listOf(comedy))), listOf(happy), liked, emptyList(), similarTo = mapOf(1 to 101)
+        )
+
+        assertEquals(PickReason.SimilarTo("Quiet One"), picks.single().reason) // no shared genre needed: TMDB said so
+    }
+
+    @Test
+    fun theReasonNamesTheLikedMovieThatSharesMostOfItsGenres() {
         val liked = listOf(
             movie(100, listOf(horror), title = "Scary One"),
             movie(101, listOf(comedy, romance), title = "Funny Love")
@@ -287,7 +489,31 @@ class RecommendationEngineTest {
 
         val picks = engine.recommend(listOf(movie(1, listOf(romance, comedy))), listOf(happy), liked, emptyList())
 
-        assertEquals(PickReason.SimilarTo("Funny Love"), picks.single().reason) // shares two genres, not just none
+        assertEquals(PickReason.SimilarTo("Funny Love"), picks.single().reason)
+    }
+
+    @Test
+    fun aLikedMovieWithOnlyASmallOverlapOfGenresIsNotCalledSimilar() {
+        val liked = listOf(movie(100, listOf(comedy), title = "Funny"))
+
+        // shares 1 of 4 genres: not "similar"
+        val picks = engine.recommend(listOf(movie(1, listOf(drama, comedy, action, horror), rating = 7.0)), listOf(happy), liked, emptyList())
+
+        assertEquals(PickReason.MoodMatch("happy"), picks.single().reason)
+    }
+
+    @Test
+    fun aVeryWellRatedMoodMatchIsATopRatedPickOfThatMood() {
+        val picks = engine.recommend(listOf(movie(1, listOf(romance), rating = 8.5, votes = 20_000)), listOf(happy, romantic), emptyList(), emptyList())
+
+        assertEquals(PickReason.TopRated("romantic"), picks.single().reason)
+    }
+
+    @Test
+    fun aVeryWellRatedMovieWithNoMoodIsJustATopRatedPick() {
+        val picks = engine.recommend(listOf(movie(1, rating = 8.5, votes = 20_000)), emptyList(), emptyList(), emptyList())
+
+        assertEquals(PickReason.TopRated(null), picks.single().reason)
     }
 
     @Test
@@ -302,6 +528,13 @@ class RecommendationEngineTest {
         val picks = engine.recommend(listOf(movie(1)), listOf(surprise), emptyList(), emptyList())
 
         assertEquals(PickReason.MoodMatch(surprise.id), picks.single().reason)
+    }
+
+    @Test
+    fun anOrdinaryMovieWithNothingToGoOnIsJustPickedForYou() {
+        val picks = engine.recommend(listOf(movie(1)), emptyList(), emptyList(), emptyList())
+
+        assertEquals(PickReason.Generic, picks.single().reason)
     }
 
     @Test

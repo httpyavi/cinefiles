@@ -173,10 +173,14 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun choosePicks(): PicksState {
         val moods = chosenMoods()
         val profile = engine.genreProfile(moods, picksLiked, picksPassed)
-        val candidates = repository.picksCandidates(engine.topGenres(profile), preferences)
-            .getOrElse { return PicksState.Error(friendlyError(it)) }
+        val pool = repository.picksCandidates(
+            genreIds = engine.topGenres(profile),
+            preferences = preferences,
+            seeds = engine.similarSeeds(picksLiked),
+            exclude = (picksLiked + picksPassed).map { it.id }.toSet()
+        ).getOrElse { return PicksState.Error(friendlyError(it)) }
 
-        val picks = engine.recommend(candidates, moods, picksLiked, picksPassed)
+        val picks = engine.recommend(pool.movies, moods, picksLiked, picksPassed, similarTo = pool.similarTo)
         if (picks.isEmpty()) return PicksState.Empty
         return PicksState.Ready(
             summary = summaryLine(moods, picks.size),

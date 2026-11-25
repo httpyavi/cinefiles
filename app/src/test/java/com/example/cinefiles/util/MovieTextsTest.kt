@@ -62,6 +62,21 @@ class MovieTextsTest {
     }
 
     @Test
+    fun aLanguageCodeBecomesItsEnglishName() {
+        assertEquals("English", languageName("en"))
+        assertEquals("Korean", languageName("ko"))
+        assertEquals("Japanese", languageName(" JA "))
+        assertEquals("Cantonese", languageName("cn")) // TMDB's own code
+    }
+
+    @Test
+    fun noLanguageOrAnUnknownCodeHasNoName() {
+        assertNull(languageName(null))
+        assertNull(languageName(""))
+        assertNull(languageName("xx")) // TMDB's "no spoken language"
+    }
+
+    @Test
     fun wholeNumbersAreWrittenWithTheLanguagesSeparator() {
         assertEquals("1,234", 1234.formatted())
         assertEquals("7", 7.formatted())

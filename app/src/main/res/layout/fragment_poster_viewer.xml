@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE FULL-SCREEN POSTER (PosterViewerFragment). The dark backdrop is the window's own background
+     (Theme.CineFiles.PosterViewer), so the screen behind shows through it faintly. The picture fills the screen, can be
+     pinched and dragged (ZoomImageView), and a tap anywhere closes it. The round close button floats at the top-right. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.ZoomImageView
+        android:id="@+id/viewerImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/viewerLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/state_loading"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indicatorColor="@color/accent" />
+
+    <TextView
+        android:id="@+id/viewerError"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:maxWidth="@dimen/state_text_max_width"
+        android:text="@string/poster_viewer_error"
+        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/viewerTopBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end">
+
+        <ImageButton
+            android:id="@+id/viewerClose"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginEnd="@dimen/space_12"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/action_close"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_primary" />
+    </FrameLayout>
+
+</FrameLayout>

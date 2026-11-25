@@ -41,13 +41,17 @@ app/src/main/java/com/example/cinefiles/
     mood/              MoodFragment, MoodFaceView, MoodSliderView, MoodSpectrum, PreferencesFragment, WatchFlowViewModel
     swipe/             SwipeFragment, SwipeViewModel, SwipeDeckView (touch + animation), SwipeCardView (one card)
     picks/             PicksFragment, PicksAdapter, QuickViewSheet, PicksState, PickTexts (Your Picks)
-    detail/            DetailFragment, DetailViewModel, DetailState (Movie Details)
-    components/        PosterAdapter (every poster row and grid), PosterView, StepIndicatorView, AmbientGlowView, AchievementBadgeView
+    detail/            DetailFragment, DetailViewModel, DetailState (Movie Details), CastAdapter (the Cast row),
+                       PosterViewerFragment (the full-screen poster)
+    person/            PersonFragment, PersonViewModel, PersonState, PersonHeaderAdapter (an actor, director or crew member + their movies)
+    components/        PosterAdapter (every poster row and grid), PosterView, ZoomImageView (pinch / drag / double-tap picture),
+                       StepIndicatorView, AmbientGlowView, AchievementBadgeView
   data/                Movie (also the Room table), MovieDao, AppDatabase, Converters, CollectionCounts, MovieRepository, MoviePage,
-                       TmdbApi (Retrofit), DiscoverQuery, ApiError, MovieDetails, dto/ (TMDB's JSON shapes),
+                       TmdbApi (Retrofit), DiscoverQuery, ApiError, MovieDetails (cast, crew, facts), PersonDetails, PicksPool,
+                       dto/ (TMDB's JSON shapes),
                        AchievementTracker and UserSettings (small SharedPreferences files)
   logic/               Plain Kotlin rules, no screens: Moods, MoodSelection, MoodShapes, Preferences, Discovery, SwipeDeck, SwipeGesture,
-                       RecommendationEngine, CollectionRules, DiscoverRules, Profile, Achievements, Genres, Featured, Greeting,
+                       RecommendationEngine, Credits, CollectionRules, DiscoverRules, Profile, Achievements, Genres, Featured, Greeting,
                        PageCounter, Pagination, PosterColor
   util/                Small shared helpers: NavigationExtensions, ViewExtensions, StateViews, SnackbarExtensions, ChipExtensions,
                        MovieTexts, CurrentTime, AnimationSettings, ImageExtensions, ImageUrls, PosterTint, PaginationScrollListener, Event
@@ -74,6 +78,7 @@ Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, s
   - `openTab(R.id.discoverFragment)`: jump to a tab (each tab keeps its state).
   - `openScreen(R.id.moodFragment)`: open a screen on top (Back returns). The steps of the watch flow pass `slide = true`.
   - `openMovieDetails(movieId)`: open Details. A different movie stacks on top of the current Details; the same movie twice is ignored.
+  - `openPerson(personId)`: open the Person screen (an actor, director or crew member). Works the same way: a different person stacks, the same one twice is ignored.
 - Motion: tabs and Details fade through, Mood → Preferences → Swipe → Picks slide (250 ms). With the phone's "Remove animations"
   on, every screen change is instant. Press animations (buttons, chips, posters) take 150 ms in and 200 ms out.
 - A tab screen reserves room for the floating bar: `android:paddingBottom="@dimen/bottom_nav_height"` on its scrolling area
@@ -88,12 +93,14 @@ Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, s
   (up to three, "Surprise Me" alone) are in `logic/MoodSelection.kt`.
 - **Preferences** (release period, minimum rating, length, language) are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
 - **The swipe deck** is a MIX (`logic/Discovery.kt`): what fits your mood, top rated, hidden gems, trending, popular, taken in turns, each
-  movie once, skipping every movie you already have a state for. If mood + preferences fit too few movies the search is loosened step by step
+  movie once, skipping every movie you already have a state for (liked, passed, on the watchlist or **watched**: `MovieDao.idsWithState`). If mood + preferences fit too few movies the search is loosened step by step
   (language, length, release period, rating, then genres) and those cards say "Something different". `SwipeViewModel` sends the questions to
   `MovieRepository.moviesFor` (TMDB `/discover`, `/trending`, `/popular`); `data/DiscoverQuery.kt` turns them into TMDB parameters. When 5 cards
   are left, more are fetched quietly. `logic/SwipeDeck.kt` is the plain-Kotlin deck (position, liked list and Undo are worked out from one
   history); `logic/SwipeGesture.kt` decides what counts as a swipe (35% of the width, or a flick faster than 600 dp/s). `SwipeDeckView` does the
-  touch and animation with only `MotionEvent` and `ViewPropertyAnimator`. Like and Pass are also offered as **accessibility actions** on the deck.
+  touch and animation with only `MotionEvent` and `ViewPropertyAnimator`. "Popcorn" (swipe right) and Pass are also offered as **accessibility actions** on the deck.
+- **Swipe right is a popcorn, not a heart** (`ic_popcorn`): on the right-hand button, in the "Picks (n)" pill and in the big icon that grows on a card dragged
+  to the right, so it is never mistaken for the Likes heart of Details and My Collection. What swiping right does has not changed.
 - **Saved at once:** every like and pass is written to Room; Undo takes it back.
 
 ## The rules of liking and the watchlist
@@ -107,20 +114,31 @@ Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, s
 
 ## Your Picks (the recommendation rules)
 
-No AI, no server: three small rules in `logic/RecommendationEngine.kt`, which knows nothing about TMDB or screens.
+No AI, no server: a few small rules in `logic/RecommendationEngine.kt`, which knows nothing about TMDB or screens. Your **taste** is the moods you chose,
+the movies you swiped right (a popcorn) and the movies you passed.
 
-1. **Genre profile:** every genre of a chosen mood +1, of a liked movie +1.5, of a passed movie −0.5. Negative totals count as 0, then everything is
+1. **Genre profile:** every genre of a chosen mood +1, of a swiped-right movie +2, of a passed movie −1. Negative totals count as 0, then everything is
    divided by the biggest.
-2. **Score** of a candidate = 0.6 × genre match + 0.3 × (rating / 10) + 0.1 × era match (how close its year is to the average year of your likes;
-   0.5 when you liked nothing).
-3. **The list:** best scores first, top 10, at most 4 whose first genre is the same. Match percent = score × 100. Equal scores are settled by
-   rating, then movie id, so the order never changes by chance. Each pick says why: "Similar to <liked movie>" or "Matches your <mood> mood".
+2. **Score** of a candidate, from 0 to 1 (`ScoreBreakdown` shows the parts):
+   `0.40 × genre match + 0.35 × quality + 0.15 × credibility + 0.10 × era and language − pass penalty`.
+   - *Genre match*: cosine similarity between the candidate's genres and the profile (a neutral 0.5 when there is no profile).
+   - *Quality*: IMDb's Bayesian weighted rating `(v / (v + m)) × R + (m / (v + m)) × C` (m = 500, C = 6.8, v = votes, R = rating), 5.0–9.0 mapped onto 0–1.
+     A rating from few voters is pulled toward the average movie, so acclaimed, well-voted movies beat obscure or noisy ones.
+   - *Credibility*: the number of votes on a log scale (20,000 votes = 1).
+   - *Era and language*: the candidate's decade (same 1, next 0.5) and original language against your swiped-right movies; 0.5 when you swiped none.
+   - *Pass penalty*: when you passed a genre at least twice more often than you liked it, movies whose FIRST genre is that one lose 0.10 to 0.20.
+3. **The list:** best scores first, top 10, at most 3 whose first genre is the same. Match percent = score × 100. Equal scores are settled by
+   rating, then movie id, so the order never changes by chance. Each pick says why: "Similar to <movie>" (TMDB listed it as similar, or it shares most genres),
+   "Top-rated <mood> pick" or "Matches your <mood> mood".
 
-**Candidates** (`MovieRepository.picksCandidates`): TMDB `/discover` with the three best genres of the profile joined with `|`, your preferences and at
-least 100 votes (pages 1 and 2). Movies that already have a state in Room and movies without a poster are never candidates. If fewer than 10 are
-found, it asks once more WITHOUT the preferences. `WatchFlowViewModel.buildPicks` runs it, with a short "building your picks" moment (about 1 s,
-skipped when animations are off). The page: Top Match card, "You liked", "More for you" (three columns, each poster with its match percent and a
-bookmark), and a quick-view sheet (story, reason, Details / Add to Watchlist / Mark as watched). Picks live only while the flow is open.
+**Candidates** (`MovieRepository.picksCandidates`, returns a `PicksPool`): TMDB `/discover` for the three best genres of the profile joined with `|` and your
+preferences, asked twice (`vote_average.desc` and `popularity.desc`, pages 1 and 2) with a **quality floor** of a rating of 6.5 and 500 votes, plus
+`/movie/{id}/similar` for up to 3 of your latest swiped-right movies (kept when rating ≥ 6.5, votes ≥ 300 and they fit your preferences). Movies that already have a
+state in Room, movies you swiped in this sitting and movies without a poster are never candidates. Only when fewer than 10 are found does the floor drop to 6.0 and 200 votes
+(Filipino keeps a tiny vote limit: few people vote on those), and if there are still fewer than 10, the preferences are forgotten too (the genres stay).
+`WatchFlowViewModel.buildPicks` runs it, with a short "building your picks" moment (about 1 s, skipped when animations are off). The page: Top Match card,
+"You liked", "More for you" (three columns, each poster with its match percent and a bookmark), and a quick-view sheet (story, reason, Details / Add to Watchlist /
+Mark as watched). Picks live only while the flow is open.
 
 ## Discover
 
@@ -138,8 +156,15 @@ Home's search icon opens the tab with the keyboard ready.
   that only small targeted `UPDATE` queries change the state. "Undo" everywhere is `restoreState`.
 - **Collection:** `Liked · Watchlist · Watched` with live counts over a three-column grid. A poster wears a badge (`badgeStatusFor`). Tap = Details,
   long-press = a menu that depends on the tab (`actionsFor`), and every action offers **Undo**.
-- **Details:** backdrop, rating · year · length, genres, **Add to Watchlist**, Like and Watched toggles, story, trailer (opens YouTube) and Similar
-  movies. It shows what is known at once and works offline for a saved movie (`ui/detail/DetailState.kt`).
+- **Details:** backdrop, a **tappable poster**, rating · year · length, genres, "Directed by …", **Add to Watchlist**, Like and Watched toggles, tagline and story,
+  trailer (opens YouTube), the **Cast** row, the **Crew** chips (writers, producers, cinematography, composers: `logic/Credits.kt`), a few facts (status, original
+  language, country) and Similar movies. It shows what is known at once and works offline for a saved movie (`ui/detail/DetailState.kt`); the people and the facts
+  only come with TMDB's details answer (`/movie/{id}?append_to_response=credits,videos`), so those sections appear when it arrives.
+- **The poster** opens `PosterViewerFragment`, a full-screen dialog: dark backdrop, close button, the w780 poster (the list's small one shows at once while it loads),
+  pinch to zoom (`ZoomImageView`, up to 4×), drag, double-tap to zoom, tap anywhere to close. It fades in and out unless the phone's animations are off.
+- **Person** (`ui/person/`, `TmdbApi.person` = `/person/{id}?append_to_response=movie_credits`): tap a director, an actor or a crew chip. Photo, name, what they are
+  known for, biography (3 lines, "More") and their movies in the three-column poster grid, one poster per movie, most popular first. A person who has both acted and worked
+  behind the camera gets two tabs, "Acting" and "Directing & Crew". Tapping a poster opens that movie's Details, and so on.
 
 ## Profile
 
@@ -155,8 +180,8 @@ The name, the numbers, your taste, the achievements, About and Clear my data.
 
 ## Performance, memory and accessibility
 
-- Pictures: only `w342` (rows and grids), `w500` (swipe card) and `w780` (backdrops), never `original` (`util/ImageUrls.kt`). Glide loads them; recycled
-  list views cancel their old download.
+- Pictures: only `w185` (profile photos), `w342` (rows and grids), `w500` (swipe card) and `w780` (backdrops and the full-screen poster), never `original`
+  (`util/ImageUrls.kt`). Glide loads them; recycled list views cancel their old download.
 - Every list uses `DiffUtil` (`ListAdapter`). Every Fragment clears its ViewBinding in `onDestroyView`.
 - Room, TMDB and the settings files are never touched on the main thread: queries are `suspend`/`Flow`, and `CineFilesApp` makes the shared objects on a
   background thread at start. **StrictMode** is on in debug builds and writes to Logcat (tag `StrictMode`) for disk or network use on the main thread
@@ -177,7 +202,7 @@ Always reuse these. Never type a color, size or text directly in a layout. Dark 
 | Text | `@style/TextAppearance.CineFiles.Display`, `.LargeTitle`, `.Title`, `.Headline`, `.Body`, `.Callout`, `.Caption`, `.Eyebrow`, `.Label`, `.Button`, `.Pill` |
 | Buttons | `Widget.CineFiles.Button.Primary` (red, one per screen), `.Tonal` (glass), `.Text`. Do not set `cornerRadius`. |
 | Round icon button | `Widget.CineFiles.RoundActionButton` (+ `.Large`, `.Large.Like`) with `@dimen/round_button_size`, an `app:icon` and a `contentDescription` |
-| Chip | `ChipGroup.addChoiceChip("label")` (util/ChipExtensions.kt) |
+| Chip | `ChipGroup.addChoiceChip("label")` (util/ChipExtensions.kt); a tappable name that opens a Person: `ChipGroup.addPersonChip("name") { ... }` |
 | Segmented control | `MaterialButtonToggleGroup` with `Widget.CineFiles.Button.Segment`; `android:saveEnabled="false"` when a ViewModel keeps the selection |
 | Card | `Widget.CineFiles.Card`, `.Card.Glass` |
 | Posters | `PosterView`; every row or grid uses `PosterAdapter(PosterStyle.ROW or GRID, …)` |
@@ -214,7 +239,6 @@ use another font (Inter, for example): put the font files in `res/font/` and cha
 
 ## Good to know / postponed
 
-- **Cast on Details** is not shown yet. The data is already loaded (`MovieDetails.cast`, `directors`).
 - **No "Double Feature" badge:** the nine badges are about swiping; adding one needs an id and goal in `Achievements.all` and a counter in `AchievementStats`.
 - **Database changes:** the table is at version 1. If `Movie` ever changes, raise `version` in `AppDatabase` and add a real Migration; without one Room starts
   over with an empty table (`fallbackToDestructiveMigration`), which deletes the saved movies.

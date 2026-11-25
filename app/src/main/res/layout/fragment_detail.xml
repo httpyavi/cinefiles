@@ -51,47 +51,96 @@
                     android:background="@drawable/scrim_bottom"
                     android:importantForAccessibility="no" />
 
+                <!-- The poster (tap it to see it full screen) and, beside it, the title, the facts and the director -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom"
-                    android:orientation="vertical"
+                    android:gravity="bottom"
+                    android:orientation="horizontal"
                     android:paddingStart="@dimen/screen_margin"
                     android:paddingEnd="@dimen/screen_margin"
                     android:paddingBottom="@dimen/space_16">
 
-                    <TextView
-                        android:id="@+id/detailTitle"
-                        android:layout_width="match_parent"
+                    <FrameLayout
+                        android:id="@+id/detailPosterWrap"
+                        android:layout_width="@dimen/detail_poster_width"
                         android:layout_height="wrap_content"
-                        android:accessibilityHeading="true"
-                        android:ellipsize="end"
-                        android:maxLines="3"
-                        android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
-                        tools:targetApi="28"
-                        tools:text="Interstellar" />
+                        android:layout_marginEnd="@dimen/space_16">
 
-                    <!-- star · rating · year · length (the star is a compound drawable: TextView.showRatingStar) -->
-                    <TextView
-                        android:id="@+id/detailMeta"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_8"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical"
-                        android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
-                        tools:text="8.4 · 2014 · 2h 49m" />
+                        <!-- A PosterView clicked: it gives the same small "press" shrink as every poster -->
+                        <com.example.cinefiles.ui.components.PosterView
+                            android:id="@+id/detailPoster"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true" />
 
-                    <TextView
-                        android:id="@+id/detailGenres"
-                        android:layout_width="match_parent"
+                        <!-- A hint that the poster opens bigger: the clicks go to the poster under it -->
+                        <ImageView
+                            android:layout_width="@dimen/detail_poster_zoom_size"
+                            android:layout_height="@dimen/detail_poster_zoom_size"
+                            android:layout_gravity="bottom|end"
+                            android:layout_margin="@dimen/space_8"
+                            android:background="@drawable/bg_glass_circle"
+                            android:importantForAccessibility="no"
+                            android:padding="@dimen/space_4"
+                            android:src="@drawable/ic_expand"
+                            app:tint="@color/text_primary" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_4"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
-                        tools:text="Adventure, Drama, Science Fiction" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/detailTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:accessibilityHeading="true"
+                            android:ellipsize="end"
+                            android:maxLines="3"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                            tools:targetApi="28"
+                            tools:text="Interstellar" />
+
+                        <!-- star · rating · year · length (the star is a compound drawable: TextView.showRatingStar) -->
+                        <TextView
+                            android:id="@+id/detailMeta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_8"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:maxLines="1"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                            tools:text="8.4 · 2014 · 2h 49m" />
+
+                        <TextView
+                            android:id="@+id/detailGenres"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                            tools:text="Adventure, Drama, Science Fiction" />
+
+                        <!-- "Directed by Christopher Nolan": every name is a link to the Person screen (DetailFragment.showDirectors) -->
+                        <TextView
+                            android:id="@+id/detailDirectors"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_8"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                            android:visibility="gone"
+                            tools:text="Directed by Christopher Nolan"
+                            tools:visibility="visible" />
+                    </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
 
@@ -156,6 +205,17 @@
                         app:iconGravity="textStart"
                         tools:text="Favorite" />
                 </LinearLayout>
+
+                <!-- The tagline, when TMDB has one -->
+                <TextView
+                    android:id="@+id/detailTagline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_24"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                    android:visibility="gone"
+                    tools:text="Mankind was born on Earth. It was never meant to die here."
+                    tools:visibility="visible" />
 
                 <!-- The story: three lines, then "More" -->
                 <TextView
@@ -224,7 +284,93 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Block 3: similar movies -->
+            <!-- Block 3: the cast (a row of round photos), the crew (tappable names by job) and a few facts.
+                 They come with TMDB's details answer, so each section only shows when it has something. -->
+            <LinearLayout
+                android:id="@+id/castSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/screen_margin"
+                    android:layout_marginTop="@dimen/space_32"
+                    android:layout_marginEnd="@dimen/screen_margin"
+                    android:layout_marginBottom="@dimen/space_8"
+                    android:accessibilityHeading="true"
+                    android:text="@string/detail_cast_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/castList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/space_16"
+                    android:paddingEnd="@dimen/space_8"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/crewSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingEnd="@dimen/screen_margin"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_24"
+                    android:layout_marginBottom="@dimen/space_8"
+                    android:accessibilityHeading="true"
+                    android:text="@string/detail_crew_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <!-- One item_crew_group for every kind of crew the movie has (DetailFragment.showCrew) -->
+                <LinearLayout
+                    android:id="@+id/crewGroups"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/infoSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingEnd="@dimen/screen_margin"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_24"
+                    android:layout_marginBottom="@dimen/space_8"
+                    android:accessibilityHeading="true"
+                    android:text="@string/detail_info_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                    tools:targetApi="28" />
+
+                <!-- One item_info_row for every fact TMDB knows (DetailFragment.showInfo) -->
+                <LinearLayout
+                    android:id="@+id/infoRows"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Block 4: similar movies -->
             <LinearLayout
                 android:id="@+id/similarSection"
                 android:layout_width="match_parent"

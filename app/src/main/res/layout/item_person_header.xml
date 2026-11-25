@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The top of the Person screen, as the first item of its poster grid (PersonHeaderAdapter): the profile photo, the
+     name and what the person is known for, the biography (three lines, "More" opens the rest), the two tabs when the
+     person has acted AND worked behind the camera, and the empty state when TMDB lists no movies.
+     The 4 dp side padding plus the grid's 16 dp padding gives the usual 20 dp screen margin. The first child is pushed
+     down by one tap target so it clears the round back button that floats at the top-left. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_4"
+    android:paddingTop="@dimen/space_16"
+    android:paddingEnd="@dimen/space_4"
+    android:paddingBottom="@dimen/space_8">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/touch_target"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- A quiet profile icon sits behind the photo: it shows when the person has no photo -->
+        <FrameLayout
+            android:layout_width="@dimen/person_photo_size"
+            android:layout_height="@dimen/person_photo_size"
+            android:background="@drawable/bg_glass_circle">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:padding="@dimen/space_32"
+                android:src="@drawable/ic_profile"
+                app:tint="@color/text_secondary" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/personPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Circle" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_16"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/personName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:targetApi="28"
+                tools:text="Christopher Nolan" />
+
+            <TextView
+                android:id="@+id/personKnownFor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                tools:text="Known for Directing" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/personBio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_20"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:textAppearance="@style/TextAppearance.CineFiles.Body"
+        tools:text="Christopher Edward Nolan is a British and American filmmaker known for his Hollywood blockbusters with complex storytelling." />
+
+    <TextView
+        android:id="@+id/personBioToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/touch_target"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:text="@string/detail_more"
+        android:textAppearance="@style/TextAppearance.CineFiles.Label"
+        android:textColor="@color/accent_soft"
+        android:visibility="gone" />
+
+    <!-- saveEnabled="false": the selected tab is kept by PersonViewModel, not by these buttons -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/personTabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_16"
+        android:saveEnabled="false"
+        android:visibility="gone"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabActing"
+            style="@style/Widget.CineFiles.Button.Segment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:saveEnabled="false"
+            android:text="@string/person_tab_acting" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabCrew"
+            style="@style/Widget.CineFiles.Button.Segment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:saveEnabled="false"
+            android:text="@string/person_tab_crew" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- Only when TMDB lists no movies for the person. It must not fill the screen: it sits under the biography. -->
+    <include
+        android:id="@+id/stateEmpty"
+        layout="@layout/view_state_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_16"
+        android:visibility="gone" />
+
+</LinearLayout>

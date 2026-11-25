@@ -79,4 +79,18 @@
             app:argType="integer" />
     </fragment>
 
+    <!-- ===== Person: an actor, a director or another crew member, with their movies =====
+         It opens with openPerson(personId) from the cast and crew of Movie Details. The argument key must match
+         ARG_PERSON_ID in NavigationExtensions.kt. -->
+    <fragment
+        android:id="@+id/personFragment"
+        android:name="com.example.cinefiles.ui.person.PersonFragment"
+        android:label="@string/person_label"
+        tools:layout="@layout/fragment_person">
+        <argument
+            android:name="personId"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
 </navigation>

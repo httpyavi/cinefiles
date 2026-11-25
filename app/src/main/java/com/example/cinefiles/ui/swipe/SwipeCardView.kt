@@ -21,7 +21,7 @@ import com.example.cinefiles.util.ratingText
 import com.example.cinefiles.util.yearAndGenres
 
 /**
- * ONE movie card: a big rounded poster with the title, rating, year and genres. While it is dragged, a see-through veil and a big heart (like) or X (pass) show on it.
+ * ONE movie card: a big rounded poster with the title, rating, year and genres. While it is dragged, a see-through veil and a big popcorn (swipe right) or X (pass) show on it.
  *
  * It only knows how to LOOK. Moving it with a finger is done by SwipeDeckView, which owns three of
  * these cards and reuses them (rebinding them to new movies) instead of making one per movie.
@@ -99,7 +99,7 @@ class SwipeCardView @JvmOverloads constructor(
 
     /**
      * Sets the like / pass feedback: 0 = nothing (the poster is completely clear), 1 = fully shown.
-     * The veil gets stronger and the heart or X bigger the larger the amount, so it follows the finger smoothly.
+     * The veil gets stronger and the popcorn or X bigger the larger the amount, so it follows the finger smoothly.
      */
     fun setFeedback(like: Float, pass: Float) {
         applyFeedback(binding.overlayLike, binding.iconLike, like)

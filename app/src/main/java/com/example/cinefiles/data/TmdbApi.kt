@@ -3,6 +3,7 @@ package com.example.cinefiles.data
 import com.example.cinefiles.BuildConfig
 import com.example.cinefiles.data.dto.MovieDto
 import com.example.cinefiles.data.dto.MovieListResponse
+import com.example.cinefiles.data.dto.PersonDto
 import com.example.cinefiles.logic.ContentFilter
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
@@ -67,6 +68,14 @@ interface TmdbApi {
         @Query("append_to_response") append: String = "credits,videos",
         @Query("language") language: String = LANGUAGE
     ): MovieDto
+
+    /** One actor, director or crew member with the movies they worked on (the Person screen). */
+    @GET("person/{id}")
+    suspend fun person(
+        @Path("id") id: Int,
+        @Query("append_to_response") append: String = "movie_credits",
+        @Query("language") language: String = LANGUAGE
+    ): PersonDto
 
     @GET("movie/{id}/similar")
     suspend fun similar(

@@ -75,6 +75,20 @@
         <item name="materialButtonStyle">@style/Widget.CineFiles.Button.Primary</item>
     </style>
 
+    <!-- The full-screen poster viewer (PosterViewerFragment): the screen behind shows through a 95% dark backdrop -->
+    <style name="Theme.CineFiles.PosterViewer" parent="Theme.CineFiles">
+        <item name="android:windowBackground">@color/poster_viewer_backdrop</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <!-- The viewer fades in and out (not used when the phone's animations are off: see PosterViewerFragment) -->
+    <style name="Animation.CineFiles.PosterViewer" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+
     <!-- Only used for the very first moment of app start (the splash screen).
          MainActivity switches to Theme.CineFiles as soon as the app is ready.
          The whole screen is the logo red, including the status and navigation bars. The system draws no icon

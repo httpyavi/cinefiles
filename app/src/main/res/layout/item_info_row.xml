@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One fact in the Details section of Movie Details ("Status   Released"): a quiet label and its value.
+     DetailFragment makes one for every fact TMDB knows. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="top"
+    android:orientation="horizontal"
+    android:paddingTop="@dimen/space_8"
+    android:paddingBottom="@dimen/space_8">
+
+    <TextView
+        android:id="@+id/infoLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+        tools:text="Original language" />
+
+    <TextView
+        android:id="@+id/infoValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:textAppearance="@style/TextAppearance.CineFiles.Body"
+        tools:text="English" />
+</LinearLayout>

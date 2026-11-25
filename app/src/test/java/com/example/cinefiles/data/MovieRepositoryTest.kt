@@ -330,31 +330,120 @@ class MovieRepositoryTest {
 
     // ---------- Your picks: the candidates ----------
 
+    /** One movie of a TMDB list answer (genre comedy). */
+    private fun movieJson(id: Int, rating: Double = 7.0, votes: Int = 500, language: String = "en", poster: Boolean = true): String {
+        val posterPath = if (poster) "\"/p$id.jpg\"" else "null"
+        return """{ "id": $id, "title": "Movie $id", "poster_path": $posterPath, "genre_ids": [35],
+               "release_date": "2016-05-01", "vote_average": $rating, "vote_count": $votes, "original_language": "$language" }"""
+    }
+
+    private fun resultsJson(vararg movies: String, totalPages: Int = 1) =
+        """{ "page": 1, "total_pages": $totalPages, "results": [${movies.joinToString(",")}] }"""
+
     /** A TMDB list answer with one movie for every id in [ids]. Ids in [noPoster] have no poster. */
-    private fun moviesJson(ids: IntRange, totalPages: Int = 1, noPoster: Set<Int> = emptySet()): String {
-        val items = ids.joinToString(",") { id ->
-            val poster = if (id in noPoster) "null" else "\"/p$id.jpg\""
-            """{ "id": $id, "title": "Movie $id", "poster_path": $poster, "genre_ids": [35],
-               "release_date": "2016-05-01", "vote_average": 7.0, "vote_count": 500, "original_language": "en" }"""
-        }
-        return """{ "page": 1, "total_pages": $totalPages, "results": [$items] }"""
+    private fun moviesJson(ids: IntRange, totalPages: Int = 1, noPoster: Set<Int> = emptySet()): String =
+        resultsJson(*ids.map { movieJson(it, poster = it !in noPoster) }.toTypedArray(), totalPages = totalPages)
+
+    private fun isSimilar(request: Recorded) = request.path.endsWith("/similar")
+
+    private val discoverRequests get() = requests.filter { it.path == "/3/discover/movie" }
+
+    @Test
+    fun candidatesAskForTheBestGenresWithPreferencesBestRatedFirstAndMostPopularFirst() = runBlocking {
+        body = moviesJson(1..20) // plenty: the quality floor never has to drop
+        val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.SEVEN_PLUS, language = Language.KOREAN)
+
+        val pool = repository().picksCandidates(listOf(35, 18, 10749), preferences).getOrThrow()
+
+        assertEquals(20, pool.movies.size)
+        assertEquals(4, requests.size) // two ways of sorting, two pages each, and no "similar" without swiped-right movies
+        assertTrue(requests.all { it.path == "/3/discover/movie" })
+        assertEquals(setOf("vote_average.desc", "popularity.desc"), requests.map { it.params["sort_by"] }.toSet())
+        assertEquals(listOf("1", "1", "2", "2"), requests.map { it.params.getValue("page") }.sorted())
+        assertTrue(requests.all { it.params["with_genres"] == "35|18|10749" })
+        assertTrue(requests.all { it.params["vote_count.gte"] == "500" })
+        assertTrue(requests.all { it.params["primary_release_date.gte"] == "2015-01-01" })
+        assertTrue(requests.all { it.params["vote_average.gte"] == "7.0" }) // the user's 7+ is stricter than the floor
+        assertTrue(requests.all { it.params["with_original_language"] == "ko" })
     }
 
     @Test
-    fun candidatesAskForTheBestGenresWithPreferencesAndAtLeastAHundredVotes() = runBlocking {
-        body = moviesJson(1..20) // plenty: no second question is needed
-        val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.SEVEN_PLUS, language = Language.KOREAN)
+    fun theQualityFloorIsARatingOfSixPointFiveAndFiveHundredVotes() = runBlocking {
+        body = moviesJson(1..20)
 
-        val candidates = repository().picksCandidates(listOf(35, 18, 10749), preferences).getOrThrow()
+        repository().picksCandidates(listOf(35), Preferences()).getOrThrow()
 
-        assertEquals(20, candidates.size)
-        val sent = requests.single()
-        assertEquals("/3/discover/movie", sent.path)
-        assertEquals("35|18|10749", sent.params["with_genres"])
-        assertEquals("100", sent.params["vote_count.gte"])
-        assertEquals("2015-01-01", sent.params["primary_release_date.gte"])
-        assertEquals("7.0", sent.params["vote_average.gte"])
-        assertEquals("ko", sent.params["with_original_language"])
+        assertTrue(requests.all { it.params["vote_average.gte"] == "6.5" && it.params["vote_count.gte"] == "500" })
+    }
+
+    @Test
+    fun candidatesAlsoComeFromTheSimilarListOfSwipedRightMoviesThatPassTheFloor() = runBlocking {
+        server.respond = { request ->
+            when (request.path) {
+                "/3/movie/101/similar" -> resultsJson(movieJson(201, rating = 7.5, votes = 400), movieJson(202, rating = 6.0, votes = 900))
+                "/3/movie/102/similar" -> resultsJson(movieJson(203, rating = 7.0, votes = 100), movieJson(204, rating = 6.5, votes = 300))
+                else -> moviesJson(1..12)
+            }
+        }
+        val seeds = listOf(movie(101), movie(102))
+
+        val pool = repository().picksCandidates(listOf(35), Preferences(), seeds = seeds).getOrThrow()
+
+        val ids = pool.movies.map { it.id }
+        assertTrue(201 in ids)  // 7.5 with 400 votes: passes (6.5 and 300)
+        assertTrue(204 in ids)  // exactly on the floor: passes
+        assertFalse(202 in ids) // rating 6.0: below the floor
+        assertFalse(203 in ids) // 100 votes: below the floor
+        assertEquals(101, pool.similarTo[201])
+        assertEquals(102, pool.similarTo[204])
+        assertEquals(listOf("/3/movie/101/similar", "/3/movie/102/similar"), requests.filter(::isSimilar).map { it.path }.sorted())
+    }
+
+    @Test
+    fun similarMoviesAreOnlyAskedForUpToThreeSwipedRightMovies() = runBlocking {
+        body = moviesJson(1..12)
+
+        repository().picksCandidates(listOf(35), Preferences(), seeds = (101..105).map { movie(it) }).getOrThrow()
+
+        assertEquals(3, requests.count(::isSimilar))
+    }
+
+    @Test
+    fun similarMoviesMustAlsoFitThePreferences() = runBlocking {
+        server.respond = { request ->
+            if (isSimilar(request)) {
+                resultsJson(movieJson(201, language = "ko", votes = 800), movieJson(202, language = "en", votes = 800))
+            } else {
+                moviesJson(1..12)
+            }
+        }
+
+        val pool = repository().picksCandidates(listOf(35), Preferences(language = Language.KOREAN), seeds = listOf(movie(101))).getOrThrow()
+
+        assertTrue(201 in pool.movies.map { it.id })
+        assertFalse(202 in pool.movies.map { it.id }) // English: the user asked for Korean
+    }
+
+    @Test
+    fun aMovieFoundByBothWaysIsOneCandidateAndStillSaysWhatItIsSimilarTo() = runBlocking {
+        server.respond = { request ->
+            if (isSimilar(request)) resultsJson(movieJson(5, votes = 800)) else moviesJson(1..12)
+        }
+
+        val pool = repository().picksCandidates(listOf(35), Preferences(), seeds = listOf(movie(101))).getOrThrow()
+
+        assertEquals(1, pool.movies.count { it.id == 5 })
+        assertEquals(101, pool.similarTo[5])
+    }
+
+    @Test
+    fun aFailedSimilarCallIsNoProblem() = runBlocking {
+        server.respond = { request -> if (isSimilar(request)) "<html>Bad gateway</html>" else moviesJson(1..12) }
+
+        val result = repository().picksCandidates(listOf(35), Preferences(), seeds = listOf(movie(101)))
+
+        assertEquals(12, result.getOrThrow().movies.size)
+        assertTrue(result.getOrThrow().similarTo.isEmpty())
     }
 
     @Test
@@ -366,44 +455,105 @@ class MovieRepositoryTest {
         dao.put(movie(5)) // saved, but with no state at all: it may be suggested
         body = moviesJson(1..14)
 
-        val ids = repository().picksCandidates(listOf(35), Preferences()).getOrThrow().map { it.id }
+        val ids = repository().picksCandidates(listOf(35), Preferences()).getOrThrow().movies.map { it.id }
 
         assertEquals((5..14).toList(), ids)
+    }
+
+    @Test
+    fun theSwipeDeckIsToldToSkipWatchedMoviesToo() = runBlocking {
+        // SwipeViewModel hides exactly these ids (the real query is checked in androidTest: MovieDaoTest)
+        dao.put(movie(1).copy(isWatched = true))
+        dao.put(movie(2).copy(inWatchlist = true))
+        dao.put(movie(3).copy(reaction = Reaction.PASSED))
+        dao.put(movie(4)) // saved, no state
+
+        assertEquals(setOf(1, 2, 3), repository().idsWithState().toSet())
+    }
+
+    @Test
+    fun theSwipesOfThisSittingAreNeverCandidates() = runBlocking {
+        body = moviesJson(1..14)
+
+        val ids = repository().picksCandidates(listOf(35), Preferences(), exclude = setOf(1, 2)).getOrThrow().movies.map { it.id }
+
+        assertEquals((3..14).toList(), ids)
     }
 
     @Test
     fun candidatesWithoutAPosterNeverComeBack() = runBlocking {
         body = moviesJson(1..12, noPoster = setOf(3, 4))
 
-        val ids = repository().picksCandidates(listOf(35), Preferences()).getOrThrow().map { it.id }
+        val ids = repository().picksCandidates(listOf(35), Preferences()).getOrThrow().movies.map { it.id }
 
         assertFalse(3 in ids || 4 in ids)
         assertEquals(10, ids.size)
     }
 
     @Test
-    fun withTooFewCandidatesThePreferencesAreDroppedOnceAndTheGenresStay() = runBlocking {
-        // With a language chosen TMDB knows only 2 movies; without it, plenty
+    fun withTooFewCandidatesTheFloorDropsFirstThenThePreferencesAndTheGenresStay() = runBlocking {
+        // Korean + the strict floor: 2 movies. Korean + the relaxed floor: 3. Anything + the relaxed floor: plenty.
         server.respond = { request ->
-            if (request.params.containsKey("with_original_language")) moviesJson(1..2) else moviesJson(100..114)
+            val korean = request.params.containsKey("with_original_language")
+            when {
+                korean && request.params["vote_count.gte"] == "500" -> moviesJson(1..2)
+                korean -> moviesJson(1..3)
+                else -> moviesJson(100..114)
+            }
         }
 
-        val candidates = repository().picksCandidates(listOf(35, 18), Preferences(language = Language.KOREAN)).getOrThrow()
+        val pool = repository().picksCandidates(listOf(35, 18), Preferences(language = Language.KOREAN)).getOrThrow()
 
-        // Page 1 and 2 with the preferences, then ONE try without them
-        assertEquals(listOf("ko", "ko", null), requests.map { it.params["with_original_language"] })
-        assertTrue(requests.all { it.params["with_genres"] == "35|18" })
-        assertEquals(17, candidates.size) // the 2 from the first try and the 15 from the second, no repeats
+        // Three steps of four questions each (the steps run one after the other)
+        val steps = requests.chunked(4)
+        assertEquals(3, steps.size)
+        assertTrue(steps[0].all { it.params["vote_average.gte"] == "6.5" && it.params["vote_count.gte"] == "500" })
+        assertTrue(steps[1].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "200" })
+        assertTrue(steps[2].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "200" })
+        assertTrue(steps[0].all { it.params["with_original_language"] == "ko" })
+        assertTrue(steps[1].all { it.params["with_original_language"] == "ko" })
+        assertTrue(steps[2].all { it.params["with_original_language"] == null }) // the preferences are dropped last...
+        assertTrue(requests.all { it.params["with_genres"] == "35|18" })        // ...but the genres always stay
+        assertEquals(18, pool.movies.size) // the 3 Korean ones and the 15 others, no repeats
     }
 
     @Test
-    fun whenNothingIsFoundTheAnswerIsAnEmptyListNotAnError() = runBlocking {
+    fun theFloorOnlyDropsWhenFewerThanTenCandidatesWereFound() = runBlocking {
+        body = moviesJson(1..10) // exactly ten: enough
+
+        repository().picksCandidates(listOf(35), Preferences()).getOrThrow()
+
+        assertEquals(4, requests.size)
+    }
+
+    @Test
+    fun similarMoviesAreAskedOnlyOnceEvenWhenTheFloorDrops() = runBlocking {
+        server.respond = { request -> if (isSimilar(request)) resultsJson(movieJson(201, votes = 800)) else moviesJson(1..3) }
+
+        val pool = repository().picksCandidates(listOf(35), Preferences(), seeds = listOf(movie(101))).getOrThrow()
+
+        assertEquals(1, requests.count(::isSimilar))
+        assertEquals(12, discoverRequests.size) // three steps of four
+        assertTrue(201 in pool.movies.map { it.id }) // a candidate from the similar list is kept at every step
+    }
+
+    @Test
+    fun filipinoMoviesKeepATinyVoteLimitBecauseFewPeopleVoteOnThem() = runBlocking {
+        body = moviesJson(1..20)
+
+        repository().picksCandidates(listOf(18), Preferences(language = Language.FILIPINO)).getOrThrow()
+
+        assertTrue(requests.all { it.params["vote_count.gte"] == "3" && it.params["with_original_language"] == "tl" })
+    }
+
+    @Test
+    fun whenNothingIsFoundTheAnswerIsAnEmptyPoolNotAnError() = runBlocking {
         body = moviesJson(1..0)
 
         val result = repository().picksCandidates(listOf(35), Preferences(language = Language.KOREAN))
 
-        assertTrue(result.getOrThrow().isEmpty())
-        assertEquals(4, requests.size) // 2 pages with the preferences, 2 pages without: then it gives up
+        assertTrue(result.getOrThrow().movies.isEmpty())
+        assertEquals(12, requests.size) // three steps of four questions: then it gives up
     }
 
     @Test
@@ -411,6 +561,41 @@ class MovieRepositoryTest {
         status = 503
         val error = repository().picksCandidates(listOf(35), Preferences()).exceptionOrNull()
         assertEquals(ApiError.SERVER, friendlyError(error!!))
+    }
+
+    // ---------- A person ----------
+
+    @Test
+    fun aPersonIsAskedForWithTheirMovieCredits() = runBlocking {
+        body = """
+            { "id": 525, "name": "Christopher Nolan", "known_for_department": "Directing", "profile_path": "/n.jpg",
+              "movie_credits": { "cast": [], "crew": [
+                { "id": 20, "title": "Big one", "poster_path": "/big.jpg", "popularity": 90.0, "job": "Director" } ] } }
+        """.trimIndent()
+        val repo = repository()
+
+        val person = repo.person(525).getOrThrow()
+
+        val sent = requests.single()
+        assertEquals("/3/person/525", sent.path)
+        assertEquals("movie_credits", sent.params["append_to_response"])
+        assertEquals("en-US", sent.params["language"])
+        assertEquals("Christopher Nolan", person.name)
+        assertEquals(listOf(20), person.crew.map { it.id })
+        assertEquals("Big one", repo.recentlySeen(20)?.title) // so that Details opens with a title and a picture at once
+    }
+
+    @Test
+    fun aPersonTmdbHasNothingUsableForIsAFailure() = runBlocking {
+        body = """{ "id": 1 }""" // no name
+        assertTrue(repository().person(1).isFailure)
+    }
+
+    @Test
+    fun withoutATokenAPersonIsNotAskedFor() = runBlocking {
+        val error = repository(token = "", hasToken = false).person(525).exceptionOrNull()
+        assertEquals(ApiError.TOKEN_MISSING, friendlyError(error!!))
+        assertTrue(requests.isEmpty())
     }
 
     // ---------- Discover: pages ----------

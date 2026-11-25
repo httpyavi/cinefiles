@@ -104,7 +104,7 @@
     </LinearLayout>
 
     <!-- Swipe feedback. At rest all four are invisible and the poster is untouched. While the card is dragged,
-         a see-through red (right) or slate (left) veil fades in over the poster and a big heart or X grows in
+         a see-through red (right) or slate (left) veil fades in over the poster and a big popcorn or X grows in
          the middle; SwipeCardView.setFeedback() sets their opacity and size from the distance dragged. -->
     <View
         android:id="@+id/overlayLike"
@@ -129,7 +129,7 @@
         android:layout_gravity="center"
         android:alpha="0"
         android:importantForAccessibility="no"
-        android:src="@drawable/ic_heart_filled"
+        android:src="@drawable/ic_popcorn"
         app:tint="@color/on_accent" />
 
     <ImageView

@@ -5,29 +5,42 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.cinefiles.R
+import com.example.cinefiles.data.CrewMember
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.Reaction
 import com.example.cinefiles.databinding.FragmentDetailBinding
+import com.example.cinefiles.databinding.ItemCrewGroupBinding
+import com.example.cinefiles.databinding.ItemInfoRowBinding
+import com.example.cinefiles.logic.CrewRole
 import com.example.cinefiles.logic.canLike
 import com.example.cinefiles.logic.splitRuntime
 import com.example.cinefiles.logic.watchlistButtonFor
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
 import com.example.cinefiles.util.ImageUrls
+import com.example.cinefiles.util.addPersonChip
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.genresText
+import com.example.cinefiles.util.languageName
 import com.example.cinefiles.util.loadImage
 import com.example.cinefiles.util.openMovieDetails
+import com.example.cinefiles.util.openPerson
 import com.example.cinefiles.util.ratingText
 import com.example.cinefiles.util.shake
 import com.example.cinefiles.util.show
@@ -38,6 +51,9 @@ import com.example.cinefiles.util.showMessage
  * The Movie Details screen for one movie. It only draws what DetailViewModel says and forwards taps.
  * The movie's id arrives as the navigation argument "movieId" (see openMovieDetails in util/NavigationExtensions.kt).
  * The three buttons change the database; the screen follows the database, so it is always up to date.
+ *
+ * It also shows the people of the movie: the director(s) next to the title, the cast row and the crew chips. Every name
+ * opens the Person screen (openPerson). The poster in the top corner opens the full-screen poster (PosterViewerFragment).
  */
 class DetailFragment : Fragment() {
 
@@ -48,12 +64,18 @@ class DetailFragment : Fragment() {
     private val viewModel: DetailViewModel by viewModels()
 
     private lateinit var similarAdapter: PosterAdapter
+    private lateinit var castAdapter: CastAdapter
 
     // Remembered between drawings, so a toggle does not redo work that did not change
     private var shownBackdropUrl: String? = null
+    private var shownPosterPath: String? = null
     private var shownOverview: String? = null
     private var overviewExpanded = false
     private var trailerKey: String? = null
+    private var posterTitle: String = ""
+    private var shownDirectors: List<CrewMember>? = null
+    private var shownCrew: Map<CrewRole, List<CrewMember>>? = null
+    private var shownFacts: List<Pair<Int, String>>? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,6 +109,16 @@ class DetailFragment : Fragment() {
         binding.similarList.adapter = similarAdapter
         binding.similarList.setHasFixedSize(true)
 
+        // The poster: tap it to see it full screen. (It is hidden while the movie has no poster.)
+        binding.detailPoster.setOnClickListener {
+            shownPosterPath?.let { PosterViewerFragment.show(childFragmentManager, it, posterTitle) }
+        }
+
+        // The cast: a row of round photos. Tapping an actor opens their Person screen.
+        castAdapter = CastAdapter(onPersonClick = { member -> findNavController().openPerson(member.id) })
+        binding.castList.adapter = castAdapter
+        binding.castList.setHasFixedSize(true)
+
         binding.stateError.errorRetry.setOnClickListener { viewModel.load() }
         binding.loadErrorRetry.setOnClickListener { viewModel.load() }
 
@@ -110,7 +142,11 @@ class DetailFragment : Fragment() {
         super.onDestroyView()
         // The next view starts fresh, so everything must be drawn again
         shownBackdropUrl = null
+        shownPosterPath = null
         shownOverview = null
+        shownDirectors = null
+        shownCrew = null
+        shownFacts = null
         _binding = null
     }
 
@@ -127,7 +163,9 @@ class DetailFragment : Fragment() {
         if (content == null) return
 
         showHero(content.movie)
+        showDirectors(content.directors)
         showButtons(content.movie)
+        showTagline(content.tagline)
         showOverview(content.movie.overview)
 
         // The trailer button only exists when TMDB lists a YouTube trailer
@@ -137,6 +175,12 @@ class DetailFragment : Fragment() {
         // TMDB could not be reached: say so, but keep showing what we have
         binding.detailLoadError.isVisible = content.loadError != null
         content.loadError?.let { binding.loadErrorText.setText(it.message) }
+
+        // The people and the facts only come with TMDB's answer: each section shows once it has something
+        binding.castSection.isVisible = content.cast.isNotEmpty()
+        castAdapter.submitList(content.cast)
+        showCrew(content.crew)
+        showInfo(content)
 
         // Similar movies: placeholders while they load, the row when they are here, nothing if there are none
         val similarLoading = content.isLoadingMore && content.similar.isEmpty()
@@ -157,6 +201,15 @@ class DetailFragment : Fragment() {
             binding.detailBackdrop.loadImage(url)
         }
 
+        // The poster in the corner opens the full-screen poster. A movie without a poster has no corner picture.
+        posterTitle = movie.title
+        binding.detailPosterWrap.isVisible = movie.posterPath != null
+        binding.detailPoster.contentDescription = getString(R.string.detail_poster_description, movie.title)
+        if (movie.posterPath != shownPosterPath) {
+            shownPosterPath = movie.posterPath
+            binding.detailPoster.imageView.loadImage(ImageUrls.poster(movie.posterPath))
+        }
+
         val rating = movie.ratingText()
         val year = movie.releaseYear?.toString()
         val length = movie.runtimeMinutes?.let { runtimeText(it) }
@@ -172,6 +225,74 @@ class DetailFragment : Fragment() {
         val genres = movie.genresText()
         binding.detailGenres.text = genres
         binding.detailGenres.isVisible = genres.isNotEmpty()
+    }
+
+    /** "Directed by Christopher Nolan": next to the title, every director's name opens their Person screen. */
+    private fun showDirectors(directors: List<CrewMember>) {
+        if (directors == shownDirectors) return
+        shownDirectors = directors
+
+        val view = binding.detailDirectors
+        view.isVisible = directors.isNotEmpty()
+        if (directors.isEmpty()) return
+
+        val accent = ContextCompat.getColor(requireContext(), R.color.accent_soft)
+        val text = SpannableStringBuilder(getString(R.string.detail_directed_by)).append(' ')
+        directors.forEachIndexed { index, director ->
+            if (index > 0) text.append(", ")
+            val start = text.length
+            text.append(director.name)
+            text.setSpan(
+                PersonSpan(accent) { findNavController().openPerson(director.id) },
+                start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        view.text = text
+        view.movementMethod = LinkMovementMethod.getInstance() // makes the names tappable
+    }
+
+    /** The crew: a small heading and tappable names for the writers, producers, cinematography and composers. */
+    private fun showCrew(crew: Map<CrewRole, List<CrewMember>>) {
+        if (crew == shownCrew) return
+        shownCrew = crew
+
+        binding.crewSection.isVisible = crew.isNotEmpty()
+        binding.crewGroups.removeAllViews()
+        for ((role, people) in crew) {
+            val group = ItemCrewGroupBinding.inflate(layoutInflater, binding.crewGroups, false)
+            group.crewRole.setText(role.label)
+            for (person in people) group.crewChips.addPersonChip(person.name) { findNavController().openPerson(person.id) }
+            binding.crewGroups.addView(group.root)
+        }
+    }
+
+    /** A few facts: the release status, the original language and where it was made. Only the ones TMDB knows. */
+    private fun showInfo(content: DetailState.Content) {
+        val facts = listOfNotNull(
+            content.status?.let { R.string.detail_info_status to it },
+            languageName(content.movie.originalLanguage)?.let { R.string.detail_info_language to it },
+            content.countries.takeIf { it.isNotEmpty() }?.let { R.string.detail_info_countries to it.joinToString(", ") }
+        )
+        if (facts == shownFacts) return
+        shownFacts = facts
+
+        binding.infoSection.isVisible = facts.isNotEmpty()
+        binding.infoRows.removeAllViews()
+        for ((label, value) in facts) {
+            val row = ItemInfoRowBinding.inflate(layoutInflater, binding.infoRows, false)
+            row.infoLabel.setText(label)
+            row.infoValue.text = value
+            binding.infoRows.addView(row.root)
+        }
+    }
+
+    /** The tagline above the story, when TMDB has one. The story moves closer to it. */
+    private fun showTagline(tagline: String?) {
+        binding.detailTagline.isVisible = tagline != null
+        binding.detailTagline.text = tagline
+        binding.detailOverview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            topMargin = resources.getDimensionPixelSize(if (tagline != null) R.dimen.space_12 else R.dimen.space_24)
+        }
     }
 
     /** The red watchlist button and the Like and Watched toggles show what is saved right now. */
@@ -254,5 +375,16 @@ class DetailFragment : Fragment() {
     private companion object {
         const val COLLAPSED_LINES = 3
         const val UNAVAILABLE_ALPHA = 0.5f
+    }
+}
+
+/** A name in a line of text that opens a screen when tapped: colored with the accent, not underlined. */
+private class PersonSpan(private val color: Int, private val action: () -> Unit) : ClickableSpan() {
+    override fun onClick(widget: View) = action()
+
+    override fun updateDrawState(paint: TextPaint) {
+        paint.color = color
+        paint.isUnderlineText = false
+        paint.isFakeBoldText = true
     }
 }

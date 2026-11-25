@@ -57,6 +57,7 @@
     <color name="scrim_solid">#FF0A0A0D</color>     <!-- 100%: so a picture melts into the screen with no seam -->
 
     <color name="badge_background">#CC0A0A0D</color> <!-- 80% background, behind poster badges -->
+    <color name="poster_viewer_backdrop">#F20A0A0D</color> <!-- 95% background: the dark backdrop of the full-screen poster -->
 
     <!-- Mood colors: exact 10 moods -->
     <color name="mood_tint_happy">#FFB938</color>        <!-- sunny amber -->
