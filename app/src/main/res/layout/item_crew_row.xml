@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One row of the Crew section of Movie Details: the role on the left ("WRITERS") and the names on the right. Every name
+     is a link to the Person screen; "+3 more" opens the full crew (DetailFragment.showCrew). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/space_16"
+    android:paddingTop="@dimen/space_12"
+    android:paddingEnd="@dimen/space_16"
+    android:paddingBottom="@dimen/space_12">
+
+    <TextView
+        android:id="@+id/crewRole"
+        android:layout_width="@dimen/crew_label_width"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:paddingTop="@dimen/space_4"
+        android:paddingEnd="@dimen/space_8"
+        android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+        app:autoSizeMaxTextSize="11sp"
+        app:autoSizeMinTextSize="7sp"
+        app:autoSizeStepGranularity="1sp"
+        app:autoSizeTextType="uniform"
+        tools:text="Cinematography" />
+
+    <TextView
+        android:id="@+id/crewNames"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:lineSpacingExtra="@dimen/space_4"
+        android:textAppearance="@style/TextAppearance.CineFiles.Body"
+        tools:text="Hoyte van Hoytema" />
+</LinearLayout>

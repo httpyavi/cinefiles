@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A thin light line between the rows of a glass panel (the Crew section of Movie Details). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <size android:height="@dimen/glass_stroke_width" />
+    <solid android:color="@color/glass_stroke" />
+</shape>

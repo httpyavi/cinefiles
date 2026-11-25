@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The top of the Person screen, as the first item of its poster grid (PersonHeaderAdapter): the profile photo, the
-     name and what the person is known for, the biography (three lines, "More" opens the rest), the two tabs when the
-     person has acted AND worked behind the camera, and the empty state when TMDB lists no movies.
+     name and what the person is known for, the biography (three lines, "More" opens the rest), the role tabs (Actor,
+     Director, Writer...) when the person has more than one, and the empty state when TMDB lists no movies.
      The 4 dp side padding plus the grid's 16 dp padding gives the usual 20 dp screen margin. The first child is pushed
      down by one tap target so it clears the round back button that floats at the top-left. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -96,35 +96,27 @@
         android:textColor="@color/accent_soft"
         android:visibility="gone" />
 
-    <!-- saveEnabled="false": the selected tab is kept by PersonViewModel, not by these buttons -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/personTabs"
+    <!-- The role tabs: Actor (24), Director (8), Producer (5)... one chip for every kind of work the person has, the primary
+         one first. They scroll sideways when they do not fit. Built from code (PersonHeaderAdapter); hidden for one role. -->
+    <HorizontalScrollView
+        android:id="@+id/personTabsScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_16"
-        android:saveEnabled="false"
-        android:visibility="gone"
-        app:selectionRequired="true"
-        app:singleSelection="true">
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/tabActing"
-            style="@style/Widget.CineFiles.Button.Segment"
-            android:layout_width="0dp"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/personTabs"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:saveEnabled="false"
-            android:text="@string/person_tab_acting" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/tabCrew"
-            style="@style/Widget.CineFiles.Button.Segment"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:saveEnabled="false"
-            android:text="@string/person_tab_crew" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+            app:chipSpacingHorizontal="@dimen/space_8"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true" />
+    </HorizontalScrollView>
 
     <!-- Only when TMDB lists no movies for the person. It must not fill the screen: it sits under the biography. -->
     <include

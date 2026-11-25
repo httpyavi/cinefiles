@@ -14,6 +14,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
 import com.example.cinefiles.R
 import com.example.cinefiles.databinding.ViewPosterBinding
+import com.example.cinefiles.logic.PopcornRating
 
 /** The small status icon that can sit in the corner of a poster. */
 enum class PosterBadge(
@@ -52,6 +53,20 @@ class PosterView @JvmOverloads constructor(
         set(value) {
             field = value
             showBadge(value)
+        }
+
+    /**
+     * The user's own popcorn rating (0.5 to 5.0) as a small badge in the bottom-left corner, or null for none.
+     * (Different from [badge], which is the status in the top-right corner.)
+     */
+    var rating: Float? = null
+        set(value) {
+            field = value
+            binding.posterRating.isVisible = value != null
+            if (value != null) {
+                binding.posterRating.text = PopcornRating.format(value)
+                binding.posterRating.contentDescription = context.getString(R.string.poster_rating_description, PopcornRating.format(value))
+            }
         }
 
     init {

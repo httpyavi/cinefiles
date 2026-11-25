@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE FULL CREW (CrewSheet): a bottom sheet with every group of crew of the movie (director, writers, producers,
+     cinematography, music, editing, design), the names tappable. It opens from "See all" in the Crew section of Details. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_8">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingEnd="@dimen/screen_margin"
+        android:text="@string/crew_sheet_title"
+        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+        tools:targetApi="28" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/crewSheetList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="@dimen/space_24"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+</LinearLayout>

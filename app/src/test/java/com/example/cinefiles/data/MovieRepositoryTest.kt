@@ -4,7 +4,6 @@ import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.ContentFilter
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
-import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.ReleasePeriod
@@ -104,10 +103,11 @@ class MovieRepositoryTest {
     private val baseUrl get() = server.baseUrl
 
     private fun repository(token: String = "test-token", hasToken: Boolean = true, url: String = baseUrl) =
-        MovieRepository(TmdbApi.create(token, url), hasToken, dao)
+        MovieRepository(TmdbApi.create(token, url), hasToken, dao, diaryDao)
 
     // A fake database: these tests are about the internet part
     private val dao = FakeMovieDao()
+    private val diaryDao = FakeDiaryDao()
 
     @Before
     fun startPretendTmdb() {
@@ -267,66 +267,9 @@ class MovieRepositoryTest {
         assertEquals(listOf(1, 2), movies.map { it.id }) // TMDB already filtered: we trust its answer
     }
 
-    // ---------- The like rule ----------
+    // The rules of liking, favoriting and rating (THE WATCH RULE) are tested in WatchRulesRepositoryTest
 
     private fun movie(id: Int) = Movie(id = id, title = "Movie $id", posterPath = "/p$id.jpg", backdropPath = null)
-
-    @Test
-    fun aMovieOnTheWatchlistCannotBeLiked() = runBlocking {
-        val repo = repository()
-        repo.addToWatchlist(movie(5))
-
-        assertFalse(repo.like(movie(5)))
-        assertEquals(Reaction.NONE, dao.saved(5)?.reaction) // nothing changed
-        assertTrue(dao.saved(5)!!.inWatchlist)
-    }
-
-    @Test
-    fun aMovieThatIsNotOnTheWatchlistCanBeLiked() = runBlocking {
-        val repo = repository()
-
-        assertTrue(repo.like(movie(6))) // not saved yet: it is saved and liked
-        assertEquals(Reaction.LIKED, dao.saved(6)?.reaction)
-    }
-
-    @Test
-    fun likingWorksAgainOnceTheMovieLeavesTheWatchlist() = runBlocking {
-        val repo = repository()
-        repo.addToWatchlist(movie(7))
-        assertFalse(repo.like(movie(7)))
-
-        repo.removeFromWatchlist(7)
-        assertTrue(repo.like(movie(7)))
-        assertEquals(Reaction.LIKED, dao.saved(7)?.reaction)
-    }
-
-    @Test
-    fun likingWorksAgainOnceTheMovieIsMarkedWatched() = runBlocking {
-        val repo = repository()
-        repo.addToWatchlist(movie(8))
-        assertFalse(repo.like(movie(8)))
-
-        repo.markWatched(movie(8)) // watched takes it off the watchlist
-        assertTrue(repo.like(movie(8)))
-    }
-
-    @Test
-    fun theLikeRuleLooksAtTheSavedCopyNotAtTheOneInTheCallersHand() = runBlocking {
-        dao.put(movie(9).copy(inWatchlist = true))
-        // The screen still holds an old copy that says "not on the watchlist"
-        assertFalse(repository().like(movie(9).copy(inWatchlist = false)))
-    }
-
-    @Test
-    fun aMovieThatWasLikedKeepsItsLikeWhenItIsAddedToTheWatchlistLater() = runBlocking {
-        val repo = repository()
-        repo.like(movie(10))
-        repo.addToWatchlist(movie(10))
-
-        // The rule only stops NEW likes; nothing is taken away
-        assertEquals(Reaction.LIKED, dao.saved(10)?.reaction)
-        assertTrue(dao.saved(10)!!.inWatchlist)
-    }
 
     // ---------- Your picks: the candidates ----------
 
@@ -351,7 +294,7 @@ class MovieRepositoryTest {
     @Test
     fun candidatesAskForTheBestGenresWithPreferencesBestRatedFirstAndMostPopularFirst() = runBlocking {
         body = moviesJson(1..20) // plenty: the quality floor never has to drop
-        val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.SEVEN_PLUS, language = Language.KOREAN)
+        val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.SEVEN_PLUS, language = "ko")
 
         val pool = repository().picksCandidates(listOf(35, 18, 10749), preferences).getOrThrow()
 
@@ -418,7 +361,7 @@ class MovieRepositoryTest {
             }
         }
 
-        val pool = repository().picksCandidates(listOf(35), Preferences(language = Language.KOREAN), seeds = listOf(movie(101))).getOrThrow()
+        val pool = repository().picksCandidates(listOf(35), Preferences(language = "ko"), seeds = listOf(movie(101))).getOrThrow()
 
         assertTrue(201 in pool.movies.map { it.id })
         assertFalse(202 in pool.movies.map { it.id }) // English: the user asked for Korean
@@ -502,7 +445,7 @@ class MovieRepositoryTest {
             }
         }
 
-        val pool = repository().picksCandidates(listOf(35, 18), Preferences(language = Language.KOREAN)).getOrThrow()
+        val pool = repository().picksCandidates(listOf(35, 18), Preferences(language = "ko")).getOrThrow()
 
         // Three steps of four questions each (the steps run one after the other)
         val steps = requests.chunked(4)
@@ -541,7 +484,7 @@ class MovieRepositoryTest {
     fun filipinoMoviesKeepATinyVoteLimitBecauseFewPeopleVoteOnThem() = runBlocking {
         body = moviesJson(1..20)
 
-        repository().picksCandidates(listOf(18), Preferences(language = Language.FILIPINO)).getOrThrow()
+        repository().picksCandidates(listOf(18), Preferences(language = "tl")).getOrThrow()
 
         assertTrue(requests.all { it.params["vote_count.gte"] == "3" && it.params["with_original_language"] == "tl" })
     }
@@ -550,7 +493,7 @@ class MovieRepositoryTest {
     fun whenNothingIsFoundTheAnswerIsAnEmptyPoolNotAnError() = runBlocking {
         body = moviesJson(1..0)
 
-        val result = repository().picksCandidates(listOf(35), Preferences(language = Language.KOREAN))
+        val result = repository().picksCandidates(listOf(35), Preferences(language = "ko"))
 
         assertTrue(result.getOrThrow().movies.isEmpty())
         assertEquals(12, requests.size) // three steps of four questions: then it gives up
@@ -561,6 +504,27 @@ class MovieRepositoryTest {
         status = 503
         val error = repository().picksCandidates(listOf(35), Preferences()).exceptionOrNull()
         assertEquals(ApiError.SERVER, friendlyError(error!!))
+    }
+
+    // ---------- The stills of a movie (the Diary's picture picker) ----------
+
+    @Test
+    fun theStillsOfAMovieAreAskedForInEnglishAndWithoutTextAndComeBackAsPaths() = runBlocking {
+        body = """{ "backdrops": [ { "file_path": "/text.jpg", "iso_639_1": "en" }, { "file_path": "/clean.jpg", "iso_639_1": null } ], "posters": [] }"""
+
+        val stills = repository().movieStills(157336).getOrThrow()
+
+        val sent = requests.single()
+        assertEquals("/3/movie/157336/images", sent.path)
+        assertEquals("en,null", sent.params["include_image_language"])
+        assertEquals(listOf("/clean.jpg", "/text.jpg"), stills) // without text first
+    }
+
+    @Test
+    fun withoutATokenNoStillsAreAskedFor() = runBlocking {
+        val error = repository(token = "", hasToken = false).movieStills(1).exceptionOrNull()
+        assertTrue(error is MissingTokenException)
+        assertTrue(requests.isEmpty())
     }
 
     // ---------- A person ----------
@@ -581,7 +545,8 @@ class MovieRepositoryTest {
         assertEquals("movie_credits", sent.params["append_to_response"])
         assertEquals("en-US", sent.params["language"])
         assertEquals("Christopher Nolan", person.name)
-        assertEquals(listOf(20), person.crew.map { it.id })
+        assertEquals(listOf(20), person.credits.getValue(com.example.cinefiles.logic.PersonRole.DIRECTOR).map { it.id })
+        assertEquals(listOf(com.example.cinefiles.logic.PersonRole.DIRECTOR), person.roles)
         assertEquals("Big one", repo.recentlySeen(20)?.title) // so that Details opens with a title and a picture at once
     }
 
@@ -658,6 +623,36 @@ class MovieRepositoryTest {
             requests.map { it.path }
         )
         assertEquals("2", requests.last().params["page"])
+    }
+
+    @Test
+    fun theDiscoverTabNeverAsksForALanguageOrAMoodItIsIndependentOfLetsWatchSomething() = runBlocking {
+        body = listJson
+        // Every way the Discover tab can ask: all categories, with and without a genre
+        for (category in BrowseCategory.values()) {
+            repository().browsePage(category, genreId = null)
+            repository().browsePage(category, genreId = 35)
+        }
+
+        assertTrue(requests.isNotEmpty())
+        for (request in requests) {
+            assertFalse("with_original_language leaked into ${request.path}", "with_original_language" in request.params)
+            assertFalse("a runtime limit leaked into ${request.path}", "with_runtime.lte" in request.params || "with_runtime.gte" in request.params)
+            assertFalse("a release limit leaked into ${request.path}", "primary_release_date.lte" in request.params)
+        }
+        // The only genre ever sent is the one the user picked in Discover (35), never a mood's genres
+        assertTrue(requests.mapNotNull { it.params["with_genres"] }.all { it == "35" })
+    }
+
+    @Test
+    fun theAllCategoryWithoutAGenreIsMostPopularFirst() = runBlocking {
+        body = listJson
+        repository().browsePage(BrowseCategory.ALL, genreId = null)
+        val sent = requests.single()
+        assertEquals("/3/discover/movie", sent.path)
+        assertEquals("popularity.desc", sent.params["sort_by"])
+        assertEquals("20", sent.params["vote_count.gte"])
+        assertNull(sent.params["with_genres"])
     }
 
     @Test

@@ -8,9 +8,9 @@ import com.example.cinefiles.data.Reaction
 /*
  * THE RULES OF MY COLLECTION AND OF THE DETAILS BUTTONS (plain Kotlin, no screens: easy to test).
  *
- * A movie can be liked, on the watchlist and watched. Liked is independent of the other two: liking never
- * changes the watchlist or watched. The watchlist and watched are linked: a movie is on the watchlist OR watched,
- * never both (marking it watched takes it off the watchlist; adding it to the watchlist un-watches it).
+ * The watchlist and watched are linked: a movie is on the watchlist OR watched, never both (marking it watched
+ * takes it off the watchlist; adding it to the watchlist un-watches it). Liking, favoriting and rating are only
+ * possible on a WATCHED movie, and un-watching takes them away: see THE WATCH RULE in logic/WatchRules.kt.
  */
 
 /** The three things a movie can be in your collection, from the most important to the least. */
@@ -23,13 +23,6 @@ fun Movie.hasStatus(status: MovieStatus): Boolean = when (status) {
     MovieStatus.WATCHLIST -> inWatchlist && !isWatched
 }
 
-/**
- * THE LIKE RULE: a movie cannot be liked while it is on the watchlist. (Remove it from the watchlist, or mark it
- * watched, and liking works again.) [movie] is the movie as the database has it, or null if it is not saved yet.
- * MovieRepository.like enforces this; the screens use it to show Like as unavailable.
- */
-fun canLike(movie: Movie?): Boolean = movie == null || !movie.hasStatus(MovieStatus.WATCHLIST)
-
 /** The movie with the user's state (liked, watchlist, watched) of its saved copy. TMDB's answers know nothing about it. */
 fun Movie.withStateOf(saved: Movie?): Movie =
     if (saved == null) this else copy(
@@ -39,10 +32,11 @@ fun Movie.withStateOf(saved: Movie?): Movie =
         watchlistAddedAt = saved.watchlistAddedAt,
         isWatched = saved.isWatched,
         watchedAt = saved.watchedAt,
-        personalRating = saved.personalRating,
+        userRating = saved.userRating,
         ratedAt = saved.ratedAt,
         isFavorite = saved.isFavorite,
-        favoritedAt = saved.favoritedAt
+        favoritedAt = saved.favoritedAt,
+        favoriteOrder = saved.favoriteOrder
     )
 
 /** The three tabs of My Collection. Each tab is the list of movies that have its status. */
@@ -50,6 +44,13 @@ enum class CollectionTab(val status: MovieStatus) {
     LIKED(MovieStatus.LIKED),
     WATCHLIST(MovieStatus.WATCHLIST),
     WATCHED(MovieStatus.WATCHED)
+}
+
+/** The time (milliseconds) the movie got into this tab: liked, put on the watchlist or marked watched. The sort "When added" uses it. */
+fun CollectionTab.addedAt(movie: Movie): Long = when (this) {
+    CollectionTab.LIKED -> movie.reactedAt
+    CollectionTab.WATCHLIST -> movie.watchlistAddedAt
+    CollectionTab.WATCHED -> movie.watchedAt
 }
 
 /**
@@ -78,11 +79,23 @@ enum class CollectionAction(@StringRes val label: Int, @StringRes val message: I
 }
 
 /**
+ * The line of the Snackbar after [this] action. Taking "watched" away (Mark as not watched, Move back to watchlist)
+ * also clears the like, the rating and the favorite (THE WATCH RULE), so when [before] had any of them the line says so.
+ */
+@StringRes
+fun CollectionAction.messageFor(before: Movie): Int = when {
+    this == CollectionAction.MARK_UNWATCHED && before.hasWatchDependents() -> R.string.msg_unmarked_watched_cleared
+    this == CollectionAction.MOVE_BACK_TO_WATCHLIST && before.isWatched && before.hasWatchDependents() ->
+        R.string.msg_moved_back_watchlist_cleared
+    else -> message
+}
+
+/**
  * The actions in the long-press menu of a poster on [tab], in the order they are listed.
  * The last one is always the one that removes the movie from the tab it is on.
  */
 fun actionsFor(tab: CollectionTab, movie: Movie): List<CollectionAction> {
-    // "Like" is left out while the movie is on the watchlist (see canLike); "Unlike" is always possible
+    // "Like" is only offered on a watched movie (see canLike); "Unlike" is always possible
     val likeToggle: CollectionAction? = when {
         movie.reaction == Reaction.LIKED -> CollectionAction.UNLIKE
         canLike(movie) -> CollectionAction.LIKE
@@ -99,6 +112,7 @@ fun actionsFor(tab: CollectionTab, movie: Movie): List<CollectionAction> {
             if (movie.isWatched) CollectionAction.MARK_UNWATCHED else CollectionAction.MARK_WATCHED,
             CollectionAction.UNLIKE
         )
+        // A movie on the watchlist is not watched, so it never offers "Like"; "Unlike" only shows for an old like
         CollectionTab.WATCHLIST -> listOfNotNull(
             CollectionAction.MARK_WATCHED,
             likeToggle,

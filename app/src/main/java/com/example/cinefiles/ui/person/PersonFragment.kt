@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.content.res.ColorStateList
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -15,6 +16,7 @@ import com.example.cinefiles.R
 import com.example.cinefiles.databinding.FragmentPersonBinding
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
+import com.example.cinefiles.ui.components.SortSheet
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.show
@@ -55,6 +57,8 @@ class PersonFragment : Fragment() {
         binding.personGlow.setTint(ContextCompat.getColor(requireContext(), R.color.accent))
 
         binding.personBack.setOnClickListener { findNavController().popBackStack() }
+        binding.personSortBar.applySystemBarsPadding(top = true, bottom = false)
+        SortSheet.listen(childFragmentManager, viewLifecycleOwner) { viewModel.selectSort(it) }
         binding.stateError.errorRetry.setOnClickListener { viewModel.load() }
 
         setUpList()
@@ -71,7 +75,7 @@ class PersonFragment : Fragment() {
     /** One list: the header (full width) and then the posters, three to a row. */
     private fun setUpList() {
         headerAdapter = PersonHeaderAdapter(onTabSelected = viewModel::selectTab)
-        posterAdapter = PosterAdapter(PosterStyle.GRID, onMovieClick = { movie -> findNavController().openMovieDetails(movie.id) })
+        posterAdapter = PosterAdapter(PosterStyle.GRID, showRatings = true, onMovieClick = { movie -> findNavController().openMovieDetails(movie.id) })
 
         val layoutManager = GridLayoutManager(requireContext(), COLUMNS)
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -97,6 +101,16 @@ class PersonFragment : Fragment() {
 
         headerAdapter.submit(content)
         posterAdapter.submitList(content.movies)
+        showSortButton(content)
+    }
+
+    /** The Sort button floats at the top right, only when there is something to sort. It is red when the order is not the usual one. */
+    private fun showSortButton(content: PersonState.Content) {
+        binding.personSort.isVisible = content.movies.size > 1
+        binding.personSort.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(requireContext(), if (content.sort != DEFAULT_SORT) R.color.accent else R.color.text_primary)
+        )
+        binding.personSort.setOnClickListener { SortSheet.show(childFragmentManager, content.sortFields, content.sort) }
     }
 
     private companion object {

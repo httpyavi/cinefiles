@@ -1,5 +1,6 @@
 package com.example.cinefiles.ui.collection
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -19,6 +20,8 @@ import com.example.cinefiles.logic.CollectionTab
 import com.example.cinefiles.logic.actionsFor
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
+import com.example.cinefiles.ui.components.SortSheet
+import com.example.cinefiles.logic.SortOption
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.applySystemBarsPadding
@@ -49,6 +52,7 @@ class CollectionFragment : Fragment() {
     private lateinit var adapter: PosterAdapter
 
     private var shownTab: CollectionTab? = null // the tab whose posters the grid is showing now
+    private var shownSort: SortOption? = null   // the sort the grid is showing now
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -70,6 +74,7 @@ class CollectionFragment : Fragment() {
         adapter = PosterAdapter(
             style = PosterStyle.GRID,
             showBadges = true,
+            showRatings = true,
             onMovieClick = { movie -> findNavController().openMovieDetails(movie.id) },
             onMovieLongClick = { movie, anchor -> showMenu(movie, anchor) }
         )
@@ -78,6 +83,7 @@ class CollectionFragment : Fragment() {
         binding.collectionGrid.setHasFixedSize(true)
 
         setUpTabs()
+        setUpSort()
         binding.stateError.show(ApiError.UNKNOWN)
         binding.stateError.errorRetry.setOnClickListener { viewModel.retry() }
 
@@ -89,6 +95,7 @@ class CollectionFragment : Fragment() {
             binding.tabWatched.text = getString(R.string.collection_tab_watched, counts.watched)
         }
         viewModel.likeBlocked.observe(viewLifecycleOwner) { event ->
+            // THE WATCH RULE: the menu only offers Like on a watched movie, so this is a safety net
             event.getIfNotHandled()?.let { showMessage(R.string.like_blocked_message, aboveTabBar = true) }
         }
         viewModel.undo.observe(viewLifecycleOwner) { event ->
@@ -99,6 +106,7 @@ class CollectionFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         shownTab = null
+        shownSort = null
         _binding = null
     }
 
@@ -110,6 +118,21 @@ class CollectionFragment : Fragment() {
         }
         // The selected tab can also change from outside (Home's tiles): the control follows
         viewModel.tab.observe(viewLifecycleOwner) { binding.collectionTabs.check(buttonOfTab(it)) }
+    }
+
+    /** The Sort button opens the shared Sort sheet; the grid follows the ViewModel's sort. The button turns red when the sort is not the usual one. */
+    private fun setUpSort() {
+        binding.collectionSort.setOnClickListener {
+            val current = viewModel.sort.value ?: CollectionViewModel.DEFAULT_SORT
+            SortSheet.show(childFragmentManager, viewModel.sortFieldsFor(adapter.currentList), current)
+        }
+        SortSheet.listen(childFragmentManager, viewLifecycleOwner) { viewModel.setSort(it) }
+        viewModel.sort.observe(viewLifecycleOwner) { sort ->
+            val isCustom = sort != CollectionViewModel.DEFAULT_SORT
+            binding.collectionSort.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), if (isCustom) R.color.accent else R.color.text_primary)
+            )
+        }
     }
 
     private fun tabOfButton(buttonId: Int): CollectionTab = when (buttonId) {
@@ -137,9 +160,11 @@ class CollectionFragment : Fragment() {
 
         if (content == null) return
         adapter.submit(content.tab, content.movies)
-        if (shownTab != content.tab) {
+        val sort = viewModel.sort.value
+        if (shownTab != content.tab || shownSort != sort) {
             shownTab = content.tab
-            binding.collectionGrid.scrollToPosition(0) // a different tab starts at its top
+            shownSort = sort
+            binding.collectionGrid.scrollToPosition(0) // a different tab, or a different order, starts at the top
         }
         if (isEmpty) showEmptyState(content.tab)
     }

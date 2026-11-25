@@ -16,6 +16,10 @@ import com.example.cinefiles.R
  *
  * It ADDS the bar heights to the padding the view already has in its XML.
  * Pass top = false for a screen that wants its image to run under the status bar.
+ *
+ * The bottom padding is also at least the height of the on-screen KEYBOARD: an edge-to-edge window is not resized by
+ * the keyboard (adjustResize does nothing there), so a bar at the bottom (the Diary editor's formatting strip and the
+ * "Start swiping" footer) would otherwise be hidden behind it while the user types.
  */
 fun View.applySystemBarsPadding(top: Boolean = true, bottom: Boolean = true) {
     val paddingTopFromXml = paddingTop
@@ -25,9 +29,10 @@ fun View.applySystemBarsPadding(top: Boolean = true, bottom: Boolean = true) {
         val bars = insets.getInsets(
             WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
         )
+        val keyboardHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
         view.updatePadding(
             top = paddingTopFromXml + if (top) bars.top else 0,
-            bottom = paddingBottomFromXml + if (bottom) bars.bottom else 0
+            bottom = paddingBottomFromXml + if (bottom) maxOf(bars.bottom, keyboardHeight) else 0
         )
         insets // not consumed, so other views can still read them
     }

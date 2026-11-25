@@ -1,6 +1,7 @@
 package com.example.cinefiles.ui.person
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
@@ -8,18 +9,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.cinefiles.R
 import com.example.cinefiles.databinding.ItemPersonHeaderBinding
-import com.example.cinefiles.util.EmptyAction
+import com.example.cinefiles.logic.PersonRole
 import com.example.cinefiles.util.ImageUrls
+import com.example.cinefiles.util.addChoiceChip
 import com.example.cinefiles.util.loadImage
 import com.example.cinefiles.util.show
 
 /**
  * The header of the Person screen: ONE item at the top of the poster grid (the screen joins it with the poster
- * adapter in a ConcatAdapter). It shows the photo, the name, the biography and, when the person has both kinds of
- * movies, the two tabs. Everything it needs is in the [PersonState.Content] it is given with [submit].
+ * adapter in a ConcatAdapter). It shows the photo, the name, the biography and, when the person has more than one kind of
+ * work, the role tabs ("Actor (24)", "Director (8)"...). Everything it needs is in the [PersonState.Content] it is given with [submit].
  */
 class PersonHeaderAdapter(
-    private val onTabSelected: (PersonTab) -> Unit
+    private val onTabSelected: (PersonRole) -> Unit
 ) : RecyclerView.Adapter<PersonHeaderAdapter.HeaderViewHolder>() {
 
     class HeaderViewHolder(val binding: ItemPersonHeaderBinding) : RecyclerView.ViewHolder(binding.root)
@@ -27,6 +29,7 @@ class PersonHeaderAdapter(
     private var content: PersonState.Content? = null
     private var bioExpanded = false
     private var bindingNow = false // true while the tabs are being set from code: that is not a tap
+    private var shownTabs: List<PersonTab>? = null // the tabs the chips were made for, so a tap does not rebuild them
 
     override fun getItemCount(): Int = if (content != null) 1 else 0
 
@@ -44,8 +47,9 @@ class PersonHeaderAdapter(
             title = R.string.person_empty_title,
             message = R.string.person_empty_message
         )
-        binding.personTabs.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked && !bindingNow) onTabSelected(if (checkedId == R.id.tabCrew) PersonTab.CREW else PersonTab.ACTING)
+        binding.personTabs.setOnCheckedStateChangeListener { group, checkedIds ->
+            val role = checkedIds.firstOrNull()?.let { group.findViewById<View>(it)?.tag as? PersonRole }
+            if (role != null && !bindingNow) onTabSelected(role)
         }
         binding.personBioToggle.setOnClickListener {
             bioExpanded = !bioExpanded
@@ -74,12 +78,35 @@ class PersonHeaderAdapter(
             binding.personBioToggle.isVisible = false
         }
 
-        bindingNow = true
-        binding.personTabs.isVisible = content.hasBothTabs
-        binding.personTabs.check(if (content.tab == PersonTab.CREW) R.id.tabCrew else R.id.tabActing)
-        bindingNow = false
+        showTabs(binding, content)
 
         binding.stateEmpty.root.isVisible = content.movies.isEmpty()
+    }
+
+    /**
+     * One chip per role ("Actor (24)"). The chips are only made again when the roles or their counts change, so tapping
+     * one does not throw the row away (it would jump back to the start); a tap only moves the check mark.
+     */
+    private fun showTabs(binding: ItemPersonHeaderBinding, content: PersonState.Content) {
+        binding.personTabsScroll.isVisible = content.showTabs
+        if (!content.showTabs) return
+
+        bindingNow = true
+        if (shownTabs != content.tabs) {
+            shownTabs = content.tabs
+            binding.personTabs.removeAllViews()
+            val context = binding.root.context
+            for (tab in content.tabs) {
+                val chip = binding.personTabs.addChoiceChip(context.getString(R.string.person_tab_label, context.getString(tab.role.label), tab.count))
+                chip.tag = tab.role
+            }
+        }
+        for (index in 0 until binding.personTabs.childCount) {
+            val chip = binding.personTabs.getChildAt(index)
+            val isSelected = chip.tag == content.role
+            if (isSelected) binding.personTabs.check(chip.id)
+        }
+        bindingNow = false
     }
 
     override fun onViewRecycled(holder: HeaderViewHolder) {

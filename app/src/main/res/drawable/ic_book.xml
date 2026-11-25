@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The diary (an open book). 24 dp icon. Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,6.5 C10.5,5.3 8,4.8 4.5,5 L4.5,18 C8,17.8 10.5,18.3 12,19.5 C13.5,18.3 16,17.8 19.5,18 L19.5,5 C16,4.8 13.5,5.3 12,6.5 Z M12,6.5 L12,19.5" />
+</vector>

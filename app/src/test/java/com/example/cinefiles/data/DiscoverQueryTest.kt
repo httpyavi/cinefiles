@@ -3,7 +3,6 @@ package com.example.cinefiles.data
 import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
-import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Preferences
@@ -91,13 +90,14 @@ class DiscoverQueryTest {
     }
 
     @Test
-    fun languageBecomesTheOriginalLanguageCode() {
-        fun code(language: Language) = moodQuery(listOf(comedy), Preferences(language = language)).originalLanguage
-        assertEquals("en", code(Language.ENGLISH))
-        assertEquals("tl", code(Language.FILIPINO))
-        assertEquals("ko", code(Language.KOREAN))
-        assertEquals("ja", code(Language.JAPANESE))
-        assertNull(code(Language.ANY))
+    fun languageIsTheOriginalLanguageCodeAnyLanguageOfTheListWorks() {
+        fun code(language: String?) = moodQuery(listOf(comedy), Preferences(language = language)).originalLanguage
+        assertEquals("en", code("en"))
+        assertEquals("tl", code("tl"))
+        assertEquals("ko", code("ko"))
+        assertEquals("th", code("th")) // not one of the four old chips
+        assertEquals("es", code("es"))
+        assertNull(code(null))
     }
 
     // ---------- The kinds of movie ----------
@@ -127,7 +127,7 @@ class DiscoverQueryTest {
 
     @Test
     fun theLastRelaxStepDropsTheGenres() {
-        val prefs = Preferences(releasePeriod = ReleasePeriod.FROM_2015, language = Language.KOREAN)
+        val prefs = Preferences(releasePeriod = ReleasePeriod.FROM_2015, language = "ko")
         val q = moodQuery(listOf(comedy), prefs, relax = 5)
         assertNull(q.withGenres)
         assertNull(q.releasedFrom)

@@ -93,4 +93,34 @@
             app:argType="integer" />
     </fragment>
 
+    <!-- ===== Movie Diary =====
+         The list opens from the Profile ("Movie Diary", every page) and from Details ("Open Diary", the pages of one movie).
+         The editor opens from a page in the list, and from Details ("Write in Diary") for a new page. The argument keys
+         must match ARG_MOVIE_ID and ARG_DIARY_ENTRY_ID in NavigationExtensions.kt. -->
+    <fragment
+        android:id="@+id/diaryListFragment"
+        android:name="com.example.cinefiles.ui.diary.DiaryListFragment"
+        android:label="@string/diary_list_title"
+        tools:layout="@layout/fragment_diary_list">
+        <argument
+            android:name="movieId"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/diaryEditorFragment"
+        android:name="com.example.cinefiles.ui.diary.DiaryEditorFragment"
+        android:label="@string/diary_editor_title"
+        tools:layout="@layout/fragment_diary_editor">
+        <argument
+            android:name="entryId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="movieId"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
 </navigation>

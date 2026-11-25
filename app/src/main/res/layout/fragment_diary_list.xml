@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MY DIARY: the list of diary pages, newest first (DiaryListFragment). With a movie it only lists the pages about it, and offers
+     "New page". Each page is a small card in the page's own theme and font. Empty states are calm and say what to do.
+     There is no tab bar on this screen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.example.cinefiles.ui.components.AmbientGlowView
+        android:id="@+id/diaryGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/diaryContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/diaryHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_8">
+
+            <ImageButton
+                android:id="@+id/diaryBack"
+                android:layout_width="@dimen/round_button_small_size"
+                android:layout_height="@dimen/round_button_small_size"
+                android:background="@drawable/bg_glass_circle"
+                android:contentDescription="@string/action_back"
+                android:padding="@dimen/space_12"
+                android:src="@drawable/ic_back"
+                app:tint="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/diaryTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_12"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="@string/diary_list_title"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:targetApi="28" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/diaryNewPage"
+                style="@style/Widget.CineFiles.Button.Tonal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="@string/diary_new_page"
+                android:visibility="gone"
+                app:icon="@drawable/ic_add"
+                app:iconGravity="textStart"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/diaryList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_8"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_24"
+                android:scrollbars="none"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_diary_entry" />
+
+            <include
+                android:id="@+id/stateEmpty"
+                layout="@layout/view_state_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

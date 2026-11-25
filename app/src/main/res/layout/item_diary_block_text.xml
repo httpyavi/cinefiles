@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A run of paragraphs on a diary page (DiaryBlockAdapter). NO box, label or tools: it is just text on the page, like an article. The font, the
+     size, the colors and the alignment are set from code, from the page's style and from the alignment buttons. -->
+<com.example.cinefiles.ui.diary.RichEditText xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/blockText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:autofillHints="@null"
+    android:background="@null"
+    android:gravity="top|start"
+    android:imeOptions="flagNoExtractUi"
+    android:importantForAutofill="no"
+    android:inputType="textMultiLine|textCapSentences"
+    android:lineSpacingMultiplier="1.3"
+    android:minHeight="@dimen/touch_target"
+    android:paddingStart="0dp"
+    android:paddingTop="@dimen/space_8"
+    android:paddingEnd="0dp"
+    android:paddingBottom="@dimen/space_8"
+    android:textAppearance="@style/TextAppearance.CineFiles.Body" />

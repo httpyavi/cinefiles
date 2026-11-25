@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A picture on a diary page (DiaryBlockAdapter): a still from the movie, or a copy of a photo from the phone, sitting between paragraphs like in an
+     article. No box around it. The only controls are a small, quiet pill in its corner: drag, up, down, delete. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/space_8"
+    android:paddingBottom="@dimen/space_8">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/blockImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:background="@color/surface"
+        android:maxHeight="@dimen/diary_image_max_height"
+        android:minHeight="@dimen/popcorn_size"
+        android:scaleType="fitCenter"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Small" />
+
+    <LinearLayout
+        android:id="@+id/blockTools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="@dimen/space_8"
+        android:background="@drawable/bg_image_tools"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_4"
+        android:paddingEnd="@dimen/space_4">
+
+        <ImageButton
+            android:id="@+id/blockHandle"
+            style="@style/Widget.CineFiles.ImageTool"
+            android:contentDescription="@string/diary_drag_block"
+            android:src="@drawable/ic_drag_handle" />
+
+        <ImageButton
+            android:id="@+id/blockUp"
+            style="@style/Widget.CineFiles.ImageTool"
+            android:contentDescription="@string/diary_move_up"
+            android:src="@drawable/ic_arrow_up" />
+
+        <ImageButton
+            android:id="@+id/blockDown"
+            style="@style/Widget.CineFiles.ImageTool"
+            android:contentDescription="@string/diary_move_down"
+            android:src="@drawable/ic_arrow_down" />
+
+        <ImageButton
+            android:id="@+id/blockDelete"
+            style="@style/Widget.CineFiles.ImageTool"
+            android:contentDescription="@string/diary_delete_picture"
+            android:src="@drawable/ic_delete" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE FAVORITES PICKER (FavoritePickerSheet): a bottom sheet with the movies the user has WATCHED (only a watched movie
+     can be a favorite: THE WATCH RULE) in the usual three-column poster grid. Tapping one makes it the next favorite.
+     With nothing watched yet, the empty state says so. The sheet's height is set in code (three quarters of the screen). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/pickerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_8">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingEnd="@dimen/screen_margin"
+        android:text="@string/favorites_picker_title"
+        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+        tools:targetApi="28" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_4"
+        android:paddingEnd="@dimen/screen_margin"
+        android:text="@string/favorites_picker_subtitle"
+        android:textAppearance="@style/TextAppearance.CineFiles.Callout" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_12"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/pickerList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/space_16"
+            android:paddingEnd="@dimen/space_16"
+            android:paddingBottom="@dimen/space_24"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="3"
+            tools:listitem="@layout/item_poster_grid" />
+
+        <include
+            android:id="@+id/pickerEmpty"
+            layout="@layout/view_state_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>

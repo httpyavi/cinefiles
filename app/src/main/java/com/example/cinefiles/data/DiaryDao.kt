@@ -2,15 +2,16 @@ package com.example.cinefiles.data
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+/** Every question we ask the `diary_entries` table, and every change we make to it. */
 @Dao
 interface DiaryDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /** Saves a NEW page (id 0) and returns its id. Saved pages are changed with [update]. */
+    @Insert
     suspend fun insert(entry: DiaryEntry): Long
 
     @Update
@@ -19,14 +20,18 @@ interface DiaryDao {
     @Query("DELETE FROM diary_entries WHERE id = :id")
     suspend fun delete(id: Long)
 
-    @Query("SELECT * FROM diary_entries WHERE movieId = :movieId ORDER BY dateWatched DESC, id DESC")
-    suspend fun getForMovie(movieId: Int): List<DiaryEntry>
+    @Query("SELECT * FROM diary_entries WHERE id = :id")
+    suspend fun get(id: Long): DiaryEntry?
 
-    @Query("SELECT * FROM diary_entries WHERE movieId = :movieId ORDER BY dateWatched DESC, id DESC")
+    /** Newest page first (by the time it was last changed). */
+    @Query("SELECT * FROM diary_entries ORDER BY updatedAt DESC, id DESC")
+    fun observeAll(): Flow<List<DiaryEntry>>
+
+    @Query("SELECT * FROM diary_entries WHERE movieId = :movieId ORDER BY updatedAt DESC, id DESC")
     fun observeForMovie(movieId: Int): Flow<List<DiaryEntry>>
 
-    @Query("SELECT * FROM diary_entries ORDER BY dateWatched DESC, id DESC")
-    fun observeAll(): Flow<List<DiaryEntry>>
+    @Query("SELECT * FROM diary_entries ORDER BY updatedAt DESC, id DESC")
+    suspend fun getAll(): List<DiaryEntry>
 
     @Query("SELECT COUNT(*) FROM diary_entries")
     fun observeCount(): Flow<Int>

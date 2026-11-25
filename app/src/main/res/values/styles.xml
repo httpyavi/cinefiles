@@ -173,6 +173,18 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
+    <!-- A tonal button that sits side by side with another one (the Diary editor's "Paragraph" / "Picture"): its one-line label shrinks
+         to fit its half of the row instead of breaking in the middle of a word when the system text is big -->
+    <style name="Widget.CineFiles.Button.Tonal.Fit" parent="Widget.CineFiles.Button.Tonal">
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingStart">@dimen/space_12</item>
+        <item name="android:paddingEnd">@dimen/space_12</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">10sp</item>
+        <item name="autoSizeMaxTextSize">16sp</item>
+        <item name="autoSizeStepGranularity">0.5sp</item>
+    </style>
+
     <!-- Compact Detail Action button (Like, Watched, Favorite) preventing word wrap -->
     <style name="Widget.CineFiles.Button.DetailAction" parent="Widget.CineFiles.Button.Tonal">
         <item name="android:minHeight">44dp</item>
@@ -185,6 +197,11 @@
         <item name="android:textAppearance">@style/TextAppearance.CineFiles.Button.Compact</item>
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">none</item>
+        <!-- At 130% font "Watched" no longer fits its third of the row: the text shrinks to fit (never below 9sp) instead of being cut -->
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">9sp</item>
+        <item name="autoSizeMaxTextSize">13sp</item>
+        <item name="autoSizeStepGranularity">0.5sp</item>
     </style>
 
     <!-- Text button: just red text, for tertiary actions -->
@@ -198,8 +215,18 @@
 
     <!-- Preference selection button/card: rounded glass card with press scale feedback -->
     <style name="Widget.CineFiles.Button.PreferenceCard" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:minHeight">50dp</item>
+        <item name="android:minHeight">@dimen/pref_card_min_height</item>
         <item name="android:textAppearance">@style/TextAppearance.CineFiles.Label</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:maxLines">2</item>
+        <!-- Material's 24 dp side padding leaves only ~25 dp for "Any" in the narrow rating cards of a 360 dp screen at 130% text -->
+        <item name="android:paddingStart">@dimen/space_8</item>
+        <item name="android:paddingEnd">@dimen/space_8</item>
+        <!-- With big system text ("Contemporary" at 130%) the two lines no longer fit the card: the text shrinks instead of breaking in the middle of a word -->
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">10sp</item>
+        <item name="autoSizeMaxTextSize">14sp</item>
+        <item name="autoSizeStepGranularity">0.5sp</item>
         <item name="cornerRadius">@dimen/radius_medium</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -274,11 +301,6 @@
         <item name="android:stateListAnimator">@animator/press_scale</item>
     </style>
 
-    <!-- A tappable name (a writer, a producer...) that opens the Person screen: the same glass pill, but it is a button, not a choice -->
-    <style name="Widget.CineFiles.Chip.Person">
-        <item name="android:checkable">false</item>
-    </style>
-
     <!-- One part of a segmented control (inside a MaterialButtonToggleGroup, for example the tabs of My Collection).
          It uses the same colors as the chip: glass, and a red edge with a red wash when selected. The text shrinks
          a little if it does not fit (a long number next to "Watchlist"). -->
@@ -298,6 +320,29 @@
         <item name="autoSizeMinTextSize">11sp</item>
         <item name="autoSizeMaxTextSize">14sp</item>
         <item name="autoSizeStepGranularity">1sp</item>
+    </style>
+
+    <!-- A button of the diary's formatting strip (bold, italic, alignment): a square, quiet until it applies (isSelected = true) -->
+    <style name="Widget.CineFiles.FormatButton" parent="">
+        <item name="android:layout_width">@dimen/format_button_size</item>
+        <item name="android:layout_height">@dimen/format_button_size</item>
+        <item name="android:layout_marginEnd">@dimen/space_4</item>
+        <item name="android:background">@drawable/bg_format_button</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">@dimen/space_10</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:textAppearance">@style/TextAppearance.CineFiles.Headline</item>
+    </style>
+
+    <!-- A small tool of a picture on a diary page (drag, up, down, delete) -->
+    <style name="Widget.CineFiles.ImageTool" parent="">
+        <item name="android:layout_width">@dimen/image_tool_size</item>
+        <item name="android:layout_height">@dimen/image_tool_size</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">@dimen/space_8</item>
+        <item name="android:tint">@color/text_primary</item>
     </style>
 
     <!-- A removable chip for a chosen mood (the edge color is set from code, in the mood's own color) -->

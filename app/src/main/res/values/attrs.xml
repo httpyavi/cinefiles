@@ -4,4 +4,11 @@
     <declare-styleable name="StepIndicatorView">
         <attr name="currentStep" format="integer" />
     </declare-styleable>
+
+    <!-- The popcorn rating row: the size of one bucket, the gap between buckets, and whether touches change the rating -->
+    <declare-styleable name="PopcornRatingView">
+        <attr name="popcornSize" format="dimension" />
+        <attr name="popcornGap" format="dimension" />
+        <attr name="interactive" format="boolean" />
+    </declare-styleable>
 </resources>

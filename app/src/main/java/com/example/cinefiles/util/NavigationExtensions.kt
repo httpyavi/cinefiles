@@ -18,6 +18,9 @@ const val ARG_MOVIE_ID = "movieId"
 /** The key under which a person id travels to the Person screen. Must match nav_graph.xml. */
 const val ARG_PERSON_ID = "personId"
 
+/** The key under which a diary page id travels to the Diary editor (0 = a new page). Must match nav_graph.xml. */
+const val ARG_DIARY_ENTRY_ID = "entryId"
+
 /**
  * How a screen change moves. FADE_THROUGH (old screen fades out, new one fades in and grows a little) is for tabs,
  * Details and every other change. SLIDE (the next step comes in from the right, Back goes the other way) is only for
@@ -105,4 +108,19 @@ fun NavController.openPerson(personId: Int) {
         currentBackStackEntry?.arguments?.getInt(ARG_PERSON_ID) == personId
     if (alreadyOpen) return
     openScreen(R.id.personFragment, bundleOf(ARG_PERSON_ID to personId), singleTop = false)
+}
+
+/**
+ * Opens the Diary list. With a [movieId] it lists only the pages about that movie (and offers "New page" for it);
+ * with 0 it is "My Diary", every page.
+ */
+fun NavController.openDiaryList(movieId: Int = 0) {
+    openScreen(R.id.diaryListFragment, bundleOf(ARG_MOVIE_ID to movieId))
+}
+
+/**
+ * Opens the Diary editor: the page [entryId] (a saved page), or a NEW page about [movieId] when [entryId] is 0.
+ */
+fun NavController.openDiaryEditor(entryId: Long = 0L, movieId: Int = 0) {
+    openScreen(R.id.diaryEditorFragment, bundleOf(ARG_DIARY_ENTRY_ID to entryId, ARG_MOVIE_ID to movieId))
 }

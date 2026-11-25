@@ -6,6 +6,7 @@ import com.example.cinefiles.data.dto.PersonDto
 import com.example.cinefiles.data.dto.toMovie
 import com.example.cinefiles.data.dto.toMovies
 import com.example.cinefiles.logic.CrewRole
+import com.example.cinefiles.logic.PersonRole
 import com.google.gson.Gson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -265,22 +266,38 @@ class MovieMappingTest {
 
     @Test
     fun aPersonsMoviesAreOnePosterEachMostPopularFirstAndNewestFirstBetweenEquals() {
-        val crew = person().crew
-        assertEquals(listOf(20, 30, 10), crew.map { it.id }) // 90, then 20 (2020) before 20 (1998); no repeat of "Big one"
+        val directed = person().credits.getValue(PersonRole.DIRECTOR)
+        assertEquals(listOf(20, 10), directed.map { it.id }) // 90 first, then 20; "Big one" is in the list once
     }
 
     @Test
     fun moviesWithoutAPosterOrThatAreAdultNeverShow() {
-        val ids = person().crew.map { it.id }
+        val ids = person().allMovies.map { it.id }
         assertFalse(40 in ids) // no poster
         assertFalse(50 in ids) // adult
     }
 
     @Test
-    fun actingAndCrewAreTwoSeparateLists() {
-        val person = person()
-        assertEquals(listOf(1), person.acting.map { it.id })
-        assertEquals(3, person.crew.size)
+    fun everyKindOfWorkIsItsOwnListAndAMovieCanBeInSeveral() {
+        val credits = person().credits
+        assertEquals(listOf(1), credits.getValue(PersonRole.ACTOR).map { it.id })        // from the cast
+        assertEquals(listOf(20, 10), credits.getValue(PersonRole.DIRECTOR).map { it.id })
+        assertEquals(listOf(20), credits.getValue(PersonRole.PRODUCER).map { it.id })    // "Big one" is also produced
+        assertEquals(listOf(30), credits.getValue(PersonRole.WRITER).map { it.id })
+        assertFalse(PersonRole.COMPOSER in credits)                                      // a role without movies has no list
+    }
+
+    @Test
+    fun theTabsStartWithWhatThePersonIsKnownForThenTheBiggestListsAndSkipEmptyRoles() {
+        assertEquals(
+            listOf(PersonRole.DIRECTOR, PersonRole.ACTOR, PersonRole.WRITER, PersonRole.PRODUCER),
+            person().roles
+        )
+    }
+
+    @Test
+    fun allMoviesAreListedOnce() {
+        assertEquals(listOf(1, 10, 20, 30), person().allMovies.map { it.id }.sorted())
     }
 
     @Test
@@ -290,10 +307,10 @@ class MovieMappingTest {
     }
 
     @Test
-    fun aPersonWithoutMoviesHasEmptyLists() {
+    fun aPersonWithoutMoviesHasNoRoles() {
         val person = PersonDto(id = 1, name = "New face").toPersonDetails()!!
-        assertTrue(person.acting.isEmpty())
-        assertTrue(person.crew.isEmpty())
+        assertTrue(person.credits.isEmpty())
+        assertTrue(person.roles.isEmpty())
         assertEquals("", person.biography)
         assertNull(person.knownFor)
     }

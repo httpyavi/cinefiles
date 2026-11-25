@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sort / filter: three sliders. 24 dp icon. Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M4,7 L20,7 M4,12 L20,12 M4,17 L20,17" />
+    <path
+        android:fillColor="@color/background"
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M15,4.8 A2.2,2.2 0 1 0 15,9.2 A2.2,2.2 0 1 0 15,4.8 Z M8,9.8 A2.2,2.2 0 1 0 8,14.2 A2.2,2.2 0 1 0 8,9.8 Z M13,14.8 A2.2,2.2 0 1 0 13,19.2 A2.2,2.2 0 1 0 13,14.8 Z" />
+</vector>

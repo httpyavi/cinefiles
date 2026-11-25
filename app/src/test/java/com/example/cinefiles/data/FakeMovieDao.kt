@@ -1,5 +1,6 @@
 package com.example.cinefiles.data
 
+import com.example.cinefiles.logic.withoutWatched
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.map
  * A fake of the real database, for the tests that run on the computer (the real DAO needs a phone or
  * emulator: see MovieDaoTest in androidTest). It keeps the movies in memory and follows the same rules as the
  * real queries: a saved movie is never replaced, and every "set a state" call only changes its own columns.
+ * Taking "watched" away also clears the like, the rating and the favorite, like the real queries (THE WATCH RULE).
  */
 class FakeMovieDao : MovieDao {
 
@@ -41,7 +43,7 @@ class FakeMovieDao : MovieDao {
         change(id) { it.copy(reaction = reaction, reactedAt = at) }
 
     override suspend fun addToWatchlist(id: Int, at: Long) =
-        change(id) { it.copy(inWatchlist = true, watchlistAddedAt = at, isWatched = false, watchedAt = 0L) }
+        change(id) { it.withoutWatched().copy(inWatchlist = true, watchlistAddedAt = at) }
 
     override suspend fun removeFromWatchlist(id: Int) =
         change(id) { it.copy(inWatchlist = false, watchlistAddedAt = 0L) }
@@ -50,15 +52,18 @@ class FakeMovieDao : MovieDao {
         change(id) { it.copy(isWatched = true, watchedAt = at, inWatchlist = false, watchlistAddedAt = 0L) }
 
     override suspend fun unmarkWatched(id: Int) =
-        change(id) { it.copy(isWatched = false, watchedAt = 0L) }
+        change(id) { it.withoutWatched() }
 
     override suspend fun restoreState(
         id: Int, reaction: Reaction, reactedAt: Long, inWatchlist: Boolean,
-        watchlistAddedAt: Long, isWatched: Boolean, watchedAt: Long
+        watchlistAddedAt: Long, isWatched: Boolean, watchedAt: Long,
+        userRating: Float?, ratedAt: Long, isFavorite: Boolean, favoritedAt: Long, favoriteOrder: Int
     ) = change(id) {
         it.copy(
             reaction = reaction, reactedAt = reactedAt, inWatchlist = inWatchlist,
-            watchlistAddedAt = watchlistAddedAt, isWatched = isWatched, watchedAt = watchedAt
+            watchlistAddedAt = watchlistAddedAt, isWatched = isWatched, watchedAt = watchedAt,
+            userRating = userRating, ratedAt = ratedAt, isFavorite = isFavorite, favoritedAt = favoritedAt,
+            favoriteOrder = favoriteOrder
         )
     }
 
@@ -101,30 +106,44 @@ class FakeMovieDao : MovieDao {
 
     override fun observeWithState(): Flow<List<Movie>> = rows.map { all -> all.values.filter { it.hasAnyState() } }
 
-    override suspend fun setPersonalRating(id: Int, rating: Float?, at: Long) =
-        change(id) { it.copy(personalRating = rating, ratedAt = at) }
+    override suspend fun setUserRating(id: Int, rating: Float?, at: Long) =
+        change(id) { it.copy(userRating = rating, ratedAt = at) }
 
-    override suspend fun clearPersonalRating(id: Int) =
-        change(id) { it.copy(personalRating = null, ratedAt = 0L) }
+    override suspend fun clearUserRating(id: Int) =
+        change(id) { it.copy(userRating = null, ratedAt = 0L) }
 
-    override suspend fun setFavorite(id: Int, isFavorite: Boolean, at: Long) =
-        change(id) { it.copy(isFavorite = isFavorite, favoritedAt = at) }
+    override suspend fun addFavorite(id: Int, at: Long) {
+        val last = rows.value.values.filter { it.isFavorite }.maxOfOrNull { it.favoriteOrder } ?: -1
+        change(id) { it.copy(isFavorite = true, favoritedAt = at, favoriteOrder = last + 1) }
+    }
+
+    override suspend fun removeFavorite(id: Int) =
+        change(id) { it.copy(isFavorite = false, favoritedAt = 0L, favoriteOrder = 0) }
+
+    override suspend fun setFavoriteOrder(first: Int, second: Int, third: Int, fourth: Int) {
+        val places = listOf(first, second, third, fourth)
+        rows.value = rows.value.mapValues { (id, movie) ->
+            val place = places.indexOf(id)
+            if (movie.isFavorite && place >= 0) movie.copy(favoriteOrder = place) else movie
+        }
+    }
 
     override suspend fun countFavorites(): Int =
         rows.value.values.count { it.isFavorite }
 
-    override fun observeFavorites(): Flow<List<Movie>> =
-        rows.map { all -> all.values.filter { it.isFavorite }.sortedByDescending { it.favoritedAt }.take(4) }
+    private fun favoritesInOrder() =
+        rows.value.values.filter { it.isFavorite }.sortedWith(compareBy({ it.favoriteOrder }, { it.favoritedAt }, { it.id })).take(4)
 
-    override suspend fun getFavorites(): List<Movie> =
-        rows.value.values.filter { it.isFavorite }.sortedByDescending { it.favoritedAt }.take(4)
+    override fun observeFavorites(): Flow<List<Movie>> = rows.map { favoritesInOrder() }
+
+    override suspend fun getFavorites(): List<Movie> = favoritesInOrder()
 
     override fun observeRated(): Flow<List<Movie>> =
-        rows.map { all -> all.values.filter { it.personalRating != null }.sortedByDescending { it.ratedAt } }
+        rows.map { all -> all.values.filter { it.userRating != null }.sortedByDescending { it.ratedAt } }
 
     override fun observeRatedCount(): Flow<Int> =
-        rows.map { all -> all.values.count { it.personalRating != null } }
+        rows.map { all -> all.values.count { it.userRating != null } }
 
     override suspend fun countRated(): Int =
-        rows.value.values.count { it.personalRating != null }
+        rows.value.values.count { it.userRating != null }
 }

@@ -206,6 +206,56 @@
                         tools:text="Favorite" />
                 </LinearLayout>
 
+                <!-- Your popcorn rating, everything centered: the label, the popcorn row, the number and the hint.
+                     It is locked (dimmed) until the movie is watched: THE WATCH RULE -->
+                <LinearLayout
+                    android:id="@+id/ratingPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:background="@drawable/bg_glass_panel"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_16">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:accessibilityHeading="true"
+                        android:text="@string/rating_title"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
+                        android:textColor="@color/accent_soft"
+                        tools:targetApi="28" />
+
+                    <com.example.cinefiles.ui.components.PopcornRatingView
+                        android:id="@+id/ratingView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_12" />
+
+                    <TextView
+                        android:id="@+id/ratingValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:importantForAccessibility="no"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                        android:textColor="@color/star"
+                        android:visibility="gone"
+                        tools:text="3.5 / 5"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/ratingHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:gravity="center_horizontal"
+                        android:textAlignment="center"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                        tools:text="Mark this movie as watched to rate it." />
+                </LinearLayout>
+
                 <!-- The tagline, when TMDB has one -->
                 <TextView
                     android:id="@+id/detailTagline"
@@ -282,6 +332,79 @@
                         android:layout_height="wrap_content"
                         android:text="@string/state_retry" />
                 </LinearLayout>
+
+                <!-- The Movie Diary: write a page about this movie, or open the pages already written -->
+                <LinearLayout
+                    android:id="@+id/diaryPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_24"
+                    android:background="@drawable/bg_glass_panel"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_16">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="@dimen/icon_size"
+                            android:layout_height="@dimen/icon_size"
+                            android:layout_gravity="top"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_book"
+                            app:tint="@color/accent_soft" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_12"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:accessibilityHeading="true"
+                                android:text="@string/diary_panel_title"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Headline"
+                                tools:targetApi="28" />
+
+                            <TextView
+                                android:id="@+id/diarySubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_4"
+                                android:text="@string/diary_panel_subtitle_none"
+                                android:textAppearance="@style/TextAppearance.CineFiles.Caption" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/diaryWriteButton"
+                        style="@style/Widget.CineFiles.Button.Tonal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_12"
+                        android:text="@string/diary_write"
+                        app:icon="@drawable/ic_edit"
+                        app:iconGravity="textStart" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/diaryOpenButton"
+                        style="@style/Widget.CineFiles.Button.Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:text="@string/diary_open"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_book"
+                        app:iconGravity="textStart"
+                        tools:visibility="visible" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Block 3: the cast (a row of round photos), the crew (tappable names by job) and a few facts.
@@ -316,6 +439,7 @@
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
             </LinearLayout>
 
+            <!-- The crew: a tidy credits table (one row per role, the names tappable) with "See all" for the rest -->
             <LinearLayout
                 android:id="@+id/crewSection"
                 android:layout_width="match_parent"
@@ -325,22 +449,46 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:visibility="gone">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_24"
                     android:layout_marginBottom="@dimen/space_8"
-                    android:accessibilityHeading="true"
-                    android:text="@string/detail_crew_title"
-                    android:textAppearance="@style/TextAppearance.CineFiles.Title"
-                    tools:targetApi="28" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <!-- One item_crew_group for every kind of crew the movie has (DetailFragment.showCrew) -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:accessibilityHeading="true"
+                        android:text="@string/detail_crew_title"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                        tools:targetApi="28" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/crewSeeAll"
+                        style="@style/Widget.CineFiles.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_target"
+                        android:text="@string/detail_crew_see_all"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <!-- One item_crew_row for each of the first roles (DetailFragment.showCrew) -->
                 <LinearLayout
-                    android:id="@+id/crewGroups"
+                    android:id="@+id/crewRows"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:background="@drawable/bg_glass_panel"
+                    android:divider="@drawable/divider_glass"
+                    android:dividerPadding="@dimen/space_12"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/space_4"
+                    android:paddingBottom="@dimen/space_4"
+                    android:showDividers="middle" />
             </LinearLayout>
 
             <LinearLayout

@@ -9,10 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.data.ApiError
 import com.example.cinefiles.data.friendlyError
+import com.example.cinefiles.logic.PersonRole
+import com.example.cinefiles.logic.SortOption
 import com.example.cinefiles.util.ARG_PERSON_ID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -26,12 +29,15 @@ class PersonViewModel(app: Application, handle: SavedStateHandle) : AndroidViewM
     private val personId: Int = handle.get<Int>(ARG_PERSON_ID) ?: 0
 
     private val remote = MutableStateFlow(PersonRemote())
-    private val chosenTab = MutableStateFlow<PersonTab?>(null)
+    private val chosenTab = MutableStateFlow<PersonRole?>(null)
+    private val chosenSort = MutableStateFlow(DEFAULT_SORT)
     private var loadJob: Job? = null
 
     /** The state to draw. It changes when TMDB answers or the user taps a tab. */
-    val state: LiveData<PersonState> = combine(remote, chosenTab) { remote, tab ->
-        buildPersonState(remote, tab)
+    val state: LiveData<PersonState> = combine(
+        remote, chosenTab, chosenSort, repository.observeWithState().map { movies -> movies.associateBy { it.id } }
+    ) { remote, tab, sort, saved ->
+        buildPersonState(remote, tab, sort, saved)
     }.asLiveData()
 
     init {
@@ -59,7 +65,13 @@ class PersonViewModel(app: Application, handle: SavedStateHandle) : AndroidViewM
         }
     }
 
-    fun selectTab(tab: PersonTab) {
-        chosenTab.value = tab
+    /** The user picked a sort with the Sort button; it applies to the role tab on screen and to the others after it. */
+    fun selectSort(sort: SortOption) {
+        chosenSort.value = sort
+    }
+
+    /** The user tapped a role tab. */
+    fun selectTab(role: PersonRole) {
+        chosenTab.value = role
     }
 }

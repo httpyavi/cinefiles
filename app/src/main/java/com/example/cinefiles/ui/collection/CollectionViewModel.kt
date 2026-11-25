@@ -12,10 +12,17 @@ import com.example.cinefiles.data.CollectionCounts
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.logic.CollectionAction
 import com.example.cinefiles.logic.CollectionTab
+import com.example.cinefiles.logic.MovieSorter
+import com.example.cinefiles.logic.SortField
+import com.example.cinefiles.logic.SortOption
+import com.example.cinefiles.logic.addedAt
+import com.example.cinefiles.logic.messageFor
 import com.example.cinefiles.util.Event
 import com.example.cinefiles.util.UndoInfo
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -50,12 +57,18 @@ class CollectionViewModel(app: Application) : AndroidViewModel(app) {
     /** The numbers on the three tabs. */
     val counts: LiveData<CollectionCounts> = repository.observeCounts().asLiveData()
 
+    private val sortOption = MutableStateFlow(DEFAULT_SORT)
+
+    /** How the posters are sorted now (the Sort button on the screen). It applies to whichever tab is selected. */
+    val sort: LiveData<SortOption> = sortOption.asLiveData()
+
     /**
-     * The list of the selected tab. When the tab changes, the old list stays on screen until the new one has
-     * arrived (a few milliseconds), so there is no flash of "loading" between tabs.
+     * The list of the selected tab, in the chosen sort (logic/MovieSorter.kt). When the tab changes, the old list stays on screen until the
+     * new one has arrived (a few milliseconds), so there is no flash of "loading" between tabs.
      */
     val state: LiveData<CollectionState> = _tab.switchMap { tab ->
         flowFor(tab)
+            .combine(sortOption) { movies, sort -> MovieSorter.sort(movies, sort, tab::addedAt) }
             .map<List<Movie>, CollectionState> { movies -> CollectionState.Content(tab, movies) }
             .catch { emit(CollectionState.Error) }
             .asLiveData()
@@ -68,13 +81,20 @@ class CollectionViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _likeBlocked = MutableLiveData<Event<Unit>>()
 
-    /** A like was refused because the movie is on the watchlist. The menu does not offer it, so this is a safety net. */
+    /** A like was refused because the movie is not watched (THE WATCH RULE). The menu does not offer it, so this is a safety net. */
     val likeBlocked: LiveData<Event<Unit>> = _likeBlocked
 
     private fun flowFor(tab: CollectionTab): Flow<List<Movie>> = when (tab) {
         CollectionTab.LIKED -> repository.observeLiked()
         CollectionTab.WATCHLIST -> repository.observeWatchlist()
         CollectionTab.WATCHED -> repository.observeWatched()
+    }
+
+    /** The sort fields worth offering for the posters on screen (a field no movie has a value for is left out). */
+    fun sortFieldsFor(movies: List<Movie>): List<SortField> = MovieSorter.availableFields(movies, MovieSorter.COLLECTION_FIELDS)
+
+    fun setSort(option: SortOption) {
+        sortOption.value = option
     }
 
     fun selectTab(tab: CollectionTab) {
@@ -98,17 +118,22 @@ class CollectionViewModel(app: Application) : AndroidViewModel(app) {
                 CollectionAction.MARK_WATCHED -> repository.markWatched(movie)
                 CollectionAction.MARK_UNWATCHED -> repository.unmarkWatched(movie.id)
                 CollectionAction.LIKE -> if (!repository.like(movie)) {
-                    _likeBlocked.value = Event(Unit) // THE LIKE RULE: nothing changed, so there is nothing to undo
+                    _likeBlocked.value = Event(Unit) // THE WATCH RULE: nothing changed, so there is nothing to undo
                     return@launch
                 }
                 CollectionAction.UNLIKE -> repository.clearReaction(movie.id)
             }
-            _undo.value = Event(UndoInfo(action.message, before))
+            _undo.value = Event(UndoInfo(action.messageFor(before), before))
         }
     }
 
     /** Undo: puts the movie's state back exactly as it was before the action. */
     fun undo(before: Movie) {
         viewModelScope.launch { repository.restoreState(before) }
+    }
+
+    companion object {
+        /** The usual order: the newest first. */
+        val DEFAULT_SORT: SortOption = MovieSorter.defaultOf(MovieSorter.COLLECTION_FIELDS)
     }
 }

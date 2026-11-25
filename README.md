@@ -43,16 +43,20 @@ app/src/main/java/com/example/cinefiles/
     picks/             PicksFragment, PicksAdapter, QuickViewSheet, PicksState, PickTexts (Your Picks)
     detail/            DetailFragment, DetailViewModel, DetailState (Movie Details), CastAdapter (the Cast row),
                        PosterViewerFragment (the full-screen poster)
-    person/            PersonFragment, PersonViewModel, PersonState, PersonHeaderAdapter (an actor, director or crew member + their movies)
-    components/        PosterAdapter (every poster row and grid), PosterView, ZoomImageView (pinch / drag / double-tap picture),
-                       StepIndicatorView, AmbientGlowView, AchievementBadgeView
-  data/                Movie (also the Room table), MovieDao, AppDatabase, Converters, CollectionCounts, MovieRepository, MoviePage,
-                       TmdbApi (Retrofit), DiscoverQuery, ApiError, MovieDetails (cast, crew, facts), PersonDetails, PicksPool,
-                       dto/ (TMDB's JSON shapes),
+    person/            PersonFragment, PersonViewModel, PersonState, PersonHeaderAdapter (an actor, director or crew member + their movies, one tab per role)
+    diary/             DiaryListFragment + DiaryListViewModel + DiaryEntryAdapter (My Diary), DiaryEditorFragment + DiaryEditorViewModel +
+                       DiaryBlockAdapter + DiaryHeaderAdapter (the article-style editor), RichText + RichEditText (bold, italic), DiaryStyleSheet,
+                       DiaryStillsSheet, DiaryStyleExtensions (fonts and colors on views)
+    profile/           (also) FavoritesAdapter (the 4 places, drag to reorder) and FavoritePickerSheet (watched movies only)
+    components/        PosterAdapter (every poster row and grid), PosterView, PopcornRatingView (the half-popcorn rating row), SortSheet (the shared Sort bottom sheet), ZoomImageView
+                       (pinch / drag / double-tap picture), StepIndicatorView, AmbientGlowView, AchievementBadgeView
+  data/                Movie (also the Room table), MovieDao, DiaryEntry + DiaryDao (the diary table), AppDatabase + Migrations, Converters,
+                       CollectionCounts, MovieRepository, MoviePage, TmdbApi (Retrofit), DiscoverQuery, ApiError, MovieDetails (cast, crew,
+                       facts), PersonDetails, PicksPool, DiaryImageStore (private copies of gallery pictures), dto/ (TMDB's JSON shapes),
                        AchievementTracker and UserSettings (small SharedPreferences files)
   logic/               Plain Kotlin rules, no screens: Moods, MoodSelection, MoodShapes, Preferences, Discovery, SwipeDeck, SwipeGesture,
-                       RecommendationEngine, Credits, CollectionRules, DiscoverRules, Profile, Achievements, Genres, Featured, Greeting,
-                       PageCounter, Pagination, PosterColor
+                       RecommendationEngine, Credits, PersonRoles, WatchRules, PopcornRating, MovieSorter, Languages, DiaryBlocks, DiaryStyles, CollectionRules,
+                       DiscoverRules, Profile, Achievements, Genres, Featured, Greeting, PageCounter, Pagination, PosterColor
   util/                Small shared helpers: NavigationExtensions, ViewExtensions, StateViews, SnackbarExtensions, ChipExtensions,
                        MovieTexts, CurrentTime, AnimationSettings, ImageExtensions, ImageUrls, PosterTint, PaginationScrollListener, Event
 app/src/main/res/
@@ -91,7 +95,12 @@ Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, s
 - **Moods** live in one file, `logic/Moods.kt`: nine moods, their TMDB genre ids and colors. Never copy genre ids elsewhere. The
   Mood screen is an animated face and a slider (`MoodFaceView`, `MoodSliderView`, shapes in `logic/MoodShapes.kt`); choosing rules
   (up to three, "Surprise Me" alone) are in `logic/MoodSelection.kt`.
-- **Preferences** (release period, minimum rating, length, language) are the option lists in `logic/Preferences.kt`; the screen builds its chips from them.
+- **Preferences** (release period, minimum rating, length, language) are in `logic/Preferences.kt`. The first three are option lists (the screen builds two-line, equal-height cards from
+  them). **The language is a search field with live suggestions, not four chips:** type "E" and English comes first; any language of `logic/Languages.kt` (about fifty, with TMDB's
+  codes: Korean `ko`, Filipino `tl`, Mandarin `zh`, Cantonese `cn`...) works, aliases too ("Tagalog" finds Filipino), the x or an empty field means "Any language".
+  `ui/mood/LanguageAdapter` filters with `Languages.search`. `Preferences.language` is the TMDB code (null = any).
+- **These choices stay inside the flow.** They only shape the swipe deck and Your Picks. The Discover tab never reads them: `DiscoverViewModel` and `MovieRepository.browsePage`
+  take no mood and no preferences (an earlier version copied them into Discover, so choosing Korean in "Let's watch something" changed the Discover lists; a test now guards it).
 - **The swipe deck** is a MIX (`logic/Discovery.kt`): what fits your mood, top rated, hidden gems, trending, popular, taken in turns, each
   movie once, skipping every movie you already have a state for (liked, passed, on the watchlist or **watched**: `MovieDao.idsWithState`). If mood + preferences fit too few movies the search is loosened step by step
   (language, length, release period, rating, then genres) and those cards say "Something different". `SwipeViewModel` sends the questions to
@@ -101,16 +110,26 @@ Fragments only show the UI and forward clicks. ViewModels (`AndroidViewModel`, s
   touch and animation with only `MotionEvent` and `ViewPropertyAnimator`. "Popcorn" (swipe right) and Pass are also offered as **accessibility actions** on the deck.
 - **Swipe right is a popcorn, not a heart** (`ic_popcorn`): on the right-hand button, in the "Picks (n)" pill and in the big icon that grows on a card dragged
   to the right, so it is never mistaken for the Likes heart of Details and My Collection. What swiping right does has not changed.
-- **Saved at once:** every like and pass is written to Room; Undo takes it back.
+- **The swipe deck is session-only:** swiping right or left only shapes this sitting's picks (`SwipeViewModel`); nothing is written to Room. A movie becomes
+  Liked, a favorite or rated only from its Details (or My Collection), and only once it is watched (see the next section).
 
-## The rules of liking and the watchlist
+## The watch rule (like, favorite, rate) and the watchlist
 
-- A movie can be liked, on the watchlist, and watched. **A movie is on the watchlist OR watched, never both** (marking watched takes it off
-  the watchlist; adding it to the watchlist un-watches it). Liked is independent of both, **except for one rule:**
-- **THE LIKE RULE: a movie that is on the watchlist cannot be liked.** Remove it from the watchlist, or mark it watched, and liking works
-  again. A movie liked BEFORE it joined the watchlist keeps its like. The rule is `canLike` in `logic/CollectionRules.kt`;
-  `MovieRepository.like(movie)` enforces it (it checks the SAVED copy) and returns `false` when it refuses. Details dims Like, shakes it and says why;
-  the Watchlist tab's menu has no Like; a card swiped right on a watchlisted movie is not liked (a Snackbar says why) and is not counted in "Picks (n)".
+- A movie can be on the watchlist, watched, liked, rated and a favorite. **A movie is on the watchlist OR watched, never both** (marking watched takes it
+  off the watchlist; adding it to the watchlist un-watches it).
+- **THE WATCH RULE (`logic/WatchRules.kt`): a movie can only be liked, put in the 4 Favorites, rated with popcorn or given a NEW diary page while it is WATCHED.** You cannot love,
+  rank, score or review what you have not seen. The watchlist counts as not watched. (A diary page that was already written stays when the movie is un-watched: it is the user's own
+  writing, and My Diary still lists it. On Details the diary panel is dimmed and says why; the diary list's "New page" and the editor check the saved copy too.)
+  - `MovieRepository.like`, `toggleFavorite` / `addFavorite` and `setUserRating` check the SAVED copy of the movie (not the screen's copy) and refuse:
+    `like` and `setUserRating` return `false`, the favorites return `FavoriteResult.NOT_WATCHED`. Refused actions change nothing. Clearing a rating is always allowed.
+  - **Rating does not mark the movie watched for you** (we chose "block with a hint" over "do it silently", the same answer as Like and Favorite).
+  - **Un-watching clears them:** `MovieDao.unmarkWatched` and `addToWatchlist` clear the like (a pass stays), the rating and the favorite in the SAME SQL statement
+    (`CLEAR_WATCH_DEPENDENTS`), so the table can never hold a liked, rated or favorited unwatched movie. The Snackbar says what was cleared and **Undo**
+    (`MovieRepository.restoreState`, which restores every state column, but never past the limit of 4 favorites) puts it all back.
+  - **Feedback:** on Details the Like, Favorite and the popcorn row are dimmed on an unwatched movie. Tapping one shakes it (`View.shake()`) and a Snackbar
+    says "Mark as watched first before liking" / "Watch this movie before adding it to Favorites" / "Mark as watched first before rating". My Collection's
+    long-press menu only offers Like on a watched movie. The Profile's favorites picker only lists watched movies.
+- `canLike` / `canFavorite` / `canRate` are plain Kotlin and tested in `WatchRulesTest`; the whole behaviour (including every pair and triple of actions) in `WatchRulesRepositoryTest`.
 
 ## Your Picks (the recommendation rules)
 
@@ -146,41 +165,84 @@ Search (2+ letters, 400 ms after the last key, `/search/movie`), the Popular / T
 over a three-column poster grid with live status badges. One request runs at a time; a new search or chip cancels the old one; the next page loads
 near the end of the list (`PaginationScrollListener`) until the last page, without repeats. With a genre and no search, `/discover` answers; while
 searching, a genre chip only filters what has loaded (a small line says so). Rules: `logic/DiscoverRules.kt` and `ui/discover/DiscoverState.kt`.
-Home's search icon opens the tab with the keyboard ready.
+Home's search icon opens the tab with the keyboard ready. **Discover is independent of "Let's watch something":** the mood, release period, rating, length and language chosen
+there never filter these lists.
 
 ## My Collection and Movie Details
 
 - **One table, `movies`** (Room): `data/Movie.kt` is both the class every screen uses and the table row. The user's state sits in the same row:
-  `reaction`, `reactedAt`, `inWatchlist`, `watchlistAddedAt`, `isWatched`, `watchedAt`.
+  `reaction`, `reactedAt`, `inWatchlist`, `watchlistAddedAt`, `isWatched`, `watchedAt`, the popcorn rating `userRating` (column `personalRating`) + `ratedAt`,
+  and the favorite `isFavorite`, `favoritedAt`, `favoriteOrder` (the place 0..3, saved when the user drags the favorites).
 - **THE rule of the DAO:** a movie is saved with `OnConflictStrategy.IGNORE`, never `REPLACE` (replacing a row would wipe the user's state). After
   that only small targeted `UPDATE` queries change the state. "Undo" everywhere is `restoreState`.
-- **Collection:** `Liked · Watchlist · Watched` with live counts over a three-column grid. A poster wears a badge (`badgeStatusFor`). Tap = Details,
-  long-press = a menu that depends on the tab (`actionsFor`), and every action offers **Undo**.
-- **Details:** backdrop, a **tappable poster**, rating · year · length, genres, "Directed by …", **Add to Watchlist**, Like and Watched toggles, tagline and story,
-  trailer (opens YouTube), the **Cast** row, the **Crew** chips (writers, producers, cinematography, composers: `logic/Credits.kt`), a few facts (status, original
-  language, country) and Similar movies. It shows what is known at once and works offline for a saved movie (`ui/detail/DetailState.kt`); the people and the facts
-  only come with TMDB's details answer (`/movie/{id}?append_to_response=credits,videos`), so those sections appear when it arrives.
+- **Collection:** `Liked · Watchlist · Watched` with live counts over a three-column grid. A poster wears a badge (`badgeStatusFor`) and, when the user rated it,
+  a small popcorn rating badge in the bottom-left corner (`PosterView.rating`). Tap = Details, long-press = a menu that depends on the tab (`actionsFor`),
+  and every action offers **Undo**.
+- **Sort (My Collection and Person):** the round button next to the title (Collection) or at the top right (Person) opens `SortSheet`, ONE bottom sheet for both screens; the
+  sorting is `logic/MovieSorter.kt` (tested). Fields: **When added** (Newest / Earliest: the time the movie got into the Liked / Watchlist / Watched tab on screen; Collection only),
+  **Popularity** (TMDB's own order; Person only), **Film name** (A to Z / Z to A, ignoring a leading The / A / An), **Release date**, **Your rating** (Highest / Lowest, from `userRating`),
+  **Film length** and **TMDB rating**. A movie without the value (unrated, runtime not known) is always last, ties are settled by name then id, and a field no movie in the list
+  has a value for is not offered. The active sort has a red edge in the sheet and the button turns red when it is not the usual order; "Reset" goes back. A person's movies wear the
+  user's saved state, so "Your rating" works there too. The sort applies to the tab on screen (and to the others after it).
+- **Details:** backdrop, a **tappable poster**, rating · year · length, genres, "Directed by …", **Add to Watchlist**, Like, Watched and Favorite toggles, **Your rating**
+  (the popcorn row), tagline and story, trailer (opens YouTube), the **Movie Diary** panel, the **Cast** row, the **Crew** table, a few facts (status, original language,
+  country) and Similar movies. It shows what is known at once and works offline for a saved movie (`ui/detail/DetailState.kt`); the people and the facts only come with
+  TMDB's details answer (`/movie/{id}?append_to_response=credits,videos`), so those sections appear when it arrives.
+- **Your rating (`ui/components/PopcornRatingView`):** five popcorn buckets (`ic_popcorn_empty / half / full`), 0.5 to 5.0 in half steps, like Letterboxd. Tap the left half of a
+  bucket for a half, the right half for the whole one; tap the rating you already have to clear it; drag across the row and it is set where the finger lifts (dragging off the left
+  end clears it). The math is `logic/PopcornRating.kt` (tested). While the movie is not watched the row is locked and dimmed. Screen readers read "Your rating: 3.5 out of 5"
+  and can raise or lower it by half a bucket. It is saved by `MovieRepository.setUserRating`.
+- **The Crew table:** one row per key role (Director, Writers, Producers, Cinematography, Music: `logic/Credits.kt`, `Credits.preview`), at most 4 rows with 2 names each, every
+  name tappable (opens Person); "+N more" and **See all** open `CrewSheet`, a bottom sheet with every group (also Editing, Production design, Costume design) and each person's job.
 - **The poster** opens `PosterViewerFragment`, a full-screen dialog: dark backdrop, close button, the w780 poster (the list's small one shows at once while it loads),
   pinch to zoom (`ZoomImageView`, up to 4×), drag, double-tap to zoom, tap anywhere to close. It fades in and out unless the phone's animations are off.
-- **Person** (`ui/person/`, `TmdbApi.person` = `/person/{id}?append_to_response=movie_credits`): tap a director, an actor or a crew chip. Photo, name, what they are
-  known for, biography (3 lines, "More") and their movies in the three-column poster grid, one poster per movie, most popular first. A person who has both acted and worked
-  behind the camera gets two tabs, "Acting" and "Directing & Crew". Tapping a poster opens that movie's Details, and so on.
+- **Person** (`ui/person/`, `TmdbApi.person` = `/person/{id}?append_to_response=movie_credits`): tap a director, an actor or a crew name. Photo, name, what they are
+  known for, biography (3 lines, "More") and their movies in the three-column poster grid, one poster per movie, most popular first. **One tab per kind of work the person
+  really has**, with its count: `Actor (24)`, `Director (8)`, `Writer`, `Producer`, `Cinematographer`, `Composer`, `Editor` and `Crew` for every other job
+  (`logic/PersonRoles.kt`, which reuses the job lists of `logic/Credits.kt`). Only roles with at least one movie get a tab; the person's primary role (TMDB's "known for
+  department") comes first, then the most movies, Crew last; one role needs no tabs. Tapping a poster opens that movie's Details, and so on.
 
 ## Profile
 
-The name, the numbers, your taste, the achievements, About and Clear my data.
+The name, the 4 favorites, the numbers, your taste, quick links (Liked, Watchlist, Watched, Movie Diary), About and Clear my data.
+- **Favorites:** four places (`FavoritesAdapter`, a RecyclerView). Tap an empty place to pick from the movies you have WATCHED (`FavoritePickerSheet`); tap the x to remove one
+  (with Undo). **Press and hold a poster, then drag it** to another place: it lifts (a small scale and a haptic tick) and the new order is saved when it is dropped
+  (`favoriteOrder`, one SQL statement: `MovieDao.setFavoriteOrder`), so it survives a restart. TalkBack gets "Move earlier / Move later" instead of the drag.
 - **Name:** the avatar shows its first letter. **Edit** opens a small dialog; the name is saved in SharedPreferences (`data/UserSettings.kt`, rules in
   `logic/Profile.kt`: trimmed, one space between words, at most 20 letters, never blank) and shows in Home's greeting.
 - **Your taste:** the genre most of your liked movies have and how many movies you like, read live from Room ("—" while nothing is liked).
   The three numbers above it (Discovered / Liked / Passed) are lifetime swipe counts from the achievements, so they can be bigger than the list.
 - **Achievements:** nine badges (`logic/Achievements.kt`) kept by `data/AchievementTracker.kt`. A badge earned once stays earned.
 - **About CineFiles:** the app version and the TMDB credit with the sentence TMDB's terms ask for.
-- **Clear my data** (red, asks first): deletes every saved movie and state (Room), the achievements and the name (both SharedPreferences files),
-  ends any journey in progress and goes Home.
+- **Clear my data** (red, asks first): deletes every saved movie and state and every diary page (Room), the diary pictures kept in the app, the achievements and the name
+  (both SharedPreferences files), ends any journey in progress and goes Home.
+
+## Movie Diary
+
+A private journal, only on the phone. Open it from Details ("Write in Diary" for a new page, "Open Diary" for that movie's pages) or from the Profile ("Movie Diary", every page).
+- **Table `diary_entries`** (`data/DiaryEntry.kt`): `movieId`, `movieTitle`, `posterPath`, `createdAt`, `updatedAt`, `ratingSnapshot` (the popcorn rating when the page was saved),
+  `fontStyle`, `backgroundTheme` and `blocksJson`.
+- **A page is a list of blocks** (`logic/DiaryBlocks.kt`, Gson): a TEXT block (a run of paragraphs) or an IMAGE block. The JSON only holds words and picture ADDRESSES, never
+  picture bytes: a TMDB picture is its TMDB path; a gallery picture is the NAME of a small JPEG copy in the app's private storage (`data/DiaryImageStore`, at most 1600 px, turned
+  upright), so it never breaks when the gallery changes and no permission has to be kept. A text block also keeps `html` (it is rich text) and `align` (left / center / right);
+  a note from an older version has neither and opens as plain left-aligned text.
+- **The editor reads and writes like a Substack article, with NO boxes** (`DiaryEditorFragment`): the movie is the headline (`DiaryHeaderAdapter`), then paragraphs and pictures flow
+  down one continuous page (`DiaryBlockAdapter`: paragraphs are bare text on the page, a picture only has a small quiet pill of tools in its corner). The blocks are still there underneath.
+  - **Bold and italic** (`ui/diary/RichText.kt`, no library): `StyleSpan`s, saved as HTML with `HtmlCompat.toHtml` and read back with `HtmlCompat.fromHtml`; only bold and italic are ever
+    written. With words selected the style is toggled on them; with only a cursor it is toggled for what is typed next.
+  - **Left / center / right** alignment is per paragraph run. A strip with Bold, Italic and the three alignments shows above the buttons while a paragraph run has the cursor, and its
+    buttons light up for what applies at the cursor.
+  - **"Paragraph"** starts a new run at the end; **"Picture"** puts a picture where the cursor is (in the middle of a run it splits the run in two around the picture) and the page always
+    ends with a paragraph run, so you can keep writing under a picture. A picture comes from the phone's photo picker (`ActivityResultContracts.PickVisualMedia`) or from the movie's official
+    stills (`GET /movie/{id}/images`, `DiaryStillsSheet`). A picture can be dragged (press its handle), moved with its arrows, or deleted (Undo). An empty paragraph run is deleted with Backspace.
+  - The page is saved when you leave it, when the app goes to the background and with Save; a NEW page with nothing on it is never saved, and pictures a page no longer uses are deleted.
+- **Style** (`DiaryStyleSheet`): four fonts (Sans · Modern, Serif · Editorial, Typewriter, Bold Display) and five dark backgrounds (Midnight Obsidian, Cinema Crimson, Warm Parchment,
+  Deep Slate, Vintage Sepia: `logic/DiaryStyles.kt`, colors in `values/colors.xml`). It changes the page live and is remembered per page.
+- **My Diary** (`DiaryListFragment`): the pages as cards in their own theme and font, newest first, with the rating they were written with and a bin (asks first). Empty states say what to do.
 
 ## Performance, memory and accessibility
 
-- Pictures: only `w185` (profile photos), `w342` (rows and grids), `w500` (swipe card) and `w780` (backdrops and the full-screen poster), never `original`
+- Pictures: only `w185` (profile photos), `w300` (the Diary's still thumbnails), `w342` (rows and grids), `w500` (swipe card) and `w780` (backdrops and the full-screen poster), never `original`
   (`util/ImageUrls.kt`). Glide loads them; recycled list views cancel their old download.
 - Every list uses `DiffUtil` (`ListAdapter`). Every Fragment clears its ViewBinding in `onDestroyView`.
 - Room, TMDB and the settings files are never touched on the main thread: queries are `suspend`/`Flow`, and `CineFilesApp` makes the shared objects on a
@@ -189,6 +251,12 @@ The name, the numbers, your taste, the achievements, About and Clear my data.
 - Accessibility: every icon button and poster has a content description, tap targets are at least 48 dp, text uses `sp` and the layouts were checked at
   130% font size on a 360 × 640 dp screen, the swipe deck reads out the movie on top and offers "Like" and "Pass" as actions, the mood slider is a
   proper range control, and animations are skipped when the phone's "Remove animations" is on.
+  At 130% text the buttons whose label has to fit a fixed width **shrink the text instead of cutting it** (`autoSizeTextType`, never below 9-10 sp): the
+  Details actions (`Button.DetailAction`), the Preferences cards (`Button.PreferenceCard`), the Diary editor's "Paragraph" / "Picture" (`Button.Tonal.Fit`)
+  and the role column of the Crew table.
+- **The keyboard:** the window is edge-to-edge, so `adjustResize` alone does not move anything. `applySystemBarsPadding` (`util/ViewExtensions.kt`) pads the
+  bottom by the bigger of the navigation bar and the keyboard, which is what keeps the Diary editor's formatting strip and "Start swiping" above the
+  keyboard. Use it on the bottom bar of any new screen that has a text field.
 
 ## Design system cheat sheet
 
@@ -202,7 +270,8 @@ Always reuse these. Never type a color, size or text directly in a layout. Dark 
 | Text | `@style/TextAppearance.CineFiles.Display`, `.LargeTitle`, `.Title`, `.Headline`, `.Body`, `.Callout`, `.Caption`, `.Eyebrow`, `.Label`, `.Button`, `.Pill` |
 | Buttons | `Widget.CineFiles.Button.Primary` (red, one per screen), `.Tonal` (glass), `.Text`. Do not set `cornerRadius`. |
 | Round icon button | `Widget.CineFiles.RoundActionButton` (+ `.Large`, `.Large.Like`) with `@dimen/round_button_size`, an `app:icon` and a `contentDescription` |
-| Chip | `ChipGroup.addChoiceChip("label")` (util/ChipExtensions.kt); a tappable name that opens a Person: `ChipGroup.addPersonChip("name") { ... }` |
+| Chip | `ChipGroup.addChoiceChip("label")` (util/ChipExtensions.kt) |
+| Rating | `PopcornRatingView` (`app:popcornSize`, `app:popcornGap`, `app:interactive="false"` for a read-only badge) |
 | Segmented control | `MaterialButtonToggleGroup` with `Widget.CineFiles.Button.Segment`; `android:saveEnabled="false"` when a ViewModel keeps the selection |
 | Card | `Widget.CineFiles.Card`, `.Card.Glass` |
 | Posters | `PosterView`; every row or grid uses `PosterAdapter(PosterStyle.ROW or GRID, …)` |
@@ -240,8 +309,11 @@ use another font (Inter, for example): put the font files in `res/font/` and cha
 ## Good to know / postponed
 
 - **No "Double Feature" badge:** the nine badges are about swiping; adding one needs an id and goal in `Achievements.all` and a counter in `AchievementStats`.
-- **Database changes:** the table is at version 1. If `Movie` ever changes, raise `version` in `AppDatabase` and add a real Migration; without one Room starts
-  over with an empty table (`fallbackToDestructiveMigration`), which deletes the saved movies.
+- **Database changes:** the database is at **version 3**. `MIGRATION_2_3` (`data/Migrations.kt`) added `movies.favoriteOrder`, replaced the old simple `diary_entries` table with the
+  page table (every old note became one text block) and applied THE WATCH RULE to old data: a movie that was liked, rated or a favorite but not marked watched was
+  marked **watched** (and left the watchlist), because that is the proof the user saw it. Nothing was deleted. If an entity ever changes again, raise `version` and add a real
+  Migration; a database from an unknown version is started over (`fallbackToDestructiveMigration`), which deletes the saved movies, so never rely on it for a known version.
+  The rating column keeps its old name `personalRating` (`@ColumnInfo` on `Movie.userRating`), so no rename was needed.
 - **Your Picks are not saved:** they live in `WatchFlowViewModel` while the flow is open. The movies you act on (watchlist, watched) are saved as always.
 - **"Trending" with a genre** means released since last year, most popular first (TMDB's trending list cannot be filtered by genre).
 - **Portrait only** on purpose (the swipe deck, the mood slider and the tall posters are designed for a tall screen).
@@ -253,4 +325,5 @@ use another font (Inter, for example): put the font files in `res/font/` and cha
 ## Status
 
 All eight batches are done: design system, tabs and Home, Mood and Preferences, the swipe deck, TMDB, Room + Collection + Details, the Like rule +
-Your Picks + Discover, and the Profile, three-column grids, cleanup and polish of this last batch.
+Your Picks + Discover, and the Profile, three-column grids, cleanup and polish of this last batch. After them: the cast / crew / Person screen (Part 1), and
+Part 2: the watch rule, role tabs on Person, the Crew table, the popcorn rating, draggable favorites and the Movie Diary.

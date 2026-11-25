@@ -1,51 +1,41 @@
 package com.example.cinefiles.ui.profile
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.cinefiles.BuildConfig
 import com.example.cinefiles.R
-import com.example.cinefiles.data.DiaryEntry
+import com.example.cinefiles.data.FavoriteResult
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.databinding.DialogEditNameBinding
-import com.example.cinefiles.databinding.DialogProfileListBinding
 import com.example.cinefiles.databinding.FragmentProfileBinding
-import com.example.cinefiles.databinding.ItemProfileDiaryEntryBinding
-import com.example.cinefiles.databinding.ItemProfileRatedMovieBinding
-import com.example.cinefiles.databinding.ViewFavoriteSlotBinding
 import com.example.cinefiles.logic.CollectionTab
+import com.example.cinefiles.logic.MAX_FAVORITES
 import com.example.cinefiles.logic.Taste
 import com.example.cinefiles.logic.initialOf
 import com.example.cinefiles.ui.collection.CollectionViewModel
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
-import com.example.cinefiles.util.ImageUrls
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.formatted
-import com.example.cinefiles.util.loadImage
+import com.example.cinefiles.util.openDiaryList
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.openTab
 import com.example.cinefiles.util.showMessage
+import com.example.cinefiles.util.showUndo
 import com.example.cinefiles.util.showWindowMessage
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
- * Redesigned Profile tab: personal film space with 4 favorites, movie statistics,
- * and quick access to Liked Movies, Watchlist, Watched, Personal Ratings, and Diary.
+ * The Profile tab: your name, your 4 favorites (press and hold a poster, then drag to reorder; tap an empty place to pick a
+ * watched movie), your numbers and taste, quick access to Liked, Watchlist, Watched and your Movie Diary, About and Clear my data.
  */
 class ProfileFragment : Fragment() {
 
@@ -55,6 +45,8 @@ class ProfileFragment : Fragment() {
     private val viewModel: ProfileViewModel by viewModels()
     private val collectionViewModel: CollectionViewModel by activityViewModels()
     private val watchFlow: WatchFlowViewModel by activityViewModels()
+
+    private lateinit var favoritesAdapter: FavoritesAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -76,6 +68,7 @@ class ProfileFragment : Fragment() {
         binding.profileEdit.setOnClickListener { showEditNameDialog() }
         binding.clearData.setOnClickListener { showClearDataDialog() }
 
+        setUpFavorites()
         setUpNavigationRows()
         observeData()
     }
@@ -103,12 +96,28 @@ class ProfileFragment : Fragment() {
             binding.navWatchedCount.text = counts.watched.formatted()
         }
 
+        viewModel.diaryCount.observe(viewLifecycleOwner) { binding.navDiaryCount.text = it.formatted() }
+
         binding.btnExploreMovies.setOnClickListener {
             findNavController().openTab(R.id.discoverFragment)
         }
 
         viewModel.favorites.observe(viewLifecycleOwner) { favorites ->
-            renderFavorites(favorites)
+            favoritesAdapter.submit(favorites)
+            binding.favoritesHint.setText(
+                if (favorites.isEmpty()) R.string.profile_favorites_empty else R.string.profile_favorites_reorder_hint
+            )
+        }
+        viewModel.undo.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { info -> showUndo(info, aboveTabBar = true) { viewModel.restore(it) } }
+        }
+        viewModel.favoriteRefused.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { result ->
+                showMessage(
+                    if (result == FavoriteResult.LIMIT_REACHED) R.string.favorite_limit_reached else R.string.favorite_blocked_message,
+                    aboveTabBar = true
+                )
+            }
         }
 
         viewModel.dataCleared.observe(viewLifecycleOwner) { event ->
@@ -135,42 +144,25 @@ class ProfileFragment : Fragment() {
             collectionViewModel.selectTab(CollectionTab.WATCHED)
             findNavController().openTab(R.id.collectionFragment)
         }
+
+        binding.navDiaryRow.setOnClickListener { findNavController().openDiaryList() }
     }
 
-    private fun renderFavorites(favorites: List<Movie>) {
-        val slots = listOf(binding.slot1, binding.slot2, binding.slot3, binding.slot4)
-
-        binding.favoritesHint.isVisible = favorites.isEmpty()
-        binding.favoritesCountLabel.text = getString(R.string.profile_favorites_subtitle)
-
-        for (i in slots.indices) {
-            val slot = slots[i]
-            if (i < favorites.size) {
-                val movie = favorites[i]
-                slot.posterImage.isVisible = true
-                slot.posterImage.loadImage(ImageUrls.poster(movie.posterPath))
-                slot.placeholderContainer.isVisible = false
-                slot.removeButton.isVisible = true
-                slot.movieTitle.isVisible = true
-                slot.movieTitle.text = movie.title
-
-                slot.slotContainer.setOnClickListener {
-                    findNavController().openMovieDetails(movie.id)
-                }
-                slot.removeButton.setOnClickListener {
-                    viewModel.removeFavorite(movie.id)
-                }
-            } else {
-                slot.posterImage.isVisible = false
-                slot.placeholderContainer.isVisible = true
-                slot.removeButton.isVisible = false
-                slot.movieTitle.isVisible = false
-
-                slot.slotContainer.setOnClickListener {
-                    showMessage(R.string.profile_favorites_empty)
-                }
-            }
-        }
+    /**
+     * The four favorite places: a poster opens its Details, an empty place opens the picker (watched movies only), the x
+     * removes it (with Undo), and a long press then a drag moves it. The order is saved when the poster is dropped.
+     */
+    private fun setUpFavorites() {
+        favoritesAdapter = FavoritesAdapter(
+            onMovieClick = { movie -> findNavController().openMovieDetails(movie.id) },
+            onEmptyClick = { FavoritePickerSheet.show(childFragmentManager) },
+            onRemoveClick = { movie -> viewModel.removeFavorite(movie) },
+            onOrderChanged = { ordered: List<Movie> -> viewModel.reorderFavorites(ordered.map { it.id }) }
+        )
+        binding.favoritesList.layoutManager = GridLayoutManager(requireContext(), MAX_FAVORITES)
+        binding.favoritesList.adapter = favoritesAdapter
+        binding.favoritesList.itemAnimator = null
+        favoritesAdapter.touchHelper.attachToRecyclerView(binding.favoritesList)
     }
 
     private fun showTaste(taste: Taste) {

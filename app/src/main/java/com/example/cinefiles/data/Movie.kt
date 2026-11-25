@@ -1,5 +1,6 @@
 package com.example.cinefiles.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -38,6 +39,16 @@ enum class Reaction { NONE, LIKED, PASSED }
  * reaction         liked, passed or none
  * inWatchlist      saved to watch later. A movie is on the watchlist OR watched, never both.
  * isWatched        already seen. Marking a movie watched takes it off the watchlist.
+ *
+ * THE WATCH RULE (logic/WatchRules.kt): a movie can only be liked, favorited or rated while it is watched, so these
+ * three columns can never hold a value on an unwatched movie. Unmarking "watched" clears them (see MovieDao.unmarkWatched).
+ *
+ * userRating       the user's own popcorn rating, 0.5 to 5.0 in steps of 0.5, or null when not rated. (It lives in the
+ *                  column "personalRating", the name it had before, so the ratings already saved on the phone are kept.)
+ * ratedAt          when it was rated (milliseconds, 0 = never)
+ * isFavorite       one of the (at most 4) favorites on the Profile
+ * favoritedAt      when it became a favorite (milliseconds, 0 = not a favorite)
+ * favoriteOrder    the place among the favorites, 0 = first. The user drags the favorites to reorder them.
  */
 @Entity(tableName = "movies")
 data class Movie(
@@ -60,8 +71,9 @@ data class Movie(
     val watchlistAddedAt: Long = 0L,
     val isWatched: Boolean = false,
     val watchedAt: Long = 0L,
-    val personalRating: Float? = null,
+    @ColumnInfo(name = "personalRating") val userRating: Float? = null,
     val ratedAt: Long = 0L,
     val isFavorite: Boolean = false,
-    val favoritedAt: Long = 0L
+    val favoritedAt: Long = 0L,
+    val favoriteOrder: Int = 0
 )

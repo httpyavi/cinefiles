@@ -28,18 +28,14 @@ enum class Length(@StringRes val label: Int) {
     OVER_2_HOURS(R.string.pref_length_over_2h)
 }
 
-enum class Language(@StringRes val label: Int) {
-    ANY(R.string.pref_any),
-    ENGLISH(R.string.pref_language_english),
-    FILIPINO(R.string.pref_language_filipino),
-    KOREAN(R.string.pref_language_korean),
-    JAPANESE(R.string.pref_language_japanese)
-}
-
-/** Everything the user chose on the Preferences screen. The default is "Any" everywhere. */
+/**
+ * Everything the user chose on the Preferences screen. The default is "Any" everywhere.
+ * [language] is a TMDB language code ("ko", "en"...: see logic/Languages.kt, which the screen's search field picks from), or null for any language.
+ * These choices only belong to the "Let's watch something" flow (the swipe deck and Your Picks): the Discover tab never uses them.
+ */
 data class Preferences(
     val releasePeriod: ReleasePeriod = ReleasePeriod.ANY,
     val minRating: MinRating = MinRating.ANY,
     val length: Length = Length.ANY,
-    val language: Language = Language.ANY
+    val language: String? = null
 )

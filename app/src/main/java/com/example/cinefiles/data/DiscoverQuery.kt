@@ -1,5 +1,6 @@
 package com.example.cinefiles.data
 
+import com.example.cinefiles.logic.Languages
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
 
@@ -30,7 +31,7 @@ fun DiscoveryRequest.toDiscoverQuery(): DiscoverQuery = DiscoverQuery(
     releasedFrom = yearFrom?.let { "$it-01-01" },
     releasedTo = yearTo?.let { "$it-12-31" },
     minRating = minRating,
-    minVotes = minVotes ?: if (language == "tl") 5 else DEFAULT_MIN_VOTES,
+    minVotes = minVotes ?: if (language == Languages.FILIPINO) 5 else DEFAULT_MIN_VOTES,
     maxVotes = maxVotes,
     minRuntime = minMinutes,
     maxRuntime = maxMinutes,

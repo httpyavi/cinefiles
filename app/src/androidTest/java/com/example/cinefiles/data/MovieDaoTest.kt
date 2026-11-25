@@ -35,7 +35,7 @@ class MovieDaoTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         dao = db.movieDao()
         // No token: these tests never go to the internet
-        repository = MovieRepository(TmdbApi.create(""), hasToken = false, dao = dao)
+        repository = MovieRepository(TmdbApi.create(""), hasToken = false, dao = dao, diaryDao = db.diaryDao())
     }
 
     @After
@@ -56,8 +56,10 @@ class MovieDaoTest {
     @Test
     fun savingAMovieAgainKeepsTheUsersState() = runBlocking {
         dao.insertIfMissing(movie(1))
+        dao.markWatched(1, 50L) // only a watched movie can be liked (THE WATCH RULE)
         dao.setReaction(1, Reaction.LIKED, 100L)
-        dao.addToWatchlist(1, 200L)
+        dao.setUserRating(1, 4.0f, 120L)
+        dao.addFavorite(1, 130L)
 
         // The same movie arrives again from TMDB, with different information and no state at all
         val result = dao.insertIfMissing(movie(1, title = "Changed by TMDB"))
@@ -65,7 +67,9 @@ class MovieDaoTest {
         assertEquals("IGNORE: nothing was inserted", -1L, result)
         val row = saved(1)
         assertEquals(Reaction.LIKED, row.reaction)
-        assertTrue(row.inWatchlist)
+        assertTrue(row.isWatched)
+        assertEquals(4.0f, row.userRating)
+        assertTrue(row.isFavorite)
         assertEquals(100L, row.reactedAt)
         assertEquals("Movie 1", row.title) // the saved information is not replaced either
     }
@@ -136,7 +140,10 @@ class MovieDaoTest {
     fun theWatchlistAndItsCountIgnoreAMovieThatIsAlsoMarkedWatched() = runBlocking {
         // Should never happen, but if both flags are ever set, the movie counts as watched only
         dao.insertIfMissing(movie(1))
-        dao.restoreState(1, Reaction.NONE, 0L, inWatchlist = true, watchlistAddedAt = 5L, isWatched = true, watchedAt = 6L)
+        dao.restoreState(
+            1, Reaction.NONE, 0L, inWatchlist = true, watchlistAddedAt = 5L, isWatched = true, watchedAt = 6L,
+            userRating = null, ratedAt = 0L, isFavorite = false, favoritedAt = 0L, favoriteOrder = 0
+        )
 
         assertTrue(dao.observeWatchlist().first().isEmpty())
         val counts = dao.observeCounts().first()
@@ -203,14 +210,15 @@ class MovieDaoTest {
     // ==================================================================================
 
     @Test
-    fun restoreStatePutsAllSixFieldsBackExactly() = runBlocking {
+    fun restoreStatePutsEveryStateFieldBackExactly() = runBlocking {
         dao.insertIfMissing(movie(1))
-        dao.setReaction(1, Reaction.LIKED, 100L)
-        dao.addToWatchlist(1, 200L)
+        dao.markWatched(1, 100L)
+        dao.setReaction(1, Reaction.LIKED, 150L)
+        dao.setUserRating(1, 3.5f, 160L)
+        dao.addFavorite(1, 170L)
         val before = saved(1)
 
-        dao.markWatched(1, 300L)       // some action...
-        dao.setReaction(1, Reaction.NONE, 0L)
+        dao.unmarkWatched(1)           // some action (it clears the like, the rating and the favorite)...
         repository.restoreState(before) // ...and Undo
 
         assertEquals(before, saved(1))
@@ -286,10 +294,13 @@ class MovieDaoTest {
     // ==================================================================================
 
     @Test
-    fun likeSavesAMovieThatWasNeverSavedAndLikesIt() = runBlocking {
+    fun likeSavesAMovieThatWasNeverSavedButOnlyLikesItOnceItIsWatched() = runBlocking {
         assertEquals(null, dao.get(7))
+        assertFalse("not watched yet", repository.like(movie(7)))
+        assertEquals(Reaction.NONE, saved(7).reaction)
 
-        repository.like(movie(7))
+        repository.markWatched(movie(7))
+        assertTrue(repository.like(movie(7)))
 
         val row = saved(7)
         assertEquals("Movie 7", row.title)
@@ -308,7 +319,7 @@ class MovieDaoTest {
 
     @Test
     fun undoingASwipeKeepsTheMovieButClearsTheReaction() = runBlocking {
-        repository.like(movie(9))
+        repository.pass(movie(9))
         repository.clearReaction(9)
 
         assertEquals(Reaction.NONE, saved(9).reaction)
@@ -328,61 +339,97 @@ class MovieDaoTest {
     }
 
     // ==================================================================================
-    //  THE LIKE RULE: a movie on the watchlist cannot be liked
+    //  THE WATCH RULE: only a watched movie can be liked, favorited or rated; un-watching clears them
     // ==================================================================================
 
     @Test
-    fun aMovieOnTheWatchlistCannotBeLiked() = runBlocking {
+    fun aMovieThatIsNotWatchedCannotBeLikedFavoritedOrRated() = runBlocking {
         repository.addToWatchlist(movie(5))
 
-        // The movie object has no state (like one fresh from TMDB), but the saved row says "on the watchlist"
         assertFalse("the like is refused", repository.like(movie(5)))
+        assertEquals(FavoriteResult.NOT_WATCHED, repository.addFavorite(movie(5)))
+        assertFalse(repository.setUserRating(movie(5), 4.0f))
 
         val row = saved(5)
         assertEquals("nothing changed", Reaction.NONE, row.reaction)
+        assertEquals(null, row.userRating)
+        assertFalse(row.isFavorite)
         assertTrue(row.inWatchlist)
-        assertTrue(repository.observeLiked().first().isEmpty())
     }
 
     @Test
-    fun likingWorksAgainAfterRemovingTheMovieFromTheWatchlist() = runBlocking {
-        repository.addToWatchlist(movie(5))
-        assertFalse(repository.like(movie(5)))
-
-        repository.removeFromWatchlist(5)
+    fun aWatchedMovieCanBeLikedFavoritedAndRatedAndNeverReplacesTheRow() = runBlocking {
+        repository.markWatched(movie(5))
 
         assertTrue(repository.like(movie(5)))
+        assertEquals(FavoriteResult.ADDED, repository.addFavorite(movie(5)))
+        assertTrue(repository.setUserRating(movie(5), 4.5f))
+
+        val row = saved(5)
+        assertEquals(Reaction.LIKED, row.reaction)
+        assertTrue(row.isFavorite)
+        assertEquals(4.5f, row.userRating)
+        assertTrue(row.isWatched)
+        assertEquals(listOf(5), repository.observeRated().first().map { it.id })
+        assertEquals(listOf(5), repository.observeFavorites().first().map { it.id })
+    }
+
+    @Test
+    fun unwatchingClearsTheLikeTheRatingAndTheFavoriteInTheRealQuery() = runBlocking {
+        repository.markWatched(movie(5))
+        repository.like(movie(5))
+        repository.setUserRating(movie(5), 2.5f)
+        repository.addFavorite(movie(5))
+        repository.markWatched(movie(6))
+        repository.addFavorite(movie(6))
+
+        repository.unmarkWatched(5)
+
+        val row = saved(5)
+        assertFalse(row.isWatched)
+        assertEquals(Reaction.NONE, row.reaction)
+        assertEquals(null, row.userRating)
+        assertFalse(row.isFavorite)
+        assertEquals("the other favorite is untouched", listOf(6), repository.observeFavorites().first().map { it.id })
+    }
+
+    @Test
+    fun movingAWatchedMovieBackToTheWatchlistClearsThemToo() = runBlocking {
+        repository.markWatched(movie(5))
+        repository.like(movie(5))
+        repository.setUserRating(movie(5), 5.0f)
+        repository.addFavorite(movie(5))
+
+        repository.addToWatchlist(movie(5))
+
+        val row = saved(5)
+        assertTrue(row.inWatchlist)
+        assertFalse(row.isWatched)
+        assertEquals(Reaction.NONE, row.reaction)
+        assertEquals(null, row.userRating)
+        assertFalse(row.isFavorite)
+    }
+
+    @Test
+    fun theFavoritesKeepTheOrderTheUserChoseInTheRealQuery() = runBlocking {
+        for (id in 1..4) {
+            repository.markWatched(movie(id))
+            repository.addFavorite(movie(id))
+        }
+        repository.reorderFavorites(listOf(4, 2, 1, 3))
+
+        assertEquals(listOf(4, 2, 1, 3), repository.observeFavorites().first().map { it.id })
+        assertEquals(listOf(4, 2, 1, 3), repository.getFavorites().map { it.id })
+    }
+
+    @Test
+    fun aLikedMovieThatWasMarkedWatchedLongAgoKeepsItsLikeWhenSavedAgain() = runBlocking {
+        repository.markWatched(movie(5))
+        assertTrue(repository.like(movie(5)))
+        dao.insertIfMissing(movie(5).copy(title = "Changed by TMDB")) // IGNORE: the row and its state stay
+
         assertEquals(Reaction.LIKED, saved(5).reaction)
-    }
-
-    @Test
-    fun likingWorksAgainAfterMarkingTheMovieWatched() = runBlocking {
-        repository.addToWatchlist(movie(5))
-        assertFalse(repository.like(movie(5)))
-
-        repository.markWatched(movie(5)) // watched takes it off the watchlist
-
-        assertTrue(repository.like(movie(5)))
-        assertEquals(Reaction.LIKED, saved(5).reaction)
-        assertTrue(saved(5).isWatched)
-    }
-
-    @Test
-    fun aMovieLikedBeforeItJoinedTheWatchlistKeepsItsLike() = runBlocking {
-        assertTrue(repository.like(movie(5)))
-        repository.addToWatchlist(movie(5))
-
-        assertEquals("the rule only stops new likes", Reaction.LIKED, saved(5).reaction)
-        assertTrue(saved(5).inWatchlist)
-    }
-
-    @Test
-    fun theWatchlistBlocksTheLikeOfAMovieNeverSavedBeforeToo() = runBlocking {
-        // First like (it is saved), then a different movie: each is checked on its own
-        assertTrue(repository.like(movie(1)))
-        repository.addToWatchlist(movie(2))
-        assertFalse(repository.like(movie(2)))
-        assertEquals(listOf(1), repository.observeLiked().first().map { it.id })
+        assertEquals("Movie 5", saved(5).title)
     }
 
     // ==================================================================================

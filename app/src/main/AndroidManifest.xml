@@ -20,11 +20,14 @@
 
         <!-- The only activity. The app is portrait only ON PURPOSE: the swipe deck, the mood slider and the tall poster
              layouts are designed for a tall screen (so lint's "locked orientation" warning is switched off here).
-             The "Starting" theme shows the splash screen. -->
+             The "Starting" theme shows the splash screen. adjustResize makes the keyboard report its height as a window inset;
+             applySystemBarsPadding (util/ViewExtensions.kt) lifts the bars at the bottom of a screen above it, so the
+             Diary editor's formatting strip and the search field are never hidden behind the keyboard. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
             tools:ignore="DiscouragedApi,LockedOrientationActivity"
             android:theme="@style/Theme.CineFiles.Starting">
             <intent-filter>

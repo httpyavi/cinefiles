@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A popcorn bucket, half: the left half is full, the right half is the empty outline. The half step of the PopcornRatingView (x.5). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_secondary"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6,11 A2.4,2.4 0 0 1 5.3,6.4 A2.8,2.8 0 0 1 10.3,4.4 A2.8,2.8 0 0 1 15.2,4.6 A2.4,2.4 0 0 1 18.6,6.8 A2.4,2.4 0 0 1 18,11 Z" />
+    <path
+        android:strokeColor="@color/text_secondary"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6,11 L7.2,20.2 Q7.3,21 8.1,21 L15.9,21 Q16.7,21 16.8,20.2 L18,11 Z M10,11.5 L10.4,20.6 M14,11.5 L13.6,20.6" />
+    <group>
+        <clip-path android:pathData="M0,0 L12,0 L12,24 L0,24 Z" />
+        <!-- the puffs: golden popcorn -->
+        <path
+            android:fillColor="@color/star"
+            android:strokeColor="@color/star"
+            android:strokeWidth="1.2"
+            android:strokeLineJoin="round"
+            android:pathData="M6,11 A2.4,2.4 0 0 1 5.3,6.4 A2.8,2.8 0 0 1 10.3,4.4 A2.8,2.8 0 0 1 15.2,4.6 A2.4,2.4 0 0 1 18.6,6.8 A2.4,2.4 0 0 1 18,11 Z" />
+        <!-- the bucket: red, with its two stripes -->
+        <path
+            android:fillColor="@color/accent"
+            android:strokeColor="@color/accent"
+            android:strokeWidth="1.2"
+            android:strokeLineJoin="round"
+            android:pathData="M6,11 L7.2,20.2 Q7.3,21 8.1,21 L15.9,21 Q16.7,21 16.8,20.2 L18,11 Z" />
+        <path
+            android:strokeColor="@color/text_primary"
+            android:strokeWidth="1.5"
+            android:strokeLineCap="round"
+            android:pathData="M10,11.5 L10.4,20.6 M14,11.5 L13.6,20.6" />
+    </group>
+</vector>

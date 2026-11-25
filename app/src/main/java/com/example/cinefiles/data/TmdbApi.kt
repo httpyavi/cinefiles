@@ -2,6 +2,7 @@ package com.example.cinefiles.data
 
 import com.example.cinefiles.BuildConfig
 import com.example.cinefiles.data.dto.MovieDto
+import com.example.cinefiles.data.dto.MovieImagesDto
 import com.example.cinefiles.data.dto.MovieListResponse
 import com.example.cinefiles.data.dto.PersonDto
 import com.example.cinefiles.logic.ContentFilter
@@ -76,6 +77,16 @@ interface TmdbApi {
         @Query("append_to_response") append: String = "movie_credits",
         @Query("language") language: String = LANGUAGE
     ): PersonDto
+
+    /**
+     * The official pictures of a movie (stills / backdrops, posters). The Diary offers them as pictures for a page.
+     * [languages] keeps pictures in English and pictures without any text on them.
+     */
+    @GET("movie/{id}/images")
+    suspend fun movieImages(
+        @Path("id") id: Int,
+        @Query("include_image_language") languages: String = "en,null"
+    ): MovieImagesDto
 
     @GET("movie/{id}/similar")
     suspend fun similar(

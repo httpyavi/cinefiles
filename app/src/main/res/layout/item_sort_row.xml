@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One field of the Sort sheet: its name, and its two directions side by side. The active direction is "checked" (red edge). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_12">
+
+    <TextView
+        android:id="@+id/sortFieldLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_8"
+        android:textAppearance="@style/TextAppearance.CineFiles.Label"
+        tools:text="Film name" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sortFirst"
+            style="@style/Widget.CineFiles.Button.Segment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_4"
+            android:layout_weight="1"
+            tools:text="A to Z" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sortSecond"
+            style="@style/Widget.CineFiles.Button.Segment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_4"
+            android:layout_weight="1"
+            tools:text="Z to A" />
+    </LinearLayout>
+</LinearLayout>

@@ -26,7 +26,7 @@ sealed class DetailState {
      *
      * The credits and the extra facts only come from TMDB's details answer, so they are empty (and their sections
      * hidden) until it arrives, and when it never does: [directors], [cast], [crew] (writers, producers, cinematography,
-     * composers), [tagline], [status] ("Released") and the [countries] the movie was made in.
+     * composers), [fullCrew] (every group, the director too, for the Crew section and its "See all crew" sheet), [tagline], [status] ("Released") and the [countries] the movie was made in.
      */
     data class Content(
         val movie: Movie,
@@ -37,6 +37,7 @@ sealed class DetailState {
         val directors: List<CrewMember> = emptyList(),
         val cast: List<CastMember> = emptyList(),
         val crew: Map<CrewRole, List<CrewMember>> = emptyMap(),
+        val fullCrew: Map<CrewRole, List<CrewMember>> = emptyMap(),
         val tagline: String? = null,
         val status: String? = null,
         val countries: List<String> = emptyList()
@@ -85,6 +86,7 @@ fun buildDetailState(saved: Movie?, seen: Movie?, remote: DetailRemote): DetailS
         directors = details?.directors.orEmpty(),
         cast = details?.cast.orEmpty(),
         crew = details?.crew.orEmpty(),
+        fullCrew = details?.fullCrew.orEmpty(),
         tagline = details?.tagline,
         status = details?.status,
         countries = details?.productionCountries.orEmpty()

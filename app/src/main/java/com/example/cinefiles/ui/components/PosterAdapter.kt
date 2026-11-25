@@ -33,13 +33,16 @@ enum class PosterStyle(@LayoutRes val layout: Int) {
  * Collection tab being shown (see logic/CollectionRules.kt: badgeStatusFor), or, with no tab, on the movie's most
  * important status.
  *
+ * With [showRatings] a rated movie also wears the user's own popcorn rating in the bottom-left corner (My Collection).
+ *
  * Hand it a list with [submit]; DiffUtil works out what changed, so only changed posters are redrawn.
  */
 class PosterAdapter(
     private val style: PosterStyle,
     private val onMovieClick: (Movie) -> Unit,
     private val onMovieLongClick: ((Movie, View) -> Unit)? = null,
-    private val showBadges: Boolean = false
+    private val showBadges: Boolean = false,
+    private val showRatings: Boolean = false
 ) : ListAdapter<Movie, PosterAdapter.PosterViewHolder>(MovieDiffCallback) {
 
     class PosterViewHolder(val poster: PosterView) : RecyclerView.ViewHolder(poster)
@@ -69,6 +72,7 @@ class PosterAdapter(
         poster.contentDescription = movie.title // read out by screen readers
         poster.imageView.loadImage(ImageUrls.poster(movie.posterPath))
         poster.badge = if (showBadges) badgeStatusFor(movie, tab)?.toBadge() else null
+        poster.rating = if (showRatings) movie.userRating else null
         poster.setOnClickListener { onMovieClick(movie) }
 
         if (onMovieLongClick != null) {

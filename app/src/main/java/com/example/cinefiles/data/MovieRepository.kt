@@ -6,13 +6,16 @@ import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
-import com.example.cinefiles.logic.Language
-import com.example.cinefiles.logic.Length
-import com.example.cinefiles.logic.MinRating
+import com.example.cinefiles.logic.Languages
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.RecommendationEngine
-import com.example.cinefiles.logic.ReleasePeriod
+import com.example.cinefiles.data.dto.toStillPaths
+import com.example.cinefiles.logic.MAX_FAVORITES
+import com.example.cinefiles.logic.PopcornRating
+import com.example.cinefiles.logic.canFavorite
 import com.example.cinefiles.logic.canLike
+import com.example.cinefiles.logic.canRate
+import com.example.cinefiles.logic.canWriteDiary
 import com.example.cinefiles.logic.trendingSince
 import com.example.cinefiles.util.currentYear
 import kotlin.coroutines.cancellation.CancellationException
@@ -35,14 +38,17 @@ import kotlinx.coroutines.flow.Flow
  * Lists are paged: [page] 1 is the first 20 movies, page 2 the next 20, and so on.
  *
  * ---- The Room part (further down) ----
- * What the user did with a movie: liked, passed, watchlist, watched. Works without internet.
+ * What the user did with a movie: liked, watchlist, watched, rated, favorite, and the diary pages. Works without internet.
  * Every "set a state" function first saves the movie if it is not saved yet, then changes the state.
+ *
+ * THE WATCH RULE (logic/WatchRules.kt) lives here: like, favorite and rate refuse a movie that is not watched (they look
+ * at the SAVED copy), and un-watching clears the like, the rating and the favorite (in the DAO's queries).
  */
 class MovieRepository(
     private val api: TmdbApi,
     private val hasToken: Boolean,
     private val dao: MovieDao,
-    private val diaryDao: DiaryDao? = null
+    private val diaryDao: DiaryDao
 ) {
 
     // Movies seen in the lists during this run of the app (NOT saved to the database). When the user opens
@@ -182,7 +188,7 @@ class MovieRepository(
     private fun picksRequests(genreIds: List<Int>, preferences: Preferences, floor: QualityFloor): Pair<List<DiscoveryRequest>, DiscoveryRequest> {
         val base = Discovery.plan(genreIds, preferences, NO_RELAXING).first()
         val rating = max(base.minRating ?: 0.0, floor.minRating)
-        val few = preferences.language == Language.FILIPINO
+        val few = preferences.language == Languages.FILIPINO
         val discoverBase = base.copy(minRating = rating, minVotes = if (few) FILIPINO_MIN_VOTES else floor.minVotes)
         return listOf(
             discoverBase.copy(source = DiscoverySource.TOP_RATED),  // /discover sorted by vote_average.desc
@@ -193,9 +199,13 @@ class MovieRepository(
     /** The TMDB person with their movies, for the Person screen. */
     suspend fun person(personId: Int): Result<PersonDetails> = call {
         val details = api.person(personId).toPersonDetails() ?: error("TMDB sent no usable person for id $personId")
-        remember(details.acting + details.crew) // opening one of their movies then shows its title and poster at once
+        remember(details.allMovies) // opening one of their movies then shows its title and poster at once
         details
     }
+
+    /** The official stills / backdrops of a movie as TMDB paths ("/abc.jpg"), best first, for the Diary's picture picker. */
+    suspend fun movieStills(movieId: Int): Result<List<String>> =
+        call { api.movieImages(movieId).toStillPaths() }
 
     // ====================================================================================
     //  TMDB: long lists for Discover (page after page)
@@ -208,149 +218,35 @@ class MovieRepository(
     }
 
     /**
-     * One page of a Discover list. With no genre, the three categories are TMDB's own lists (popular, trending,
-     * top rated). With a genre they are /discover calls, because TMDB's own lists cannot be filtered by genre.
+     * One page of a Discover list. With no genre, the categories are TMDB's own lists (popular, trending, top rated) and "All" is
+     * everything most popular first. With a genre they are /discover calls, because TMDB's own lists cannot be filtered by genre.
+     *
+     * The Discover tab is independent of the "Let's watch something" flow: it never takes the mood or the preferences chosen there
+     * (those only shape the swipe deck and Your Picks), so nothing here knows about them.
      */
-    suspend fun browsePage(
-        category: BrowseCategory,
-        genreId: Int?,
-        page: Int = 1,
-        preferences: Preferences = Preferences(),
-        moodGenreIds: List<Int> = emptyList()
-    ): Result<MoviePage> = call {
-        val (fromYear, toYear) = Discovery.yearsOf(preferences.releasePeriod)
-        val (minMin, maxMin) = Discovery.minutesOf(preferences.length)
-        val langCode = Discovery.languageCode(preferences.language)
-        val minRating = Discovery.ratingOf(preferences.minRating)
-        val hasCustomPrefs = preferences.releasePeriod != ReleasePeriod.ANY ||
-                preferences.minRating != MinRating.ANY ||
-                preferences.length != Length.ANY ||
-                preferences.language != Language.ANY
-
+    suspend fun browsePage(category: BrowseCategory, genreId: Int?, page: Int = 1): Result<MoviePage> = call {
         val response = if (genreId == null) {
             when (category) {
-                BrowseCategory.ALL -> {
-                    val genresStr = if (moodGenreIds.isNotEmpty()) moodGenreIds.joinToString("|") else null
-                    val minVotes = if (langCode == "tl") 5 else 20
-                    api.discover(
-                        withGenres = genresStr,
-                        releasedFrom = fromYear?.let { "$it-01-01" },
-                        releasedTo = toYear?.let { "$it-12-31" },
-                        minRating = minRating,
-                        minVotes = minVotes,
-                        minRuntime = minMin,
-                        maxRuntime = maxMin,
-                        originalLanguage = langCode,
-                        sortBy = "popularity.desc",
-                        page = page
-                    )
-                }
-                BrowseCategory.POPULAR -> {
-                    if (hasCustomPrefs) {
-                        val minVotes = if (langCode == "tl") 5 else 100
-                        api.discover(
-                            releasedFrom = fromYear?.let { "$it-01-01" },
-                            releasedTo = toYear?.let { "$it-12-31" },
-                            minRating = minRating,
-                            minVotes = minVotes,
-                            minRuntime = minMin,
-                            maxRuntime = maxMin,
-                            originalLanguage = langCode,
-                            sortBy = "popularity.desc",
-                            page = page
-                        )
-                    } else {
-                        api.popular(page)
-                    }
-                }
-                BrowseCategory.TRENDING -> {
-                    if (hasCustomPrefs) {
-                        val minVotes = if (langCode == "tl") 5 else 20
-                        api.discover(
-                            releasedFrom = fromYear?.let { "$it-01-01" } ?: trendingSince(currentYear()),
-                            releasedTo = toYear?.let { "$it-12-31" },
-                            minRating = minRating,
-                            minVotes = minVotes,
-                            minRuntime = minMin,
-                            maxRuntime = maxMin,
-                            originalLanguage = langCode,
-                            sortBy = "popularity.desc",
-                            page = page
-                        )
-                    } else {
-                        api.trending(page)
-                    }
-                }
-                BrowseCategory.TOP_RATED -> {
-                    if (hasCustomPrefs) {
-                        val minVotes = if (langCode == "tl") 5 else 300
-                        val rating = maxOf(minRating ?: 0.0, 7.5)
-                        api.discover(
-                            releasedFrom = fromYear?.let { "$it-01-01" },
-                            releasedTo = toYear?.let { "$it-12-31" },
-                            minRating = rating,
-                            minVotes = minVotes,
-                            minRuntime = minMin,
-                            maxRuntime = maxMin,
-                            originalLanguage = langCode,
-                            sortBy = "vote_average.desc",
-                            page = page
-                        )
-                    } else {
-                        api.topRated(page)
-                    }
-                }
-                else -> api.popular(page)
+                BrowseCategory.POPULAR, BrowseCategory.GENRE -> api.popular(page)
+                BrowseCategory.TRENDING -> api.trending(page)
+                BrowseCategory.TOP_RATED -> api.topRated(page)
+                BrowseCategory.ALL -> api.discover(minVotes = BROWSE_MIN_VOTES_TRENDING, sortBy = SORT_BY_POPULARITY, page = page)
             }
         } else {
             val withGenre = genreId.toString()
             when (category) {
-                BrowseCategory.TRENDING -> {
-                    val minVotes = if (langCode == "tl") 5 else 20
-                    api.discover(
-                        withGenres = withGenre,
-                        releasedFrom = fromYear?.let { "$it-01-01" } ?: trendingSince(currentYear()),
-                        releasedTo = toYear?.let { "$it-12-31" },
-                        minRating = minRating,
-                        minVotes = minVotes,
-                        minRuntime = minMin,
-                        maxRuntime = maxMin,
-                        originalLanguage = langCode,
-                        sortBy = "popularity.desc",
-                        page = page
-                    )
-                }
-                BrowseCategory.TOP_RATED -> {
-                    val minVotes = if (langCode == "tl") 5 else 300
-                    val rating = maxOf(minRating ?: 0.0, 7.5)
-                    api.discover(
-                        withGenres = withGenre,
-                        releasedFrom = fromYear?.let { "$it-01-01" },
-                        releasedTo = toYear?.let { "$it-12-31" },
-                        minRating = rating,
-                        minVotes = minVotes,
-                        minRuntime = minMin,
-                        maxRuntime = maxMin,
-                        originalLanguage = langCode,
-                        sortBy = "vote_average.desc",
-                        page = page
-                    )
-                }
-                else -> {
-                    val minVotes = if (langCode == "tl") 5 else 100
-                    api.discover(
-                        withGenres = withGenre,
-                        releasedFrom = fromYear?.let { "$it-01-01" },
-                        releasedTo = toYear?.let { "$it-12-31" },
-                        minRating = minRating,
-                        minVotes = minVotes,
-                        minRuntime = minMin,
-                        maxRuntime = maxMin,
-                        originalLanguage = langCode,
-                        sortBy = "popularity.desc",
-                        page = page
-                    )
-                }
+                // TMDB's trending list cannot be filtered by genre: recent movies, most popular first
+                BrowseCategory.TRENDING -> api.discover(
+                    withGenres = withGenre, releasedFrom = trendingSince(currentYear()),
+                    minVotes = BROWSE_MIN_VOTES_TRENDING, sortBy = SORT_BY_POPULARITY, page = page
+                )
+                BrowseCategory.TOP_RATED -> api.discover(
+                    withGenres = withGenre, minRating = BROWSE_TOP_RATED_MIN_RATING,
+                    minVotes = BROWSE_MIN_VOTES_TOP_RATED, sortBy = SORT_BY_RATING, page = page
+                )
+                else -> api.discover(
+                    withGenres = withGenre, minVotes = BROWSE_MIN_VOTES_POPULAR, sortBy = SORT_BY_POPULARITY, page = page
+                )
             }
         }
         response.toMoviePage(page)
@@ -398,6 +294,9 @@ class MovieRepository(
 
     suspend fun savedMovie(movieId: Int): Movie? = dao.get(movieId)
 
+    /** THE WATCH RULE for the diary (canWriteDiary): is this movie watched, so a new page may be started? Looks at the SAVED copy. */
+    suspend fun canWriteDiary(movieId: Int): Boolean = canWriteDiary(dao.get(movieId))
+
     /** The ids of all movies the user has any state for. The swipe deck never shows them again. */
     suspend fun idsWithState(): List<Int> = dao.idsWithState()
 
@@ -409,9 +308,9 @@ class MovieRepository(
     // ====================================================================================
 
     /**
-     * Likes the movie. THE LIKE RULE (logic/CollectionRules.kt: canLike): a movie that is on the watchlist cannot
-     * be liked. Then nothing changes and this returns false, so the screen can say why. True = it is liked now.
-     * The check uses the SAVED copy of the movie, not the one the caller holds, which may be out of date.
+     * Likes the movie. THE WATCH RULE (logic/WatchRules.kt: canLike): a movie that is not watched (the watchlist counts
+     * as not watched) cannot be liked. Then nothing changes and this returns false, so the screen can say why.
+     * True = it is liked now. The check uses the SAVED copy of the movie, not the one the caller holds, which may be out of date.
      */
     suspend fun like(movie: Movie): Boolean {
         saveIfMissing(movie)
@@ -428,7 +327,10 @@ class MovieRepository(
     /** Takes back a like or a pass (Undo on the swipe screen, or "Unlike"). The movie itself stays saved. */
     suspend fun clearReaction(movieId: Int) = dao.setReaction(movieId, Reaction.NONE, 0L)
 
-    /** Adds to the watchlist. If the movie was marked watched, it is moved back (it is never both). */
+    /**
+     * Adds to the watchlist. If the movie was marked watched, it is moved back (it is never both), and its like, rating and
+     * favorite go away with "watched" (THE WATCH RULE: the DAO does it in the same statement).
+     */
     suspend fun addToWatchlist(movie: Movie) {
         saveIfMissing(movie)
         dao.addToWatchlist(movie.id, now())
@@ -442,21 +344,38 @@ class MovieRepository(
         dao.markWatched(movie.id, now())
     }
 
+    /** Marks as not watched. THE WATCH RULE: the like, the rating and the favorite of the movie go away with it. */
     suspend fun unmarkWatched(movieId: Int) = dao.unmarkWatched(movieId)
 
-    /** Undo: puts the six state fields of [before] back, exactly as they were (nothing else is touched). */
-    suspend fun restoreState(before: Movie) = dao.restoreState(
-        id = before.id,
-        reaction = before.reaction,
-        reactedAt = before.reactedAt,
-        inWatchlist = before.inWatchlist,
-        watchlistAddedAt = before.watchlistAddedAt,
-        isWatched = before.isWatched,
-        watchedAt = before.watchedAt
-    )
+    /**
+     * Undo: puts the state of [before] back exactly as it was (the lists, and the rating and favorite that un-watching
+     * cleared). Nothing else is touched. If it was a favorite but the four places are taken by now, it comes back
+     * without the favorite (the limit of four wins).
+     */
+    suspend fun restoreState(before: Movie) {
+        val savedNow = dao.get(before.id)
+        val favoriteFits = before.isFavorite && (savedNow?.isFavorite == true || dao.countFavorites() < MAX_FAVORITES)
+        dao.restoreState(
+            id = before.id,
+            reaction = before.reaction,
+            reactedAt = before.reactedAt,
+            inWatchlist = before.inWatchlist,
+            watchlistAddedAt = before.watchlistAddedAt,
+            isWatched = before.isWatched,
+            watchedAt = before.watchedAt,
+            userRating = before.userRating,
+            ratedAt = before.ratedAt,
+            isFavorite = favoriteFits,
+            favoritedAt = if (favoriteFits) before.favoritedAt else 0L,
+            favoriteOrder = if (favoriteFits) before.favoriteOrder else 0
+        )
+    }
 
-    /** Deletes every saved movie and every state. Nothing in the app calls this yet (a later settings screen will). */
-    suspend fun clearAllData() = dao.deleteAll()
+    /** Deletes every saved movie, every state and every diary page. (The gallery pictures of the pages: DiaryImageStore.) */
+    suspend fun clearAllData() {
+        dao.deleteAll()
+        diaryDao.deleteAll()
+    }
 
     /** Saves the movie's information if this movie is not saved yet. A saved movie is never overwritten. */
     private suspend fun saveIfMissing(movie: Movie) {
@@ -466,21 +385,25 @@ class MovieRepository(
     private fun now(): Long = System.currentTimeMillis()
 
     // ====================================================================================
-    //  Personal Ratings (0.5 to 5.0 stars, half-star increments)
+    //  The popcorn rating (0.5 to 5.0, half steps)
     // ====================================================================================
 
-    suspend fun setPersonalRating(movie: Movie, rating: Float?) {
-        saveIfMissing(movie)
-        if (rating == null || rating <= 0f) {
-            dao.clearPersonalRating(movie.id)
-        } else {
-            val clamped = (Math.round(rating * 2f) / 2f).coerceIn(0.5f, 5.0f)
-            dao.setPersonalRating(movie.id, clamped, now())
+    /**
+     * Sets the popcorn rating, or clears it when [rating] is null or 0 (clearing is always allowed).
+     * THE WATCH RULE (logic/WatchRules.kt: canRate): only a WATCHED movie can be rated. For any other movie nothing changes
+     * and this returns false, so the screen can say "Mark as watched first". We do not mark it watched for the user.
+     * The rating is rounded to the nearest half step. True = the rating is saved (or cleared).
+     */
+    suspend fun setUserRating(movie: Movie, rating: Float?): Boolean {
+        val value = PopcornRating.normalize(rating)
+        if (value == null) {
+            dao.clearUserRating(movie.id)
+            return true
         }
-    }
-
-    suspend fun removePersonalRating(movieId: Int) {
-        dao.clearPersonalRating(movieId)
+        saveIfMissing(movie)
+        if (!canRate(dao.get(movie.id))) return false
+        dao.setUserRating(movie.id, value, now())
+        return true
     }
 
     fun observeRated(): Flow<List<Movie>> = dao.observeRated()
@@ -488,31 +411,50 @@ class MovieRepository(
     fun observeRatedCount(): Flow<Int> = dao.observeRatedCount()
 
     // ====================================================================================
-    //  Favorites (Maximum 4 movies)
+    //  Favorites (at most 4, in the order the user chose)
     // ====================================================================================
 
     /**
-     * Toggles favorite status.
-     * Returns true if favorite was toggled.
-     * Returns false if limit of 4 is already reached and cannot add another.
+     * Adds the movie to the favorites, or takes it out when it already is one.
+     * THE WATCH RULE (canFavorite): only a WATCHED movie can become a favorite ([FavoriteResult.NOT_WATCHED] otherwise),
+     * and there is room for [MAX_FAVORITES] ([FavoriteResult.LIMIT_REACHED] when all places are taken). A new favorite
+     * takes the last place.
      */
-    suspend fun toggleFavorite(movie: Movie): Boolean {
+    suspend fun toggleFavorite(movie: Movie): FavoriteResult {
         saveIfMissing(movie)
-        val current = dao.get(movie.id)
-        if (current?.isFavorite == true) {
-            dao.setFavorite(movie.id, false, 0L)
-            return true
+        if (dao.get(movie.id)?.isFavorite == true) {
+            dao.removeFavorite(movie.id)
+            return FavoriteResult.REMOVED
         }
-        val count = dao.countFavorites()
-        if (count >= 4) {
-            return false // Limit of 4 reached
-        }
-        dao.setFavorite(movie.id, true, now())
-        return true
+        return addFavorite(movie)
+    }
+
+    /** Adds the movie to the favorites (the favorites picker of the Profile). It is the same checks as [toggleFavorite]. */
+    suspend fun addFavorite(movie: Movie): FavoriteResult {
+        saveIfMissing(movie)
+        val saved = dao.get(movie.id)
+        if (saved?.isFavorite == true) return FavoriteResult.ADDED // already there
+        if (!canFavorite(saved)) return FavoriteResult.NOT_WATCHED
+        if (dao.countFavorites() >= MAX_FAVORITES) return FavoriteResult.LIMIT_REACHED
+        dao.addFavorite(movie.id, now())
+        return FavoriteResult.ADDED
     }
 
     suspend fun removeFavorite(movieId: Int) {
-        dao.setFavorite(movieId, false, 0L)
+        dao.removeFavorite(movieId)
+    }
+
+    /**
+     * Saves the order the user dragged the favorites into ([orderedIds]: first place first). Ids that are not favorites
+     * are ignored, and a favorite the list forgot keeps its place after the others, so nothing is ever lost.
+     * It is one database statement, so the Profile never sees a half-moved order.
+     */
+    suspend fun reorderFavorites(orderedIds: List<Int>) {
+        val current = dao.getFavorites().map { it.id }
+        val wanted = orderedIds.filter { it in current }.distinct()
+        val complete = (wanted + current.filter { it !in wanted }).take(MAX_FAVORITES)
+        val places = complete + List(MAX_FAVORITES - complete.size) { NO_MOVIE }
+        dao.setFavoriteOrder(places[0], places[1], places[2], places[3])
     }
 
     fun observeFavorites(): Flow<List<Movie>> = dao.observeFavorites()
@@ -520,49 +462,36 @@ class MovieRepository(
     suspend fun getFavorites(): List<Movie> = dao.getFavorites()
 
     // ====================================================================================
-    //  Personal Movie Diary
+    //  The Movie Diary (pages of text and picture blocks)
     // ====================================================================================
 
-    suspend fun saveDiaryEntry(
-        movie: Movie,
-        notes: String,
-        rating: Float?,
-        dateWatched: Long,
-        isRewatch: Boolean
-    ): Long {
-        saveIfMissing(movie)
-        if (rating != null && rating > 0f) {
-            setPersonalRating(movie, rating)
+    suspend fun diaryEntry(id: Long): DiaryEntry? = diaryDao.get(id)
+
+    /**
+     * Saves a diary page: a new one (id 0) is inserted, a saved one is updated. It stamps the times. Returns the page's id.
+     * [DiaryEntry.createdAt] of a new page is now; the update never changes it.
+     */
+    suspend fun saveDiaryEntry(entry: DiaryEntry): Long {
+        val time = now()
+        return if (entry.id == 0L) {
+            diaryDao.insert(entry.copy(createdAt = time, updatedAt = time))
+        } else {
+            diaryDao.update(entry.copy(updatedAt = time))
+            entry.id
         }
-        val entry = DiaryEntry(
-            movieId = movie.id,
-            movieTitle = movie.title,
-            posterPath = movie.posterPath,
-            releaseYear = movie.releaseYear,
-            rating = rating,
-            notes = notes,
-            dateWatched = dateWatched,
-            isRewatch = isRewatch,
-            createdAt = now()
-        )
-        return diaryDao?.insert(entry) ?: 0L
     }
 
-    suspend fun deleteDiaryEntry(id: Long) {
-        diaryDao?.delete(id)
-    }
+    suspend fun deleteDiaryEntry(id: Long) = diaryDao.delete(id)
 
-    fun observeDiaryForMovie(movieId: Int): Flow<List<DiaryEntry>>? =
-        diaryDao?.observeForMovie(movieId)
+    suspend fun allDiaryEntries(): List<DiaryEntry> = diaryDao.getAll()
 
-    fun observeDiary(): Flow<List<DiaryEntry>>? =
-        diaryDao?.observeAll()
+    /** Every page, newest first. */
+    fun observeDiary(): Flow<List<DiaryEntry>> = diaryDao.observeAll()
 
-    fun observeDiaryCount(): Flow<Int>? =
-        diaryDao?.observeCount()
+    /** The pages about one movie, newest first. */
+    fun observeDiaryForMovie(movieId: Int): Flow<List<DiaryEntry>> = diaryDao.observeForMovie(movieId)
 
-    suspend fun getDiaryCount(): Int =
-        diaryDao?.count() ?: 0
+    fun observeDiaryCount(): Flow<Int> = diaryDao.observeCount()
 
     // ====================================================================================
     //  Shared by the TMDB functions
@@ -583,6 +512,15 @@ class MovieRepository(
     private companion object {
         const val MAX_PAGE = 500
         const val MAX_SEEN = 500
+        const val NO_MOVIE = -1              // "nobody here" in the four places of the favorites
+
+        // Discover (browse) lists
+        const val SORT_BY_POPULARITY = "popularity.desc"
+        const val SORT_BY_RATING = "vote_average.desc"
+        const val BROWSE_MIN_VOTES_TRENDING = 20     // also "All": a few votes, so empty entries stay out
+        const val BROWSE_MIN_VOTES_POPULAR = 100
+        const val BROWSE_MIN_VOTES_TOP_RATED = 300
+        const val BROWSE_TOP_RATED_MIN_RATING = 7.5
 
         // Your picks
         const val PICKS_PAGES = 2            // two pages of 20 for each way of sorting
@@ -604,4 +542,19 @@ class MovieRepository(
             PicksStep(RELAXED_FLOOR, dropPreferences = true)
         )
     }
+}
+
+/** What happened when the user asked to add a movie to the Favorites (or to toggle it). */
+enum class FavoriteResult {
+    /** It is a favorite now. */
+    ADDED,
+
+    /** It was a favorite and is not any more. */
+    REMOVED,
+
+    /** Refused: THE WATCH RULE, only a watched movie can be a favorite. */
+    NOT_WATCHED,
+
+    /** Refused: all four places are taken. */
+    LIMIT_REACHED
 }

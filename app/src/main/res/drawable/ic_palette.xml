@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize the look (a painter's palette). 24 dp icon. Colored by the theme (colorControlNormal) unless a view sets its own tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size"
+    android:height="@dimen/icon_size"
+    android:autoMirrored="false"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,4 C7.5,4 4,7.4 4,11.6 C4,15.8 7.4,19.5 11.5,19.5 C12.6,19.5 13.2,18.8 13.2,18 C13.2,17.4 12.9,17 12.7,16.6 C12.4,16.1 12.4,15.5 12.9,15 C13.3,14.6 13.9,14.5 14.6,14.5 L16,14.5 C18.2,14.5 20,12.9 20,10.7 C20,7 16.5,4 12,4 Z" />
+    <path
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7.8,11 A0.6,0.6 0 1 0 7.8,11.01 M10,7.9 A0.6,0.6 0 1 0 10,7.91 M14.2,7.9 A0.6,0.6 0 1 0 14.2,7.91" />
+</vector>

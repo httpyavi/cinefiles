@@ -69,4 +69,26 @@
             app:tint="@color/text_primary" />
     </FrameLayout>
 
+
+    <!-- ===== The round Sort button, top right (shown when the person has more than one movie in the tab) ===== -->
+    <FrameLayout
+        android:id="@+id/personSortBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end">
+
+        <ImageButton
+            android:id="@+id/personSort"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginEnd="@dimen/space_12"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/sort_button_description"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_filter"
+            android:visibility="gone"
+            app:tint="@color/text_primary" />
+    </FrameLayout>
+
 </FrameLayout>

@@ -75,10 +75,7 @@ data class DiscoveryRequest(
         if (maxMinutes != null && minutes != null && minutes > maxMinutes) return false
 
         val movieLanguage = movie.originalLanguage
-        if (language != null && movieLanguage != null) {
-            val matches = if (language == "tl") movieLanguage == "tl" || movieLanguage == "fil" else movieLanguage.equals(language, ignoreCase = true)
-            if (!matches) return false
-        }
+        if (language != null && movieLanguage != null && !Languages.matches(language, movieLanguage)) return false
 
         // Vote limits are about "how well known": 0 means we do not know, which can never be a hidden gem
         if (minVotes != null && movie.voteCount < minVotes) return false
@@ -125,7 +122,7 @@ object Discovery {
             minRating = if (relax >= 3) null else ratingOf(preferences.minRating),
             minMinutes = minMinutes,
             maxMinutes = maxMinutes,
-            language = languageCode(preferences.language)
+            language = preferences.language
         )
         val rating = base.minRating ?: 0.0
 
@@ -134,8 +131,8 @@ object Discovery {
             base.copy(source = DiscoverySource.TOP_RATED, minRating = max(rating, TOP_RATED_MIN_RATING)),
             base.copy(
                 source = DiscoverySource.HIDDEN_GEM, minRating = max(rating, HIDDEN_GEM_MIN_RATING),
-                minVotes = if (base.language == "tl") 3 else HIDDEN_GEM_MIN_VOTES,
-                maxVotes = if (base.language == "tl") 100 else HIDDEN_GEM_MAX_VOTES
+                minVotes = if (base.language == Languages.FILIPINO) 3 else HIDDEN_GEM_MIN_VOTES,
+                maxVotes = if (base.language == Languages.FILIPINO) 100 else HIDDEN_GEM_MAX_VOTES
             ),
             base.copy(source = DiscoverySource.TRENDING),
             base.copy(source = DiscoverySource.POPULAR)
@@ -191,7 +188,7 @@ object Discovery {
     ): List<Pick> {
         val deck = ArrayList<Pick>()
         val used = exclude.toMutableSet()
-        val langCode = languageCode(preferences.language)
+        val langCode = preferences.language
 
         val maxRelax = if (langCode != null) 3 else MAX_RELAX
         for (relax in 0..maxRelax) {
@@ -204,12 +201,8 @@ object Discovery {
             }
             val filteredBatches = if (langCode != null) {
                 batches.map { (source, movies) ->
-                    source to movies.filter { movie ->
-                        val ml = movie.originalLanguage
-                        if (ml == null) true
-                        else if (langCode == "tl") ml == "tl" || ml == "fil"
-                        else ml.equals(langCode, ignoreCase = true)
-                    }
+                    // A movie whose language TMDB does not know is kept
+                    source to movies.filter { movie -> movie.originalLanguage?.let { Languages.matches(langCode, it) } ?: true }
                 }
             } else batches
             val more = mix(filteredBatches, used, limit - deck.size)
@@ -244,13 +237,5 @@ object Discovery {
         Length.UNDER_90_MIN -> Pair(null, 89)
         Length.UNDER_2_HOURS -> Pair(null, 119)
         Length.OVER_2_HOURS -> Pair(120, null)
-    }
-
-    fun languageCode(language: Language): String? = when (language) {
-        Language.ANY -> null
-        Language.ENGLISH -> "en"
-        Language.FILIPINO -> "tl"
-        Language.KOREAN -> "ko"
-        Language.JAPANESE -> "ja"
     }
 }

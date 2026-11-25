@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One person in the full crew sheet: the name, and the job TMDB lists for them. The whole row opens the Person screen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingTop="@dimen/space_8"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingBottom="@dimen/space_8">
+
+    <TextView
+        android:id="@+id/crewPersonName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="@style/TextAppearance.CineFiles.Body"
+        tools:text="Hans Zimmer" />
+
+    <TextView
+        android:id="@+id/crewPersonJob"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+        tools:text="Original Music Composer" />
+</LinearLayout>

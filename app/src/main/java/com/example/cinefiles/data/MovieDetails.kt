@@ -16,7 +16,8 @@ data class CrewMember(val id: Int, val name: String, val job: String, val profil
  *
  * trailerKey is a YouTube video id, or null when TMDB lists no trailer.
  * directors are shown next to the title; crew holds the other groups (writers, producers, cinematography, composers),
- * see logic/Credits.kt. tagline, status ("Released") and productionCountries are null / empty when TMDB has none.
+ * see logic/Credits.kt. fullCrew is every group (the director, the editors, the designers too) with more names each, for
+ * the "See all crew" sheet and for the short Crew section made from it. tagline, status ("Released") and productionCountries are null / empty when TMDB has none.
  */
 data class MovieDetails(
     val movie: Movie,
@@ -24,6 +25,7 @@ data class MovieDetails(
     val directors: List<CrewMember>,
     val trailerKey: String?,
     val crew: Map<CrewRole, List<CrewMember>> = emptyMap(),
+    val fullCrew: Map<CrewRole, List<CrewMember>> = emptyMap(),
     val tagline: String? = null,
     val status: String? = null,
     val productionCountries: List<String> = emptyList()
@@ -45,6 +47,7 @@ fun MovieDto.toDetails(): MovieDetails? {
         .filter { it.id != null && !it.name.isNullOrBlank() && !it.job.isNullOrBlank() }
         .map { CrewMember(it.id!!, it.name.orEmpty(), it.job.orEmpty(), it.profilePath?.ifBlank { null }) }
     val groups = Credits.group(crew)
+    val fullGroups = Credits.group(crew, Credits.MAX_FULL_PER_ROLE)
 
     val trailerKey = videos?.results.orEmpty()
         .firstOrNull { it.site == "YouTube" && it.type == "Trailer" && !it.key.isNullOrBlank() }
@@ -56,6 +59,7 @@ fun MovieDto.toDetails(): MovieDetails? {
         directors = groups[CrewRole.DIRECTOR].orEmpty(),
         trailerKey = trailerKey,
         crew = groups - CrewRole.DIRECTOR,
+        fullCrew = fullGroups,
         tagline = tagline?.trim()?.ifBlank { null },
         status = status?.trim()?.ifBlank { null },
         productionCountries = productionCountries.orEmpty().mapNotNull { it.name?.trim()?.ifBlank { null } }

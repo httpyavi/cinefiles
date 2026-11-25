@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen-reader actions on a favorite poster of the Profile: the same as dragging it one place -->
+    <item name="action_favorite_earlier" type="id" />
+    <item name="action_favorite_later" type="id" />
+</resources>

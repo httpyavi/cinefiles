@@ -11,7 +11,6 @@ import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.friendlyError
 import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.DiscoverFilters
-import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.appendUnique
 import com.example.cinefiles.logic.filterByGenre
 import com.example.cinefiles.logic.withStateOf
@@ -101,18 +100,6 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
     private var lastPage = 0
     private var hasMore = false
     private var autoPagesLeft = 0
-
-    private var currentPreferences = Preferences()
-    private var currentMoodGenres = emptyList<Int>()
-
-    fun setPreferences(preferences: Preferences, moodGenres: List<Int>) {
-        val changed = (preferences != currentPreferences || moodGenres != currentMoodGenres)
-        currentPreferences = preferences
-        currentMoodGenres = moodGenres
-        if (changed && started) {
-            reload(debounce = false)
-        }
-    }
 
     /** The first call loads the initial browse list. */
     fun start() {
@@ -207,13 +194,7 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
         val result = if (filters.isSearching) {
             repository.searchPage(filters.query, number)
         } else {
-            repository.browsePage(
-                category = filters.category,
-                genreId = filters.genreId,
-                page = number,
-                preferences = currentPreferences,
-                moodGenreIds = currentMoodGenres
-            )
+            repository.browsePage(category = filters.category, genreId = filters.genreId, page = number)
         }
 
         result

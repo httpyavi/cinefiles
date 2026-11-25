@@ -25,35 +25,48 @@ import com.example.cinefiles.data.CrewMember
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.Reaction
 import com.example.cinefiles.databinding.FragmentDetailBinding
-import com.example.cinefiles.databinding.ItemCrewGroupBinding
+import com.example.cinefiles.databinding.ItemCrewRowBinding
 import com.example.cinefiles.databinding.ItemInfoRowBinding
+import com.example.cinefiles.logic.Credits
 import com.example.cinefiles.logic.CrewRole
+import com.example.cinefiles.logic.PopcornRating
+import com.example.cinefiles.logic.WatchRuleBlock
+import com.example.cinefiles.logic.canFavorite
 import com.example.cinefiles.logic.canLike
+import com.example.cinefiles.logic.canRate
+import com.example.cinefiles.logic.canWriteDiary
 import com.example.cinefiles.logic.splitRuntime
 import com.example.cinefiles.logic.watchlistButtonFor
+import com.example.cinefiles.util.ARG_MOVIE_ID
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
 import com.example.cinefiles.util.ImageUrls
-import com.example.cinefiles.util.addPersonChip
 import com.example.cinefiles.util.applySystemBarsPadding
 import com.example.cinefiles.util.genresText
 import com.example.cinefiles.util.languageName
 import com.example.cinefiles.util.loadImage
+import com.example.cinefiles.util.openDiaryEditor
+import com.example.cinefiles.util.openDiaryList
 import com.example.cinefiles.util.openMovieDetails
 import com.example.cinefiles.util.openPerson
 import com.example.cinefiles.util.ratingText
 import com.example.cinefiles.util.shake
 import com.example.cinefiles.util.show
-import com.example.cinefiles.util.showRatingStar
 import com.example.cinefiles.util.showMessage
+import com.example.cinefiles.util.showRatingStar
+import com.example.cinefiles.util.showUndo
 
 /**
  * The Movie Details screen for one movie. It only draws what DetailViewModel says and forwards taps.
  * The movie's id arrives as the navigation argument "movieId" (see openMovieDetails in util/NavigationExtensions.kt).
  * The three buttons change the database; the screen follows the database, so it is always up to date.
  *
- * It also shows the people of the movie: the director(s) next to the title, the cast row and the crew chips. Every name
- * opens the Person screen (openPerson). The poster in the top corner opens the full-screen poster (PosterViewerFragment).
+ * It also shows the people of the movie: the director(s) next to the title, the cast row and a tidy Crew table (a few roles,
+ * "See all" opens the rest). Every name opens the Person screen (openPerson). The poster in the top corner opens the
+ * full-screen poster (PosterViewerFragment).
+ *
+ * THE WATCH RULE (logic/WatchRules.kt): Like, Favorite and the popcorn rating only work on a watched movie. Until then they
+ * look dimmed; tapping one shakes it and says "Mark as watched first".
  */
 class DetailFragment : Fragment() {
 
@@ -75,6 +88,9 @@ class DetailFragment : Fragment() {
     private var posterTitle: String = ""
     private var shownDirectors: List<CrewMember>? = null
     private var shownCrew: Map<CrewRole, List<CrewMember>>? = null
+    private var shownMovie: Movie? = null
+    private var diaryPages = 0
+    private var diaryLocked = false
     private var shownFacts: List<Pair<Int, String>>? = null
 
     override fun onCreateView(
@@ -98,6 +114,15 @@ class DetailFragment : Fragment() {
         binding.likeButton.setOnClickListener { viewModel.toggleLike() }
         binding.watchedButton.setOnClickListener { viewModel.toggleWatched() }
         binding.favoriteButton.setOnClickListener { viewModel.toggleFavorite() }
+        binding.crewSeeAll.setOnClickListener { CrewSheet.show(childFragmentManager) }
+
+        // The popcorn rating: a finished touch saves it; a touch while it is locked (not watched) explains why
+        binding.ratingView.onRatingChanged = { rating -> viewModel.setRating(rating) }
+        binding.ratingView.onLockedTouch = { refuse(WatchRuleBlock.RATE) }
+
+        // The diary: a new page for this movie, or the pages already written about it. Only a watched movie has one (THE WATCH RULE)
+        binding.diaryWriteButton.setOnClickListener { viewModel.requestDiary(openList = false) }
+        binding.diaryOpenButton.setOnClickListener { viewModel.requestDiary(openList = true) }
         binding.trailerButton.setOnClickListener { trailerKey?.let { openTrailer(it) } }
         binding.overviewToggle.setOnClickListener {
             overviewExpanded = !overviewExpanded
@@ -123,19 +148,71 @@ class DetailFragment : Fragment() {
         binding.loadErrorRetry.setOnClickListener { viewModel.load() }
 
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
-        viewModel.likeBlocked.observe(viewLifecycleOwner) { event ->
-            event.getIfNotHandled()?.let {
-                // THE LIKE RULE: the button wiggles "no" and the Snackbar says what to do instead
-                binding.likeButton.shake()
-                showMessage(R.string.like_blocked_message)
-            }
+        viewModel.blocked.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { refuse(it) }
         }
-        viewModel.favoriteBlocked.observe(viewLifecycleOwner) { event ->
+        viewModel.favoriteLimit.observe(viewLifecycleOwner) { event ->
             event.getIfNotHandled()?.let {
                 binding.favoriteButton.shake()
                 showMessage(R.string.favorite_limit_reached)
             }
         }
+        viewModel.undo.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { info -> showUndo(info) { viewModel.restore(it) } }
+        }
+        viewModel.diaryCount.observe(viewLifecycleOwner) {
+            diaryPages = it
+            showDiary()
+        }
+        viewModel.diaryRequest.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { openList ->
+                val movieId = requireArguments().getInt(ARG_MOVIE_ID)
+                if (openList) findNavController().openDiaryList(movieId) else findNavController().openDiaryEditor(movieId = movieId)
+            }
+        }
+    }
+
+    /**
+     * THE WATCH RULE said no: the control wiggles "no" and the Snackbar says what to do first.
+     * (A refused rating also puts the popcorn back to what is saved: the finger had already moved it.)
+     */
+    private fun refuse(block: WatchRuleBlock) {
+        when (block) {
+            WatchRuleBlock.LIKE -> {
+                binding.likeButton.shake()
+                showMessage(R.string.like_blocked_message)
+            }
+            WatchRuleBlock.FAVORITE -> {
+                binding.favoriteButton.shake()
+                showMessage(R.string.favorite_blocked_message)
+            }
+            WatchRuleBlock.DIARY -> {
+                binding.diaryPanel.shake()
+                showMessage(R.string.diary_blocked_message)
+            }
+            WatchRuleBlock.RATE -> {
+                binding.ratingView.rating = shownMovie?.userRating
+                binding.ratingView.shake()
+                showMessage(R.string.rate_blocked_message)
+            }
+        }
+    }
+
+    /**
+     * The diary panel: how many pages there are, whether "Open Diary" is offered, and, until the movie is watched, a line that says why the
+     * buttons are dimmed (they still answer a tap, with a shake and a message: THE WATCH RULE).
+     */
+    private fun showDiary() {
+        val pages = diaryPages
+        binding.diaryOpenButton.isVisible = pages > 0
+        binding.diarySubtitle.text = when {
+            diaryLocked -> getString(R.string.diary_panel_subtitle_locked)
+            pages > 0 -> resources.getQuantityString(R.plurals.diary_pages_count, pages, pages)
+            else -> getString(R.string.diary_panel_subtitle_none)
+        }
+        val alpha = if (diaryLocked) UNAVAILABLE_ALPHA else 1f
+        binding.diaryWriteButton.alpha = alpha
+        binding.diaryOpenButton.alpha = alpha
     }
 
     override fun onDestroyView() {
@@ -147,6 +224,8 @@ class DetailFragment : Fragment() {
         shownDirectors = null
         shownCrew = null
         shownFacts = null
+        shownMovie = null
+        diaryLocked = false
         _binding = null
     }
 
@@ -179,7 +258,7 @@ class DetailFragment : Fragment() {
         // The people and the facts only come with TMDB's answer: each section shows once it has something
         binding.castSection.isVisible = content.cast.isNotEmpty()
         castAdapter.submitList(content.cast)
-        showCrew(content.crew)
+        showCrew(content.fullCrew)
         showInfo(content)
 
         // Similar movies: placeholders while they load, the row when they are here, nothing if there are none
@@ -251,18 +330,44 @@ class DetailFragment : Fragment() {
         view.movementMethod = LinkMovementMethod.getInstance() // makes the names tappable
     }
 
-    /** The crew: a small heading and tappable names for the writers, producers, cinematography and composers. */
+    /**
+     * The crew: a tidy table with one row per key role (director, writers, producers, cinematography, music), the first few
+     * names of each tappable. "See all" opens the whole crew when something did not fit (logic/Credits.kt: preview).
+     */
     private fun showCrew(crew: Map<CrewRole, List<CrewMember>>) {
         if (crew == shownCrew) return
         shownCrew = crew
 
-        binding.crewSection.isVisible = crew.isNotEmpty()
-        binding.crewGroups.removeAllViews()
-        for ((role, people) in crew) {
-            val group = ItemCrewGroupBinding.inflate(layoutInflater, binding.crewGroups, false)
-            group.crewRole.setText(role.label)
-            for (person in people) group.crewChips.addPersonChip(person.name) { findNavController().openPerson(person.id) }
-            binding.crewGroups.addView(group.root)
+        val preview = Credits.preview(crew)
+        binding.crewSection.isVisible = preview.rows.isNotEmpty()
+        binding.crewSeeAll.isVisible = preview.hasMore
+        binding.crewRows.removeAllViews()
+
+        val accent = ContextCompat.getColor(requireContext(), R.color.accent_soft)
+        val muted = ContextCompat.getColor(requireContext(), R.color.text_secondary)
+        for (row in preview.rows) {
+            val item = ItemCrewRowBinding.inflate(layoutInflater, binding.crewRows, false)
+            item.crewRole.setText(row.role.label)
+
+            val names = SpannableStringBuilder()
+            row.people.forEachIndexed { index, person ->
+                if (index > 0) names.append(", ")
+                val start = names.length
+                names.append(person.name)
+                names.setSpan(
+                    PersonSpan(accent) { findNavController().openPerson(person.id) },
+                    start, names.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            if (row.hiddenCount > 0) {
+                names.append("  ")
+                val start = names.length
+                names.append(getString(R.string.crew_more, row.hiddenCount))
+                names.setSpan(PersonSpan(muted) { CrewSheet.show(childFragmentManager) }, start, names.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            item.crewNames.text = names
+            item.crewNames.movementMethod = LinkMovementMethod.getInstance() // makes the names tappable
+            binding.crewRows.addView(item.root)
         }
     }
 
@@ -307,7 +412,7 @@ class DetailFragment : Fragment() {
         binding.likeButton.setText(if (liked) R.string.status_liked else R.string.action_like)
         binding.likeButton.setIconResource(if (liked) R.drawable.ic_heart_filled else R.drawable.ic_heart)
         binding.likeButton.iconTint = tint(if (liked) R.color.like else R.color.text_primary)
-        // On the watchlist, Like is unavailable (THE LIKE RULE): dimmed, but still tappable so that a tap can explain why
+        // A movie that is not watched cannot be liked (THE WATCH RULE): dimmed, but still tappable so that a tap can explain why
         binding.likeButton.alpha = if (liked || canLike(movie)) 1f else UNAVAILABLE_ALPHA
 
         val watched = movie.isWatched
@@ -319,6 +424,30 @@ class DetailFragment : Fragment() {
         binding.favoriteButton.setText(if (favorite) R.string.detail_favorited else R.string.detail_favorite)
         binding.favoriteButton.setIconResource(R.drawable.ic_star_filled)
         binding.favoriteButton.iconTint = tint(if (favorite) R.color.accent else R.color.text_primary)
+        binding.favoriteButton.alpha = if (favorite || canFavorite(movie)) 1f else UNAVAILABLE_ALPHA
+
+        showRating(movie)
+
+        diaryLocked = !canWriteDiary(movie)
+        showDiary()
+    }
+
+    /** The popcorn rating: locked (dimmed, with a hint) until the movie is watched, then it shows and sets the rating. */
+    private fun showRating(movie: Movie) {
+        shownMovie = movie
+        val locked = !canRate(movie)
+        val rating = movie.userRating
+        binding.ratingView.isLocked = locked
+        binding.ratingView.rating = rating
+        binding.ratingValue.isVisible = rating != null
+        binding.ratingValue.text = rating?.let { getString(R.string.rating_value, PopcornRating.format(it)) }
+        binding.ratingHint.setText(
+            when {
+                locked -> R.string.rating_hint_locked
+                rating == null -> R.string.rating_hint_unrated
+                else -> R.string.rating_hint_rated
+            }
+        )
     }
 
     private fun tint(colorRes: Int): ColorStateList =

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The button of the diary's formatting strip (bold, italic, alignment): quiet when off, a red wash and edge when it applies where the cursor is. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/accent_glow" />
+            <corners android:radius="@dimen/radius_medium" />
+            <stroke
+                android:width="@dimen/glass_stroke_width"
+                android:color="@color/accent" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="@dimen/radius_medium" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One still of a movie in the picker (rounded). 4 dp around it plus the grid's 16 dp padding. -->
+<com.google.android.material.imageview.ShapeableImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/diary_still_height"
+    android:layout_margin="@dimen/space_4"
+    android:background="@color/surface"
+    android:clickable="true"
+    android:contentDescription="@string/diary_still_description"
+    android:focusable="true"
+    android:scaleType="centerCrop"
+    app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Medium" />

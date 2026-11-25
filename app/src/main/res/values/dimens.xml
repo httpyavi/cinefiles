@@ -112,4 +112,24 @@
     <dimen name="placeholder_heading_width">160dp</dimen>
     <dimen name="placeholder_line_short_width">200dp</dimen>
 
+
+    <!-- Popcorn rating, crew and diary -->
+    <dimen name="popcorn_size">40dp</dimen>               <!-- one bucket of the rating on Details -->
+    <dimen name="popcorn_gap">8dp</dimen>
+    <dimen name="popcorn_size_small">16dp</dimen>         <!-- a read-only rating in the diary list -->
+    <dimen name="popcorn_gap_small">2dp</dimen>
+    <dimen name="crew_label_width">124dp</dimen>          <!-- the role column of the Crew section ("Cinematography" fits on one line) -->
+    <dimen name="diary_cover_width">64dp</dimen>          <!-- the small poster of a diary page in the list -->
+    <dimen name="diary_image_max_height">320dp</dimen>
+    <dimen name="diary_option_width">112dp</dimen>        <!-- one font or theme card in the style sheet -->
+    <dimen name="diary_option_selected_stroke">2dp</dimen>
+    <dimen name="diary_still_height">96dp</dimen>         <!-- one movie still in the picker -->
+    <dimen name="diary_rule_width">56dp</dimen>           <!-- the short accent line under a page's headline -->
+    <dimen name="diary_rule_height">3dp</dimen>
+    <dimen name="format_button_size">44dp</dimen>         <!-- a button of the diary's formatting strip -->
+    <dimen name="image_tool_size">36dp</dimen>            <!-- a tool on a picture of a diary page -->
+
+    <!-- Make it yours -->
+    <dimen name="pref_card_min_height">64dp</dimen>        <!-- every era / runtime / rating card is at least this tall, so a row never looks jagged -->
+    <dimen name="pref_dropdown_height">240dp</dimen>       <!-- the language suggestions: about four and a half rows, then it scrolls -->
 </resources>

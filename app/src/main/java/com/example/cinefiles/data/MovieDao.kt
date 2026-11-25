@@ -19,7 +19,19 @@ import kotlinx.coroutines.flow.Flow
  * coroutine (Room runs them off the main thread by itself).
  *
  * The enum names in the queries ('LIKED', 'NONE') are how Room stores [Reaction]: as its name.
+ *
+ * THE WATCH RULE (logic/WatchRules.kt): a like, a rating and a favorite only belong on a WATCHED movie. The queries that
+ * take "watched" away ([unmarkWatched], [addToWatchlist]) clear them in the SAME statement, so the table can never hold
+ * a liked, rated or favorited movie that is not watched. (The rule that refuses NEW likes, ratings and favorites is
+ * in MovieRepository, which looks at the saved copy.)
  */
+
+/** The SQL that goes with taking "watched" away: no like (a pass stays), no rating, no favorite. */
+private const val CLEAR_WATCH_DEPENDENTS =
+    "reaction = CASE WHEN reaction = 'LIKED' THEN 'NONE' ELSE reaction END, " +
+        "reactedAt = CASE WHEN reaction = 'LIKED' THEN 0 ELSE reactedAt END, " +
+        "personalRating = NULL, ratedAt = 0, isFavorite = 0, favoritedAt = 0, favoriteOrder = 0"
+
 @Dao
 interface MovieDao {
 
@@ -34,8 +46,14 @@ interface MovieDao {
     @Query("UPDATE movies SET reaction = :reaction, reactedAt = :at WHERE id = :id")
     suspend fun setReaction(id: Int, reaction: Reaction, at: Long)
 
-    /** Puts the movie on the watchlist. A movie is on the watchlist OR watched, so this also clears "watched". */
-    @Query("UPDATE movies SET inWatchlist = 1, watchlistAddedAt = :at, isWatched = 0, watchedAt = 0 WHERE id = :id")
+    /**
+     * Puts the movie on the watchlist. A movie is on the watchlist OR watched, so this also clears "watched", and
+     * with it the like, the rating and the favorite (THE WATCH RULE).
+     */
+    @Query(
+        "UPDATE movies SET inWatchlist = 1, watchlistAddedAt = :at, isWatched = 0, watchedAt = 0, " +
+            CLEAR_WATCH_DEPENDENTS + " WHERE id = :id"
+    )
     suspend fun addToWatchlist(id: Int, at: Long)
 
     @Query("UPDATE movies SET inWatchlist = 0, watchlistAddedAt = 0 WHERE id = :id")
@@ -45,13 +63,19 @@ interface MovieDao {
     @Query("UPDATE movies SET isWatched = 1, watchedAt = :at, inWatchlist = 0, watchlistAddedAt = 0 WHERE id = :id")
     suspend fun markWatched(id: Int, at: Long)
 
-    @Query("UPDATE movies SET isWatched = 0, watchedAt = 0 WHERE id = :id")
+    /** Takes "watched" away, and with it the like, the rating and the favorite (THE WATCH RULE). */
+    @Query("UPDATE movies SET isWatched = 0, watchedAt = 0, " + CLEAR_WATCH_DEPENDENTS + " WHERE id = :id")
     suspend fun unmarkWatched(id: Int)
 
-    /** Puts all six state columns back to the given values. This is what every "Undo" uses. */
+    /**
+     * Puts every state column back to the given values (the six of the lists, and the rating and the favorite that
+     * un-watching clears). This is what every "Undo" uses.
+     */
     @Query(
         "UPDATE movies SET reaction = :reaction, reactedAt = :reactedAt, inWatchlist = :inWatchlist, " +
-            "watchlistAddedAt = :watchlistAddedAt, isWatched = :isWatched, watchedAt = :watchedAt WHERE id = :id"
+            "watchlistAddedAt = :watchlistAddedAt, isWatched = :isWatched, watchedAt = :watchedAt, " +
+            "personalRating = :userRating, ratedAt = :ratedAt, isFavorite = :isFavorite, favoritedAt = :favoritedAt, " +
+            "favoriteOrder = :favoriteOrder WHERE id = :id"
     )
     suspend fun restoreState(
         id: Int,
@@ -60,7 +84,12 @@ interface MovieDao {
         inWatchlist: Boolean,
         watchlistAddedAt: Long,
         isWatched: Boolean,
-        watchedAt: Long
+        watchedAt: Long,
+        userRating: Float?,
+        ratedAt: Long,
+        isFavorite: Boolean,
+        favoritedAt: Long,
+        favoriteOrder: Int
     )
 
     /**
@@ -98,22 +127,45 @@ interface MovieDao {
     @Query("SELECT * FROM movies WHERE isWatched = 1 ORDER BY watchedAt DESC, id DESC")
     fun observeWatched(): Flow<List<Movie>>
 
+    // ---------- The popcorn rating ----------
+
+    /** The column is still called personalRating (see Movie.userRating). The repository only calls this on a watched movie. */
     @Query("UPDATE movies SET personalRating = :rating, ratedAt = :at WHERE id = :id")
-    suspend fun setPersonalRating(id: Int, rating: Float?, at: Long)
+    suspend fun setUserRating(id: Int, rating: Float?, at: Long)
 
     @Query("UPDATE movies SET personalRating = NULL, ratedAt = 0 WHERE id = :id")
-    suspend fun clearPersonalRating(id: Int)
+    suspend fun clearUserRating(id: Int)
 
-    @Query("UPDATE movies SET isFavorite = :isFavorite, favoritedAt = :at WHERE id = :id")
-    suspend fun setFavorite(id: Int, isFavorite: Boolean, at: Long)
+    // ---------- The favorites (at most 4, in the order the user dragged them to) ----------
+
+    /** Makes the movie the LAST favorite. The repository only calls this on a watched movie, and when there is room. */
+    @Query(
+        "UPDATE movies SET isFavorite = 1, favoritedAt = :at, " +
+            "favoriteOrder = COALESCE((SELECT MAX(favoriteOrder) FROM movies WHERE isFavorite = 1), -1) + 1 WHERE id = :id"
+    )
+    suspend fun addFavorite(id: Int, at: Long)
+
+    @Query("UPDATE movies SET isFavorite = 0, favoritedAt = 0, favoriteOrder = 0 WHERE id = :id")
+    suspend fun removeFavorite(id: Int)
+
+    /**
+     * Saves the order of the favorites in ONE statement (so a list that is watching the table never sees a half-moved
+     * order): the favorite with id [first] gets place 0, [second] place 1, and so on. Pass -1 for a place nobody has.
+     * (Four, because the Profile holds at most four favorites: MAX_FAVORITES.)
+     */
+    @Query(
+        "UPDATE movies SET favoriteOrder = CASE id WHEN :first THEN 0 WHEN :second THEN 1 WHEN :third THEN 2 " +
+            "WHEN :fourth THEN 3 ELSE favoriteOrder END WHERE isFavorite = 1"
+    )
+    suspend fun setFavoriteOrder(first: Int, second: Int, third: Int, fourth: Int)
 
     @Query("SELECT COUNT(*) FROM movies WHERE isFavorite = 1")
     suspend fun countFavorites(): Int
 
-    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoritedAt DESC, id DESC LIMIT 4")
+    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoriteOrder ASC, favoritedAt ASC, id ASC LIMIT 4")
     fun observeFavorites(): Flow<List<Movie>>
 
-    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoritedAt DESC, id DESC LIMIT 4")
+    @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY favoriteOrder ASC, favoritedAt ASC, id ASC LIMIT 4")
     suspend fun getFavorites(): List<Movie>
 
     @Query("SELECT * FROM movies WHERE personalRating IS NOT NULL ORDER BY ratedAt DESC, id DESC")

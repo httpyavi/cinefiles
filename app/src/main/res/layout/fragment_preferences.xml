@@ -77,7 +77,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:letterSpacing="0.08"
-                    android:text="STEP 2 OF 3"
+                    android:text="@string/pref_step_label"
                     android:textAppearance="@style/TextAppearance.CineFiles.Eyebrow"
                     android:textColor="@color/accent_soft" />
 
@@ -151,13 +151,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_12"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/periodAny"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_period_any_era" />
@@ -166,7 +167,7 @@
                             android:id="@+id/periodBefore2000"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_period_classic" />
@@ -176,13 +177,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_8"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/period2000To2014"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_period_modern" />
@@ -191,7 +193,7 @@
                             android:id="@+id/periodFrom2015"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_period_recent" />
@@ -243,13 +245,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_12"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/ratingAny"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_any" />
@@ -258,30 +261,30 @@
                             android:id="@+id/rating6"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
-                            android:text="★ 6+" />
+                            android:text="@string/pref_rating_6_star" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/rating7"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
-                            android:text="★ 7+" />
+                            android:text="@string/pref_rating_7_star" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/rating8"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_weight="1"
-                            android:text="★ 8+" />
+                            android:text="@string/pref_rating_8_star" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -330,13 +333,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_12"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/lengthAny"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_length_any" />
@@ -345,7 +349,7 @@
                             android:id="@+id/lengthUnder90"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_length_quick" />
@@ -355,13 +359,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_8"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/lengthUnder2h"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginEnd="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_length_standard" />
@@ -370,7 +375,7 @@
                             android:id="@+id/lengthOver2h"
                             style="@style/Widget.CineFiles.Button.PreferenceCard"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="@dimen/space_4"
                             android:layout_weight="1"
                             android:text="@string/pref_length_epic" />
@@ -417,64 +422,56 @@
                         android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                         android:textColor="@color/text_secondary" />
 
-                    <!-- Balanced 1 + 2 + 2 layout -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/languageAny"
-                        style="@style/Widget.CineFiles.Button.PreferenceCard"
+                    <!-- A search field with live suggestions: any language, not just four (ui/mood/LanguageAdapter, logic/Languages.kt).
+                         Empty = any language. Picking a suggestion selects it; the x clears it. -->
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_12"
-                        android:text="@string/pref_language_any" />
+                        android:layout_marginTop="@dimen/space_12">
 
-                    <LinearLayout
+                        <AutoCompleteTextView
+                            android:id="@+id/languageInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_input_field"
+                            android:completionThreshold="1"
+                            android:drawableStart="@drawable/ic_search"
+                            android:drawablePadding="@dimen/space_12"
+                            android:drawableTint="@color/text_secondary"
+                            android:dropDownVerticalOffset="@dimen/space_4"
+                            android:ellipsize="end"
+                            android:hint="@string/pref_language_hint"
+                            android:imeOptions="actionDone"
+                            android:inputType="textCapWords|textNoSuggestions"
+                            android:maxLines="1"
+                            android:minHeight="@dimen/touch_target"
+                            android:paddingStart="@dimen/space_16"
+                            android:paddingEnd="@dimen/touch_target"
+                            android:popupBackground="@drawable/bg_dropdown"
+                            android:textAppearance="@style/TextAppearance.CineFiles.Body"
+                            android:textColorHint="@color/text_secondary" />
+
+                        <ImageButton
+                            android:id="@+id/languageClear"
+                            android:layout_width="@dimen/touch_target"
+                            android:layout_height="@dimen/touch_target"
+                            android:layout_gravity="end|center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/pref_language_clear"
+                            android:padding="@dimen/space_12"
+                            android:src="@drawable/ic_close"
+                            android:visibility="gone"
+                            app:tint="@color/text_secondary" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/languageStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_4"
                         android:layout_marginTop="@dimen/space_8"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/languageEnglish"
-                            style="@style/Widget.CineFiles.Button.PreferenceCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/space_4"
-                            android:layout_weight="1"
-                            android:text="@string/pref_language_english" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/languageFilipino"
-                            style="@style/Widget.CineFiles.Button.PreferenceCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_4"
-                            android:layout_weight="1"
-                            android:text="@string/pref_language_filipino" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_8"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/languageKorean"
-                            style="@style/Widget.CineFiles.Button.PreferenceCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/space_4"
-                            android:layout_weight="1"
-                            android:text="@string/pref_language_korean" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/languageJapanese"
-                            style="@style/Widget.CineFiles.Button.PreferenceCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_4"
-                            android:layout_weight="1"
-                            android:text="@string/pref_language_japanese" />
-                    </LinearLayout>
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                        tools:text="Any language" />
                 </LinearLayout>
 
             </LinearLayout>

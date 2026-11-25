@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The headline of a diary page, the first thing on the page like the title of an article: the movie, and under it the date and the rating the page
+     was written with. A thin line in the page's accent color closes it. Not editable. The page's font and colors are set from code. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_8"
+    android:paddingBottom="@dimen/space_8">
+
+    <TextView
+        android:id="@+id/headerTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+        tools:targetApi="28"
+        tools:text="Interstellar" />
+
+    <TextView
+        android:id="@+id/headerMeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+        tools:text="Nov 25, 2026 · Rated 4.5" />
+
+    <View
+        android:id="@+id/headerRule"
+        android:layout_width="@dimen/diary_rule_width"
+        android:layout_height="@dimen/diary_rule_height"
+        android:layout_marginTop="@dimen/space_16"
+        android:layout_marginBottom="@dimen/space_8"
+        android:importantForAccessibility="no" />
+</LinearLayout>

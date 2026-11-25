@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One choice in the style sheet: a small card with "Aa" written in the font (or the theme's colors) and its name under it.
+     The selected one has a red edge. DiaryStyleSheet makes one of these for every font and every theme. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/optionCard"
+    style="@style/Widget.CineFiles.Card"
+    android:layout_width="@dimen/diary_option_width"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_8"
+    android:clickable="true"
+    android:focusable="true"
+    app:strokeColor="@color/glass_stroke"
+    app:strokeWidth="@dimen/glass_stroke_width">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/space_8"
+        android:paddingTop="@dimen/space_12"
+        android:paddingEnd="@dimen/space_8"
+        android:paddingBottom="@dimen/space_12">
+
+        <TextView
+            android:id="@+id/optionSample"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:importantForAccessibility="no"
+            android:text="@string/diary_font_sample"
+            android:textAppearance="@style/TextAppearance.CineFiles.Title" />
+
+        <TextView
+            android:id="@+id/optionLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:gravity="center"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+            tools:text="Midnight Obsidian" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

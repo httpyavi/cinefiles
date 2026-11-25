@@ -31,14 +31,34 @@
             android:paddingEnd="@dimen/screen_margin"
             android:paddingBottom="@dimen/space_8">
 
-            <TextView
-                android:id="@+id/collectionTitle"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:accessibilityHeading="true"
-                android:text="@string/collection_title"
-                android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
-                tools:targetApi="28" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/collectionTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:accessibilityHeading="true"
+                    android:text="@string/collection_title"
+                    android:textAppearance="@style/TextAppearance.CineFiles.LargeTitle"
+                    tools:targetApi="28" />
+
+                <!-- Sort: opens the shared Sort sheet (ui/components/SortSheet). Red when the list is not in its usual order. -->
+                <ImageButton
+                    android:id="@+id/collectionSort"
+                    android:layout_width="@dimen/round_button_small_size"
+                    android:layout_height="@dimen/round_button_small_size"
+                    android:layout_marginStart="@dimen/space_12"
+                    android:background="@drawable/bg_glass_circle"
+                    android:contentDescription="@string/sort_button_description"
+                    android:padding="@dimen/space_12"
+                    android:src="@drawable/ic_filter"
+                    app:tint="@color/text_primary" />
+            </LinearLayout>
 
             <!-- saveEnabled="false": the selected tab is kept by CollectionViewModel, not by these buttons. If they saved
                  their own selection, Android would put it back after the screen is rebuilt and overrule Home's tiles. -->

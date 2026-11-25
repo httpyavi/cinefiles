@@ -20,11 +20,9 @@ import com.example.cinefiles.databinding.FragmentDiscoverBinding
 import com.example.cinefiles.logic.BrowseCategory
 import com.example.cinefiles.logic.DiscoverFilters
 import com.example.cinefiles.logic.Genres
-import com.example.cinefiles.logic.Moods
 import com.example.cinefiles.ui.components.PosterAdapter
 import com.example.cinefiles.ui.components.PosterStyle
 import com.example.cinefiles.ui.components.ShimmerDrawable
-import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.EmptyAction
 import com.example.cinefiles.util.PaginationScrollListener
 import com.example.cinefiles.util.addChoiceChip
@@ -44,7 +42,6 @@ class DiscoverFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: DiscoverViewModel by activityViewModels()
-    private val watchFlow: WatchFlowViewModel by activityViewModels()
 
     // Single 3-column grid adapter for all Discover results
     private lateinit var discoverAdapter: PosterAdapter
@@ -78,19 +75,8 @@ class DiscoverFragment : Fragment() {
         setUpStateButtons()
         setUpLoadingSkeletons()
 
-        syncPreferences()
         viewModel.start()
         observeViewModel()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        syncPreferences()
-    }
-
-    private fun syncPreferences() {
-        val moodGenreIds = Moods.genreIdsFor(watchFlow.selection.value?.ids.orEmpty())
-        viewModel.setPreferences(watchFlow.preferences, moodGenreIds)
     }
 
     override fun onDestroyView() {

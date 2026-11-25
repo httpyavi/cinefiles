@@ -10,7 +10,6 @@ import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.friendlyError
-import com.example.cinefiles.logic.Language
 import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Mood
@@ -90,8 +89,9 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
         preferences = preferences.copy(length = value)
     }
 
-    fun setLanguage(value: Language) {
-        preferences = preferences.copy(language = value)
+    /** The language to ask for as a TMDB code ("ko"), or null for any language. */
+    fun setLanguage(code: String?) {
+        preferences = preferences.copy(language = code)
     }
 
     /** Back to "Any" everywhere. Used by Skip. */
@@ -183,16 +183,11 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
         val picks = engine.recommend(pool.movies, moods, picksLiked, picksPassed, similarTo = pool.similarTo)
         if (picks.isEmpty()) return PicksState.Empty
         return PicksState.Ready(
-            summary = summaryLine(moods, picks.size),
+            summary = getApplication<Application>().getString(R.string.picks_subtitle),
             top = picks.first(),
             more = picks.drop(1),
             liked = picksLiked
         )
-    }
-
-    /** "Happy · Romantic · 7 liked · 12 passed · 10 new picks" */
-    private fun summaryLine(moods: List<Mood>, pickCount: Int): String {
-        return getApplication<Application>().getString(R.string.picks_subtitle)
     }
 
     private fun chosenMoods(): List<Mood> = Moods.all.filter { it.id in currentSelection.ids }

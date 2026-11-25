@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE DIARY EDITOR (DiaryEditorFragment): one continuous page, like an article on Substack. No boxes: the movie's name is the headline, then
+     paragraphs and pictures flow down the page (a RecyclerView: DiaryHeaderAdapter + DiaryBlockAdapter). A top bar (back, Style, Save), a
+     formatting strip that appears while a paragraph is being edited (bold, italic, left / center / right) and a bottom bar that adds a paragraph or
+     a picture. The page's background, text colors and font come from its theme and font (set from code).
+     There is no tab bar on this screen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/editorRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <!-- ===== Top bar ===== -->
+    <LinearLayout
+        android:id="@+id/editorTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_12"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/space_12"
+        android:paddingBottom="@dimen/space_8">
+
+        <ImageButton
+            android:id="@+id/editorBack"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/action_back"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text_primary" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/editorStyle"
+            android:layout_width="@dimen/round_button_small_size"
+            android:layout_height="@dimen/round_button_small_size"
+            android:background="@drawable/bg_glass_circle"
+            android:contentDescription="@string/diary_style"
+            android:padding="@dimen/space_12"
+            android:src="@drawable/ic_palette"
+            app:tint="@color/text_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/editorSave"
+            style="@style/Widget.CineFiles.Button.Primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_8"
+            android:text="@string/diary_save" />
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/editorImporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indicatorColor="@color/accent"
+        app:trackColor="@color/glass_fill" />
+
+    <!-- ===== The page ===== -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/blockList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/space_24"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/space_24"
+            android:paddingBottom="@dimen/space_24"
+            android:scrollbars="none"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/item_diary_block_text" />
+
+        <FrameLayout
+            android:id="@+id/editorStates"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <include
+                android:id="@+id/stateLoading"
+                layout="@layout/view_state_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateMissing"
+                layout="@layout/view_state_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- ===== Formatting strip: only while a paragraph is being edited ===== -->
+    <LinearLayout
+        android:id="@+id/formatBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/glass_dark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/screen_margin"
+        android:paddingBottom="@dimen/space_4"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/formatBold"
+            style="@style/Widget.CineFiles.FormatButton"
+            android:contentDescription="@string/diary_format_bold"
+            android:text="@string/diary_format_bold_letter"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/formatItalic"
+            style="@style/Widget.CineFiles.FormatButton"
+            android:contentDescription="@string/diary_format_italic"
+            android:text="@string/diary_format_italic_letter"
+            android:textStyle="italic" />
+
+        <View
+            android:layout_width="@dimen/glass_stroke_width"
+            android:layout_height="@dimen/icon_size"
+            android:layout_marginStart="@dimen/space_8"
+            android:layout_marginEnd="@dimen/space_8"
+            android:background="@color/glass_stroke"
+            android:importantForAccessibility="no" />
+
+        <ImageButton
+            android:id="@+id/alignLeft"
+            style="@style/Widget.CineFiles.FormatButton"
+            android:contentDescription="@string/diary_align_left"
+            android:src="@drawable/ic_align_left" />
+
+        <ImageButton
+            android:id="@+id/alignCenter"
+            style="@style/Widget.CineFiles.FormatButton"
+            android:contentDescription="@string/diary_align_center"
+            android:src="@drawable/ic_align_center" />
+
+        <ImageButton
+            android:id="@+id/alignRight"
+            style="@style/Widget.CineFiles.FormatButton"
+            android:contentDescription="@string/diary_align_right"
+            android:src="@drawable/ic_align_right" />
+    </LinearLayout>
+
+    <!-- ===== Add a paragraph or a picture ===== -->
+    <LinearLayout
+        android:id="@+id/editorAddBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/glass_dark"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/screen_margin"
+        android:paddingBottom="@dimen/space_12">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addText"
+            style="@style/Widget.CineFiles.Button.Tonal.Fit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_4"
+            android:layout_weight="1"
+            android:contentDescription="@string/diary_add_text_description"
+            android:text="@string/diary_add_text"
+            app:icon="@drawable/ic_text_lines"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addImage"
+            style="@style/Widget.CineFiles.Button.Tonal.Fit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_4"
+            android:layout_weight="1"
+            android:contentDescription="@string/diary_add_image_description"
+            android:text="@string/diary_add_image"
+            app:icon="@drawable/ic_image"
+            app:iconGravity="textStart" />
+    </LinearLayout>
+</LinearLayout>

@@ -15,6 +15,7 @@ object ImageUrls {
     private const val BACKDROP_SIZE = "w780"     // the Home hero and the Details backdrop
     private const val HD_POSTER_SIZE = "w780"    // the full-screen poster: the biggest size that is still light to load
     private const val PROFILE_SIZE = "w185"      // the photo of an actor, director or crew member
+    private const val STILL_THUMB_SIZE = "w300"  // the small pictures in the Diary's "movie stills" picker
 
     fun poster(path: String?): String? = path?.let { BASE + POSTER_SIZE + it }
 
@@ -25,4 +26,6 @@ object ImageUrls {
     fun profile(path: String?): String? = path?.let { BASE + PROFILE_SIZE + it }
 
     fun backdrop(path: String?): String? = path?.let { BASE + BACKDROP_SIZE + it }
+
+    fun stillThumbnail(path: String?): String? = path?.let { BASE + STILL_THUMB_SIZE + it }
 }

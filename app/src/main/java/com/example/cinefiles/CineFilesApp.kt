@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.StrictMode
 import android.util.Log
 import com.example.cinefiles.data.AppDatabase
+import com.example.cinefiles.data.DiaryImageStore
 import com.example.cinefiles.data.MovieRepository
 import com.example.cinefiles.data.TmdbApi
 import com.example.cinefiles.data.UserSettings
@@ -22,6 +23,9 @@ class CineFilesApp : Application() {
 
     /** The phone's own storage for the user's movies (Room). It is only opened when something first asks it a question. */
     val database: AppDatabase by lazy { AppDatabase.create(this) }
+
+    /** The private folder with the copies of the gallery pictures that diary pages use (see data/DiaryImageStore.kt). */
+    val diaryImages: DiaryImageStore by lazy { DiaryImageStore(this) }
 
     /**
      * The only way to get movies: from TMDB and from the database. It makes the TMDB API (one network client for
@@ -60,6 +64,7 @@ class CineFilesApp : Application() {
         thread(name = "cinefiles-warm-up") {
             userSettings
             movieRepository
+            diaryImages.prepare()
         }
     }
 

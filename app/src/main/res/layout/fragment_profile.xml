@@ -158,32 +158,21 @@
                 android:textAppearance="@style/TextAppearance.CineFiles.Caption"
                 android:textColor="@color/text_secondary" />
 
-            <!-- The 4 Favorite Movie Slots -->
-            <LinearLayout
-                android:id="@+id/favoritesRow"
+            <!-- The 4 favorite places: a RecyclerView of four slots (FavoritesAdapter). Press and hold a poster, then
+                 drag it to another place: the new order is saved when it is dropped. -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/favoritesList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="-4dp"
                 android:layout_marginTop="@dimen/space_12"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
-
-                <include
-                    android:id="@+id/slot1"
-                    layout="@layout/view_favorite_slot" />
-
-                <include
-                    android:id="@+id/slot2"
-                    layout="@layout/view_favorite_slot" />
-
-                <include
-                    android:id="@+id/slot3"
-                    layout="@layout/view_favorite_slot" />
-
-                <include
-                    android:id="@+id/slot4"
-                    layout="@layout/view_favorite_slot" />
-
-            </LinearLayout>
+                android:layout_marginEnd="-4dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                tools:itemCount="4"
+                tools:listitem="@layout/view_favorite_slot" />
 
             <!-- ===== Personal Movie Statistics ===== -->
             <TextView
@@ -521,6 +510,54 @@
                         android:textAppearance="@style/TextAppearance.CineFiles.Callout"
                         android:textColor="@color/text_secondary"
                         tools:text="14" />
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
+
+                <!-- Row 4: Movie Diary (the pages you wrote) -->
+                <LinearLayout
+                    android:id="@+id/navDiaryRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_16">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_book"
+                        app:tint="@color/star" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_16"
+                        android:layout_weight="1"
+                        android:text="@string/profile_nav_diary"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Headline" />
+
+                    <TextView
+                        android:id="@+id/navDiaryCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Callout"
+                        android:textColor="@color/text_secondary"
+                        tools:text="3" />
 
                     <ImageView
                         android:layout_width="@dimen/icon_size"

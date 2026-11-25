@@ -1,5 +1,6 @@
 package com.example.cinefiles.logic
 
+import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.Reaction
 import org.junit.Assert.assertEquals
@@ -106,34 +107,31 @@ class CollectionRulesTest {
         }
     }
 
-    // ---------- the like rule ----------
+    // ---------- the watch rule in the menus (the rule itself is in WatchRulesTest) ----------
 
     @Test
-    fun aMovieOnTheWatchlistCannotBeLiked() {
-        assertFalse(canLike(movie(watchlist = true)))
+    fun likeIsOnlyOfferedOnAWatchedMovie() {
+        // Watchlist tab: never watched, so no "Like"
+        assertFalse(CollectionAction.LIKE in actionsFor(CollectionTab.WATCHLIST, movie(watchlist = true)))
+        // Watched tab: watched, so "Like" is there
+        assertTrue(CollectionAction.LIKE in actionsFor(CollectionTab.WATCHED, movie(watched = true)))
     }
 
     @Test
-    fun otherMoviesCanBeLiked() {
-        assertTrue(canLike(null))                  // not saved yet
-        assertTrue(canLike(movie()))               // saved, nothing else
-        assertTrue(canLike(movie(watched = true))) // watched
-        assertTrue(canLike(movie(passed = true)))  // passed: a changed mind is fine
-        assertTrue(canLike(movie(liked = true)))   // already liked
-    }
+    fun theSnackbarSaysWhenUnwatchingAlsoClearedTheLikeTheRatingOrTheFavorite() {
+        val plain = movie(watched = true)
+        val loved = movie(watched = true, liked = true)
+        val rated = movie(watched = true).copy(userRating = 4.0f)
+        val favorite = movie(watched = true).copy(isFavorite = true)
 
-    @Test
-    fun aWatchedMovieIsNotOnTheWatchlistSoItCanBeLiked() {
-        // Marking watched takes a movie off the watchlist; a stale flag must not block the like
-        assertTrue(canLike(movie(watchlist = true, watched = true)))
-    }
-
-    @Test
-    fun likingIsPossibleAgainAfterLeavingTheWatchlist() {
-        val onList = movie(watchlist = true)
-        assertFalse(canLike(onList))
-        assertTrue(canLike(onList.copy(inWatchlist = false))) // removed from the watchlist
-        assertTrue(canLike(onList.copy(inWatchlist = false, isWatched = true))) // marked watched
+        assertEquals(R.string.msg_unmarked_watched, CollectionAction.MARK_UNWATCHED.messageFor(plain))
+        for (movie in listOf(loved, rated, favorite)) {
+            assertEquals(R.string.msg_unmarked_watched_cleared, CollectionAction.MARK_UNWATCHED.messageFor(movie))
+            assertEquals(R.string.msg_moved_back_watchlist_cleared, CollectionAction.MOVE_BACK_TO_WATCHLIST.messageFor(movie))
+        }
+        assertEquals(R.string.msg_moved_back_watchlist, CollectionAction.MOVE_BACK_TO_WATCHLIST.messageFor(plain))
+        // Other actions keep their own line
+        assertEquals(R.string.msg_marked_watched, CollectionAction.MARK_WATCHED.messageFor(loved))
     }
 
     // ---------- the user's state on a movie that came from TMDB ----------

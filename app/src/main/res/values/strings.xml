@@ -135,15 +135,19 @@
     <string name="pref_section_length_sub">How much time do you have tonight?</string>
     <string name="pref_section_language">Language</string>
     <string name="pref_section_language_sub">Original audio language</string>
-    <string name="pref_period_any_era">Any Era</string>
-    <string name="pref_period_classic">Before 2000 · Classic</string>
-    <string name="pref_period_modern">2000–2014 · Modern</string>
-    <string name="pref_period_recent">2015+ · Contemporary</string>
-    <string name="pref_length_any">Any Length</string>
-    <string name="pref_length_quick">&lt; 90 min · Quick Watch</string>
-    <string name="pref_length_standard">&lt; 2 hrs · Standard</string>
-    <string name="pref_length_epic">2 hrs+ · Epic</string>
-    <string name="pref_language_any">Any Language</string>
+    <string name="pref_step_label">STEP 2 OF 3</string>
+    <string name="pref_period_any_era">Any era\nAll years</string>
+    <string name="pref_period_classic">Classic\nBefore 2000</string>
+    <string name="pref_period_modern">Modern\n2000–2014</string>
+    <string name="pref_period_recent">Contemporary\n2015 and newer</string>
+    <string name="pref_length_any">Any length\nNo limit</string>
+    <string name="pref_length_quick">Quick watch\nUnder 90 min</string>
+    <string name="pref_length_standard">Standard\nUnder 2 hrs</string>
+    <string name="pref_length_epic">Epic\n2 hrs and more</string>
+    <string name="pref_language_hint">Any language · type to search</string>
+    <string name="pref_language_clear">Clear the language (any language)</string>
+    <string name="pref_language_status_any">Any language</string>
+    <string name="pref_language_status_picked">Only movies originally made in %1$s</string>
 
     <string name="pref_any">Any</string>
     <string name="pref_period_before_2000">Before 2000</string>
@@ -152,13 +156,12 @@
     <string name="pref_rating_6">6+</string>
     <string name="pref_rating_7">7+</string>
     <string name="pref_rating_8">8+</string>
+    <string name="pref_rating_6_star">★ 6+</string>
+    <string name="pref_rating_7_star">★ 7+</string>
+    <string name="pref_rating_8_star">★ 8+</string>
     <string name="pref_length_under_90">Under 90 min</string>
     <string name="pref_length_under_2h">Under 2 hrs</string>
     <string name="pref_length_over_2h">2 hrs+</string>
-    <string name="pref_language_english">English</string>
-    <string name="pref_language_filipino">Filipino</string>
-    <string name="pref_language_korean">Korean</string>
-    <string name="pref_language_japanese">Japanese</string>
 
     <!-- One-word mood names, for small places like the caption on the swipe screen -->
     <string name="mood_happy_short">Happy</string>
@@ -307,7 +310,7 @@
     <string name="collection_tab_watchlist">Watchlist %1$d</string>
     <string name="collection_tab_watched">Watched %1$d</string>
     <string name="collection_empty_liked_title">No liked movies yet</string>
-    <string name="collection_empty_liked_message">Swipe right on a movie you like, or tap Like on its page, and it will wait for you here.</string>
+    <string name="collection_empty_liked_message">Watch a movie, mark it as watched and tap Like on its page. It will wait for you here.</string>
     <string name="collection_empty_watchlist_title">Your watchlist is empty</string>
     <string name="collection_empty_watchlist_message">Save the movies you want to watch later and they will show up here.</string>
     <string name="collection_empty_watchlist_action">Browse movies</string>
@@ -328,6 +331,9 @@
     <string name="msg_marked_watched">Marked as watched</string>
     <string name="msg_unmarked_watched">Removed from Watched</string>
     <string name="msg_moved_back_watchlist">Moved back to your watchlist</string>
+    <!-- THE WATCH RULE: taking "watched" away also clears the like, the rating and the favorite -->
+    <string name="msg_unmarked_watched_cleared">Removed from Watched. Its like, rating and favorite were cleared too.</string>
+    <string name="msg_moved_back_watchlist_cleared">Moved back to your watchlist. Its like, rating and favorite were cleared too.</string>
     <string name="msg_liked">Added to Liked</string>
     <string name="msg_unliked">Removed from Liked</string>
 
@@ -344,9 +350,10 @@
     <string name="detail_runtime_minutes">%1$dm</string>
     <string name="detail_trailer_error">No app on this phone can open the trailer.</string>
 
-    <!-- THE LIKE RULE: a movie on the watchlist cannot be liked -->
-    <string name="like_blocked_message">Remove from watchlist or mark as watched before liking</string>
-    <string name="swipe_like_blocked">%1$s is on your watchlist, so it was not liked.</string>
+    <!-- THE WATCH RULE: a movie that is not watched cannot be liked, favorited or rated -->
+    <string name="like_blocked_message">Mark as watched first before liking</string>
+    <string name="favorite_blocked_message">Watch this movie before adding it to Favorites</string>
+    <string name="rate_blocked_message">Mark as watched first before rating</string>
     <string name="swipe_end_show_picks_anyway">Show picks anyway</string>
 
     <!-- Your Picks -->
@@ -399,36 +406,119 @@
     <string name="discover_empty_message">Try different words, or fewer filters.</string>
     <string name="discover_clear_filters">Clear filters</string>
     <string name="discover_load_more_failed">Could not load more movies.</string>
-    <!-- Personal Movie Ratings & Diary & Favorites -->
-    <string name="detail_personal_rating">Your Rating</string>
-    <string name="detail_rate_movie">Rate movie</string>
-    <string name="detail_rating_format">%1$.1f / 5.0</string>
-    <string name="detail_remove_rating">Remove rating</string>
+    <!-- The popcorn rating, the favorites and the diary on Movie Details -->
+    <string name="rating_title">Your rating</string>
+    <string name="rating_value">%1$s / 5</string>
+    <string name="rating_hint_locked">Mark this movie as watched to rate it.</string>
+    <string name="rating_hint_unrated">Tap or drag across the popcorn. Tap the same rating again to clear it.</string>
+    <string name="rating_hint_rated">Tap the same rating again to clear it.</string>
+    <string name="rating_description">Your rating: %1$s out of 5</string>
+    <string name="rating_none_description">Not rated yet</string>
+    <string name="rating_locked_description">Rating unavailable until the movie is marked as watched</string>
+    <string name="poster_rating_description">Your rating: %1$s out of 5</string>
     <string name="detail_favorite">Favorite</string>
     <string name="detail_favorited">Favorite</string>
     <string name="favorite_limit_reached">You can only have up to 4 favorites. Remove an existing favorite first.</string>
-    <string name="detail_personal_diary">Movie Diary</string>
-    <string name="detail_log_in_diary">Log in Diary</string>
-    <string name="diary_title">Movie Diary</string>
-    <string name="diary_thoughts_hint">Write your personal thoughts, notes or experience…</string>
-    <string name="diary_date_watched">Date Watched</string>
-    <string name="diary_rewatch">Rewatch</string>
-    <string name="diary_save">Save Entry</string>
-    <string name="diary_empty">No diary entries yet. Start logging movies you\'ve watched!</string>
+    <string name="diary_panel_title">Movie Diary</string>
+    <string name="diary_panel_subtitle_none">Keep what you felt about this movie, in words and pictures.</string>
+    <plurals name="diary_pages_count">
+        <item quantity="one">%1$d page in your diary</item>
+        <item quantity="other">%1$d pages in your diary</item>
+    </plurals>
+    <string name="diary_panel_subtitle_locked">Mark this movie as watched to write about it.</string>
+    <string name="diary_blocked_message">Mark this movie as watched first</string>
+    <string name="diary_blocked_title">Not watched yet</string>
+    <string name="diary_write">Write in Diary</string>
+    <string name="diary_open">Open Diary</string>
+
+    <!-- The Crew section of Movie Details and its "See all" sheet -->
+    <string name="detail_crew_see_all">See all</string>
+    <string name="crew_sheet_title">Full crew</string>
+    <string name="crew_more">+%1$d more</string>
+
+    <!-- The Movie Diary: the list of pages -->
+    <string name="diary_list_title">My Diary</string>
+    <string name="diary_list_movie_title">Diary: %1$s</string>
+    <string name="diary_new_page">New page</string>
+    <string name="diary_empty_title">Your diary is empty</string>
+    <string name="diary_empty_message">Open a movie you have watched and tap Write in Diary. Your pages stay private on this phone.</string>
+    <string name="diary_empty_movie_message">Nothing written about this movie yet. Start a page.</string>
+    <string name="diary_empty_action">Browse movies</string>
+    <string name="diary_no_words">No words yet</string>
+    <string name="diary_page_description">%1$s. Diary page. Opens it.</string>
+    <string name="diary_delete_title">Delete this page?</string>
+    <string name="diary_delete_message">The page and the pictures you added to it are deleted. This cannot be undone.</string>
     <string name="diary_delete">Delete</string>
-    <string name="diary_entry_saved">Saved to diary</string>
+    <string name="diary_deleted">Diary page deleted</string>
+
+    <!-- The Movie Diary: the editor (blocks) -->
+    <string name="diary_editor_title">Diary page</string>
+    <string name="diary_save">Save</string>
+    <string name="diary_saved">Diary page saved</string>
+    <string name="diary_style">Style</string>
+    <string name="diary_add_text">Paragraph</string>
+    <string name="diary_add_image">Picture</string>
+    <string name="diary_add_text_description">Add a paragraph</string>
+    <string name="diary_add_image_description">Add a picture</string>
+    <string name="diary_block_deleted">Picture deleted</string>
+    <string name="diary_missing_title">Page not found</string>
+    <string name="diary_meta_rated">%1$s · Rated %2$s</string>
+    <string name="diary_text_hint">Tell your story… a thought, a quote, a memory.</string>
+    <string name="diary_move_up">Move picture up</string>
+    <string name="diary_move_down">Move picture down</string>
+    <string name="diary_drag_block">Drag to move this picture</string>
+    <string name="diary_delete_picture">Delete this picture</string>
+    <string name="diary_format_bold">Bold</string>
+    <string name="diary_format_bold_letter">B</string>
+    <string name="diary_format_italic">Italic</string>
+    <string name="diary_format_italic_letter">I</string>
+    <string name="diary_align_left">Align left</string>
+    <string name="diary_align_center">Align center</string>
+    <string name="diary_align_right">Align right</string>
+    <string name="diary_image_description">A picture on your diary page</string>
+    <string name="diary_image_failed">Could not add that picture.</string>
+    <string name="diary_image_source_title">Add a picture</string>
+    <string name="diary_image_from_phone">From my photos</string>
+    <string name="diary_image_from_movie">A still from the movie</string>
+    <string name="diary_stills_title">Movie stills</string>
+    <string name="diary_stills_empty">TMDB has no stills for this movie.</string>
+    <string name="diary_still_description">A still from the movie</string>
+    <string name="diary_movie_missing">This movie could not be opened. Open it again from its page.</string>
+
+    <!-- The Movie Diary: the look of a page -->
+    <string name="diary_style_title">Style of this page</string>
+    <string name="diary_style_font">Font</string>
+    <string name="diary_style_theme">Background</string>
+    <string name="diary_font_sans">Sans · Modern</string>
+    <string name="diary_font_serif">Serif · Editorial</string>
+    <string name="diary_font_mono">Typewriter</string>
+    <string name="diary_font_display">Bold Display</string>
+    <string name="diary_font_sample">Aa</string>
+    <string name="diary_theme_midnight">Midnight Obsidian</string>
+    <string name="diary_theme_crimson">Cinema Crimson</string>
+    <string name="diary_theme_parchment">Warm Parchment</string>
+    <string name="diary_theme_slate">Deep Slate</string>
+    <string name="diary_theme_sepia">Vintage Sepia</string>
 
     <!-- Profile & Stats -->
     <string name="profile_favorites_title">Favorites</string>
     <string name="profile_favorites_subtitle">Top 4 movies</string>
-    <string name="profile_favorites_empty">Tap Favorite on any movie to pin up to 4 of your all-time favorites here.</string>
+    <string name="profile_favorites_empty">Tap + to pick up to 4 movies you have watched. Press and hold a poster, then drag it to reorder.</string>
+    <string name="profile_favorites_reorder_hint">Press and hold a poster, then drag it to reorder.</string>
+    <string name="profile_favorite_slot_description">Favorite %1$d: %2$s</string>
+    <string name="profile_favorite_empty_description">Empty favorite place %1$d. Pick a movie.</string>
+    <string name="msg_favorite_removed">Removed from your favorites</string>
+    <string name="favorite_move_earlier">Move earlier</string>
+    <string name="favorite_move_later">Move later</string>
+    <string name="favorites_picker_title">Pick a favorite</string>
+    <string name="favorites_picker_subtitle">Only movies you have watched can be favorites.</string>
+    <string name="favorites_picker_empty_title">No watched movies yet</string>
+    <string name="favorites_picker_empty_message">Mark a movie as watched first, then you can pick it as a favorite.</string>
+    <string name="favorites_picker_empty_action">Browse movies</string>
     <string name="profile_stats_title">Personal Movie Stats</string>
     <string name="profile_stats_watched">Watched</string>
     <string name="profile_stats_watchlist">Watchlist</string>
-    <string name="profile_stats_rated">Rated</string>
-    <string name="profile_stats_diary">Diary Entries</string>
     <string name="profile_nav_diary">Movie Diary</string>
-    <string name="profile_nav_ratings">Personal Ratings</string>
     <string name="profile_nav_watchlist">Watchlist</string>
     <string name="profile_nav_watched">Watched Movies</string>
     <string name="profile_nav_liked">Liked Movies</string>
@@ -438,9 +528,6 @@
     <string name="profile_nav_header">Library &amp; Journal</string>
     <string name="favorites_empty_slot">Empty</string>
     <string name="favorite_remove">Remove favorite</string>
-    <string name="dialog_close">Close</string>
-    <string name="profile_no_ratings">No rated movies yet. Rate movies from 0.5 to 5 stars on movie details.</string>
-    <string name="profile_no_diary">No diary entries yet. Write your personal reflections on movie details.</string>
 
     <!-- Swipe screen: swiping right is a "popcorn" (it is not the Likes heart) -->
     <string name="swipe_popcorn">Popcorn: I\'d watch this</string>
@@ -454,7 +541,10 @@
     <string name="credits_writers">Writers</string>
     <string name="credits_producers">Producers</string>
     <string name="credits_cinematography">Cinematography</string>
-    <string name="credits_composers">Composers</string>
+    <string name="credits_composers">Music</string>
+    <string name="credits_editors">Editing</string>
+    <string name="credits_production_design">Production design</string>
+    <string name="credits_costume_design">Costume design</string>
     <string name="detail_directed_by">Directed by</string>
     <string name="detail_cast_title">Cast</string>
     <string name="detail_crew_title">Crew</string>
@@ -462,7 +552,6 @@
     <string name="detail_info_status">Status</string>
     <string name="detail_info_language">Original language</string>
     <string name="detail_info_countries">Made in</string>
-    <string name="detail_open_person">Open %1$s</string>
 
     <!-- Movie Details: the full-screen poster -->
     <string name="detail_poster_description">%1$s poster. Opens it full screen.</string>
@@ -472,8 +561,37 @@
     <!-- Person screen -->
     <string name="person_label">Person</string>
     <string name="person_known_for">Known for %1$s</string>
-    <string name="person_tab_acting">Acting</string>
-    <string name="person_tab_crew">Directing &amp; Crew</string>
+    <!-- The role tabs of the Person screen: "Actor (24)" -->
+    <string name="person_tab_label">%1$s (%2$d)</string>
+    <string name="person_role_actor">Actor</string>
+    <string name="person_role_director">Director</string>
+    <string name="person_role_writer">Writer</string>
+    <string name="person_role_producer">Producer</string>
+    <string name="person_role_cinematographer">Cinematographer</string>
+    <string name="person_role_composer">Composer</string>
+    <string name="person_role_editor">Editor</string>
+    <string name="person_role_crew">Crew</string>
     <string name="person_empty_title">No movies listed</string>
     <string name="person_empty_message">TMDB has no movies for this person yet.</string>
+
+    <!-- Sort (My Collection and the Person screen) -->
+    <string name="sort_button_description">Sort the movies</string>
+    <string name="sort_title">Sort by</string>
+    <string name="sort_reset">Reset</string>
+    <string name="sort_when_added">When added</string>
+    <string name="sort_popularity">Popularity</string>
+    <string name="sort_name">Film name</string>
+    <string name="sort_release_date">Release date</string>
+    <string name="sort_user_rating">Your rating</string>
+    <string name="sort_runtime">Film length</string>
+    <string name="sort_tmdb_rating">TMDB rating</string>
+    <string name="sort_a_z">A to Z</string>
+    <string name="sort_z_a">Z to A</string>
+    <string name="sort_newest">Newest first</string>
+    <string name="sort_earliest">Earliest first</string>
+    <string name="sort_highest">Highest first</string>
+    <string name="sort_lowest">Lowest first</string>
+    <string name="sort_longest">Longest first</string>
+    <string name="sort_shortest">Shortest first</string>
+    <string name="sort_field_description">%1$s, %2$s</string>
 </resources>

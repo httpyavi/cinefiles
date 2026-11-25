@@ -91,7 +91,7 @@ class DiscoveryTest {
 
     private val strict = Preferences(
         releasePeriod = ReleasePeriod.FROM_2015, minRating = MinRating.EIGHT_PLUS,
-        length = Length.UNDER_2_HOURS, language = Language.KOREAN
+        length = Length.UNDER_2_HOURS, language = "ko"
     )
 
     private fun firstRequest(relax: Int) = Discovery.plan(listOf(comedy), strict, relax).first()

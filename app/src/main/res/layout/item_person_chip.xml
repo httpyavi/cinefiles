@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- One tappable name (a writer, a producer...) that opens the Person screen. ChipGroup.addPersonChip
-     (util/ChipExtensions.kt) creates these for the crew groups of Movie Details. -->
-<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.CineFiles.Chip.Person"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content" />

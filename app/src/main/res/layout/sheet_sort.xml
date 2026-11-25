@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE SORT SHEET (SortSheet): a bottom sheet shared by My Collection and the Person screen. One block per field the list can be sorted on
+     (item_sort_row, made from code), each with its two directions. The active one has a red edge. "Reset" goes back to the usual order. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipToPadding="false"
+    android:paddingBottom="@dimen/space_24">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/space_8">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/space_8">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/sort_title"
+                android:textAppearance="@style/TextAppearance.CineFiles.Title"
+                tools:targetApi="28" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sortReset"
+                style="@style/Widget.CineFiles.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_target"
+                android:text="@string/sort_reset" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sortRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

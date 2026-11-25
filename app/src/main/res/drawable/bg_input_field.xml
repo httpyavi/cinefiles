@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- A field that holds a chosen value (the picked language) wears the red edge too -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/glass_fill_strong" />
+            <corners android:radius="12dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/accent" />
+        </shape>
+    </item>
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <solid android:color="@color/glass_fill_strong" />
