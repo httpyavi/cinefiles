@@ -25,12 +25,25 @@ data class DiaryCover(val source: ImageSource, val ref: String) {
         fun tmdb(path: String) = DiaryCover(ImageSource.TMDB, path)
 
         /** The cover written as [value], or null for nothing, a blank text or an address nobody knows (never a crash). */
-        fun parse(value: String?): DiaryCover? {
+        fun parse(value: String?): DiaryCover? = parseList(value).firstOrNull()
+
+        /** Parses one or more encoded attachments stored in `DiaryEntry.coverImageUri`. */
+        fun parseList(value: String?): List<DiaryCover> {
+            if (value.isNullOrBlank()) return emptyList()
+            return value.split('\n', '|').mapNotNull { parseSingle(it) }
+        }
+
+        /** Encodes a list of attachments for storage in `DiaryEntry.coverImageUri`. */
+        fun encodeList(covers: List<DiaryCover>): String? =
+            covers.takeIf { it.isNotEmpty() }?.joinToString("\n") { it.encode() }
+
+        private fun parseSingle(value: String?): DiaryCover? {
             if (value.isNullOrBlank()) return null
-            val colon = value.indexOf(':')
+            val trimmed = value.trim()
+            val colon = trimmed.indexOf(':')
             if (colon <= 0) return null
-            val source = ImageSource.values().firstOrNull { it.prefix == value.substring(0, colon) } ?: return null
-            val ref = value.substring(colon + 1)
+            val source = ImageSource.values().firstOrNull { it.prefix == trimmed.substring(0, colon) } ?: return null
+            val ref = trimmed.substring(colon + 1)
             return if (ref.isBlank()) null else DiaryCover(source, ref)
         }
     }
@@ -90,9 +103,9 @@ object DiaryText {
     /** The words of a page's body with no formatting marks. */
     fun plainBody(bodyHtml: String): String = HtmlText.toPlain(bodyHtml)
 
-    /** A page with nothing on it (no headline, no words, no cover) is not worth saving. */
+    /** A page with nothing on it (no headline, no words, no attachments) is not worth saving. */
     fun isBlank(headline: String, bodyHtml: String, cover: String?): Boolean =
-        headline.isBlank() && plainBody(bodyHtml).isBlank() && DiaryCover.parse(cover) == null
+        headline.isBlank() && plainBody(bodyHtml).isBlank() && DiaryCover.parseList(cover).isEmpty()
 
     /** The first words of the body on one line (blank lines and runs of spaces squeezed), or "" when it has no words. */
     fun preview(bodyHtml: String): String = plainBody(bodyHtml).replace(Regex("\\s+"), " ")

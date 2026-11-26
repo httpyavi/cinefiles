@@ -26,6 +26,8 @@
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>
     <string name="home_greeting_evening">Good evening</string>
+    <string name="home_welcome_back">Welcome back, %1$s!</string>
+    <string name="home_welcome_back_generic">Welcome back!</string>
     <string name="home_search_description">Search</string>
 
     <!-- Home: hero and sections -->
@@ -390,6 +392,7 @@
 
     <!-- Discover -->
     <string name="discover_all">All</string>
+    <string name="discover_all_genres">All Genres</string>
     <string name="discover_popular_title">Popular Movies</string>
     <string name="discover_trending_title">Trending Movies</string>
     <string name="discover_top_rated_title">Top Rated Movies</string>

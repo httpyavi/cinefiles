@@ -210,15 +210,21 @@ class DiscoveryTest {
     }
 
     @Test
-    fun aNarrowSearchIsLoosenedAndTheLooseOnesComeLast() = runBlocking {
+    fun aNarrowSearchNeverPadsWithMoviesThatViolateMoodOrPreferences() = runBlocking {
         val catalog = listOf(movie(1, genres = listOf(comedy))) + (100..130).map { movie(it, genres = listOf(drama)) }
         val deck = Discovery.buildDeck(listOf(comedy), Preferences(), emptySet(), sourceOf(catalog))
 
-        assertEquals(Discovery.DECK_SIZE, deck.size)
-        assertEquals(1, deck.first().movie.id) // what fits the mood comes first
+        assertEquals(1, deck.size)
+        assertEquals(1, deck.first().movie.id)
         assertEquals(DiscoverySource.MOOD_MATCH, deck.first().source)
-        assertTrue(deck.drop(1).all { it.source == DiscoverySource.EXPLORE || it.source == DiscoverySource.TOP_RATED ||
-            it.source == DiscoverySource.TRENDING || it.source == DiscoverySource.POPULAR })
+    }
+
+    @Test
+    fun whenNoMoviesMatchStrictPreferencesTheDeckIsEmpty() = runBlocking {
+        val catalog = (1..20).map { movie(it, genres = listOf(comedy), language = "en", year = 2005) }
+        val strict = Preferences(language = "ko", releasePeriod = ReleasePeriod.FROM_2015)
+        val deck = Discovery.buildDeck(listOf(comedy), strict, emptySet(), sourceOf(catalog))
+        assertTrue(deck.isEmpty())
     }
 
     @Test

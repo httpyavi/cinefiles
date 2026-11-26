@@ -49,7 +49,7 @@ class DiaryImageStore(private val context: Context) {
      * a page was deleted while the app was closed, a crash, and the extra pictures of pages written before a page had just one cover.
      */
     suspend fun deleteUnused(covers: Collection<String>) = withContext(Dispatchers.IO) {
-        val used = covers.mapNotNull { DiaryCover.parse(it) }.filter { it.source == ImageSource.LOCAL }.map { it.ref }.toSet()
+        val used = covers.flatMap { DiaryCover.parseList(it) }.filter { it.source == ImageSource.LOCAL }.map { it.ref }.toSet()
         folder.listFiles()?.filter { it.name !in used }?.forEach { it.delete() }
         Unit
     }

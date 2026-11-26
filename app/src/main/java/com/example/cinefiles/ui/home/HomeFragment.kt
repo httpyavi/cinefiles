@@ -186,8 +186,13 @@ class HomeFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
-        viewModel.greeting.observe(viewLifecycleOwner) { binding.greetingText.setText(it) }
-        viewModel.userName.observe(viewLifecycleOwner) { binding.userNameText.text = it }
+        viewModel.userName.observe(viewLifecycleOwner) { name ->
+            binding.userGreetingText.text = if (name.isNullOrBlank()) {
+                getString(R.string.home_welcome_back_generic)
+            } else {
+                getString(R.string.home_welcome_back, name)
+            }
+        }
         viewModel.avatarLook.observe(viewLifecycleOwner) { binding.avatarButton.show(it.letter, it.photo) }
         viewModel.counts.observe(viewLifecycleOwner) { counts ->
             // Written the way the phone's language does

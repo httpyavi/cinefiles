@@ -157,7 +157,7 @@
                                 android:visibility="gone"
                                 app:interactive="false"
                                 app:popcornGap="@dimen/popcorn_gap_small"
-                                app:popcornSize="@dimen/popcorn_size_small"
+                                app:popcornSize="@dimen/popcorn_size_diary_header"
                                 tools:visibility="visible" />
                         </LinearLayout>
                     </LinearLayout>
@@ -179,7 +179,24 @@
                     tools:ignore="LabelFor"
                     tools:text="A film about trust" />
 
-                <!-- The cover (optional): a picture across the page with a quiet pill to replace or remove it, or the way to add one -->
+                <!-- Picture attachments (zero, one, or multiple) + add button -->
+                <HorizontalScrollView
+                    android:id="@+id/attachmentsScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:id="@+id/attachmentsContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/coverAdd"
                     style="@style/Widget.CineFiles.Button.Text"
@@ -189,46 +206,6 @@
                     android:text="@string/diary_cover_add"
                     app:icon="@drawable/ic_image"
                     app:iconTint="@color/text_secondary" />
-
-                <FrameLayout
-                    android:id="@+id/coverBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/coverImage"
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/diary_cover_height"
-                        android:background="@color/surface"
-                        android:contentDescription="@string/diary_cover_description"
-                        android:scaleType="centerCrop"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.CineFiles.Small" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:layout_margin="@dimen/space_8"
-                        android:background="@drawable/bg_image_tools"
-                        android:orientation="horizontal"
-                        android:padding="@dimen/space_4">
-
-                        <ImageButton
-                            android:id="@+id/coverReplace"
-                            style="@style/Widget.CineFiles.ImageTool"
-                            android:contentDescription="@string/diary_cover_replace"
-                            android:src="@drawable/ic_image" />
-
-                        <ImageButton
-                            android:id="@+id/coverRemove"
-                            style="@style/Widget.CineFiles.ImageTool"
-                            android:contentDescription="@string/diary_cover_remove"
-                            android:src="@drawable/ic_delete" />
-                    </LinearLayout>
-                </FrameLayout>
 
                 <View
                     android:id="@+id/headerRule"
@@ -354,12 +331,6 @@
                 style="@style/Widget.CineFiles.FormatButton"
                 android:contentDescription="@string/diary_align_right"
                 android:src="@drawable/ic_align_right" />
-
-            <ImageButton
-                android:id="@+id/alignJustify"
-                style="@style/Widget.CineFiles.FormatButton"
-                android:contentDescription="@string/diary_align_justify"
-                android:src="@drawable/ic_align_justify" />
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>

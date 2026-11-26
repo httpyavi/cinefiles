@@ -14,13 +14,12 @@ import com.example.cinefiles.data.Movie
  *     the movies that are already loaded.
  */
 
-/** The three lists of the Discover tab. */
+/** The discovery categories of the Discover tab. */
 enum class BrowseCategory(@StringRes val label: Int) {
     ALL(R.string.discover_all),
     POPULAR(R.string.discover_popular),
     TRENDING(R.string.discover_trending),
-    TOP_RATED(R.string.discover_top_rated),
-    GENRE(R.string.discover_title)
+    TOP_RATED(R.string.discover_top_rated)
 }
 
 /** A search needs at least this many letters (one letter would match far too much). */

@@ -172,6 +172,11 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
     /** Asks TMDB for candidates and lets the engine choose (the rules are in logic/RecommendationEngine.kt). */
     private suspend fun choosePicks(): PicksState {
         val moods = chosenMoods()
+        val hasMoodGenres = moods.any { it.genreIds.isNotEmpty() }
+        val hasPreferences = preferences != Preferences()
+        val hasLiked = picksLiked.isNotEmpty()
+        if (!hasMoodGenres && !hasPreferences && !hasLiked) return PicksState.Empty
+
         val profile = engine.genreProfile(moods, picksLiked, picksPassed)
         val pool = repository.picksCandidates(
             genreIds = engine.topGenres(profile),

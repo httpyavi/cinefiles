@@ -113,10 +113,13 @@ class MovieRepository(
      * "Trending" and "popular" are TMDB lists that cannot be filtered by the server, so they are filtered
      * here with [DiscoveryRequest.matches]. Every other kind is a /discover call that TMDB filters itself.
      */
-    suspend fun moviesFor(request: DiscoveryRequest, page: Int = 1): Result<List<Movie>> = when (request.source) {
-        DiscoverySource.TRENDING -> if (request.language != null) discover(request, page) else trending(page).map { movies -> movies.filter(request::matches) }
-        DiscoverySource.POPULAR -> if (request.language != null) discover(request, page) else popular(page).map { movies -> movies.filter(request::matches) }
-        else -> discover(request, page)
+    suspend fun moviesFor(request: DiscoveryRequest, page: Int = 1): Result<List<Movie>> {
+        val needsServerFilter = request.language != null || request.minMinutes != null || request.maxMinutes != null
+        return when (request.source) {
+            DiscoverySource.TRENDING -> if (needsServerFilter) discover(request, page) else trending(page).map { movies -> movies.filter(request::matches) }
+            DiscoverySource.POPULAR -> if (needsServerFilter) discover(request, page) else popular(page).map { movies -> movies.filter(request::matches) }
+            else -> discover(request, page)
+        }
     }
 
     // ====================================================================================
@@ -166,10 +169,16 @@ class MovieRepository(
             }
             val answers = similarAnswers ?: similarAsked.toMap().also { similarAnswers = it }
 
-            for (movie in discovered) if (movie.id !in hidden) found.putIfAbsent(movie.id, movie)
+            for (movie in discovered) {
+                if (movie.id in hidden) continue
+                if (preferences.language != null && (movie.originalLanguage == null || !com.example.cinefiles.logic.Languages.matches(preferences.language, movie.originalLanguage))) continue
+                found.putIfAbsent(movie.id, movie)
+            }
             for ((seedId, movies) in answers) {
                 for (movie in movies) {
                     if (movie.id in hidden || !similarFilter.matches(movie)) continue
+                    if ((similarFilter.minMinutes != null || similarFilter.maxMinutes != null) && movie.runtimeMinutes == null) continue
+                    if (similarFilter.language != null && movie.originalLanguage == null) continue
                     found.putIfAbsent(movie.id, movie)
                     similarTo.putIfAbsent(movie.id, seedId)
                 }
@@ -226,7 +235,7 @@ class MovieRepository(
     suspend fun browsePage(category: BrowseCategory, genreId: Int?, page: Int = 1): Result<MoviePage> = call {
         val response = if (genreId == null) {
             when (category) {
-                BrowseCategory.POPULAR, BrowseCategory.GENRE -> api.popular(page)
+                BrowseCategory.POPULAR -> api.popular(page)
                 BrowseCategory.TRENDING -> api.trending(page)
                 BrowseCategory.TOP_RATED -> api.topRated(page)
                 BrowseCategory.ALL -> api.discover(minVotes = BROWSE_MIN_VOTES_TRENDING, sortBy = SORT_BY_POPULARITY, page = page)
@@ -243,8 +252,11 @@ class MovieRepository(
                     withGenres = withGenre, minRating = BROWSE_TOP_RATED_MIN_RATING,
                     minVotes = BROWSE_MIN_VOTES_TOP_RATED, sortBy = SORT_BY_RATING, page = page
                 )
-                else -> api.discover(
+                BrowseCategory.POPULAR -> api.discover(
                     withGenres = withGenre, minVotes = BROWSE_MIN_VOTES_POPULAR, sortBy = SORT_BY_POPULARITY, page = page
+                )
+                BrowseCategory.ALL -> api.discover(
+                    withGenres = withGenre, sortBy = SORT_BY_POPULARITY, page = page
                 )
             }
         }
@@ -541,8 +553,7 @@ class MovieRepository(
 
         val PICKS_STEPS = listOf(
             PicksStep(STRICT_FLOOR, dropPreferences = false),
-            PicksStep(RELAXED_FLOOR, dropPreferences = false),
-            PicksStep(RELAXED_FLOOR, dropPreferences = true)
+            PicksStep(RELAXED_FLOOR, dropPreferences = false)
         )
     }
 }

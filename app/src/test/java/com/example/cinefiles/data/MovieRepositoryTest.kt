@@ -284,8 +284,8 @@ class MovieRepositoryTest {
         """{ "page": 1, "total_pages": $totalPages, "results": [${movies.joinToString(",")}] }"""
 
     /** A TMDB list answer with one movie for every id in [ids]. Ids in [noPoster] have no poster. */
-    private fun moviesJson(ids: IntRange, totalPages: Int = 1, noPoster: Set<Int> = emptySet()): String =
-        resultsJson(*ids.map { movieJson(it, poster = it !in noPoster) }.toTypedArray(), totalPages = totalPages)
+    private fun moviesJson(ids: IntRange, totalPages: Int = 1, noPoster: Set<Int> = emptySet(), language: String = "en"): String =
+        resultsJson(*ids.map { movieJson(it, poster = it !in noPoster, language = language) }.toTypedArray(), totalPages = totalPages)
 
     private fun isSimilar(request: Recorded) = request.path.endsWith("/similar")
 
@@ -293,7 +293,7 @@ class MovieRepositoryTest {
 
     @Test
     fun candidatesAskForTheBestGenresWithPreferencesBestRatedFirstAndMostPopularFirst() = runBlocking {
-        body = moviesJson(1..20) // plenty: the quality floor never has to drop
+        body = moviesJson(1..20, language = "ko") // plenty: the quality floor never has to drop
         val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.SEVEN_PLUS, language = "ko")
 
         val pool = repository().picksCandidates(listOf(35, 18, 10749), preferences).getOrThrow()
@@ -434,30 +434,27 @@ class MovieRepositoryTest {
     }
 
     @Test
-    fun withTooFewCandidatesTheFloorDropsFirstThenThePreferencesAndTheGenresStay() = runBlocking {
+    fun withTooFewCandidatesTheFloorDropsButPreferencesAndGenresStay() = runBlocking {
         // Korean + the strict floor: 2 movies. Korean + the relaxed floor: 3. Anything + the relaxed floor: plenty.
         server.respond = { request ->
             val korean = request.params.containsKey("with_original_language")
             when {
-                korean && request.params["vote_count.gte"] == "500" -> moviesJson(1..2)
-                korean -> moviesJson(1..3)
-                else -> moviesJson(100..114)
+                korean && request.params["vote_count.gte"] == "500" -> moviesJson(1..2, language = "ko")
+                korean -> moviesJson(1..3, language = "ko")
+                else -> moviesJson(100..114, language = "en")
             }
         }
 
         val pool = repository().picksCandidates(listOf(35, 18), Preferences(language = "ko")).getOrThrow()
 
-        // Three steps of four questions each (the steps run one after the other)
+        // Two steps of four questions each (preferences are NEVER dropped)
         val steps = requests.chunked(4)
-        assertEquals(3, steps.size)
+        assertEquals(2, steps.size)
         assertTrue(steps[0].all { it.params["vote_average.gte"] == "6.5" && it.params["vote_count.gte"] == "500" })
         assertTrue(steps[1].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "200" })
-        assertTrue(steps[2].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "200" })
-        assertTrue(steps[0].all { it.params["with_original_language"] == "ko" })
-        assertTrue(steps[1].all { it.params["with_original_language"] == "ko" })
-        assertTrue(steps[2].all { it.params["with_original_language"] == null }) // the preferences are dropped last...
-        assertTrue(requests.all { it.params["with_genres"] == "35|18" })        // ...but the genres always stay
-        assertEquals(18, pool.movies.size) // the 3 Korean ones and the 15 others, no repeats
+        assertTrue(requests.all { it.params["with_original_language"] == "ko" }) // preferences stay
+        assertTrue(requests.all { it.params["with_genres"] == "35|18" })        // genres stay
+        assertEquals(3, pool.movies.size) // only the 3 matching Korean movies
     }
 
     @Test
@@ -476,7 +473,7 @@ class MovieRepositoryTest {
         val pool = repository().picksCandidates(listOf(35), Preferences(), seeds = listOf(movie(101))).getOrThrow()
 
         assertEquals(1, requests.count(::isSimilar))
-        assertEquals(12, discoverRequests.size) // three steps of four
+        assertEquals(8, discoverRequests.size) // two steps of four
         assertTrue(201 in pool.movies.map { it.id }) // a candidate from the similar list is kept at every step
     }
 
@@ -496,7 +493,7 @@ class MovieRepositoryTest {
         val result = repository().picksCandidates(listOf(35), Preferences(language = "ko"))
 
         assertTrue(result.getOrThrow().movies.isEmpty())
-        assertEquals(12, requests.size) // three steps of four questions: then it gives up
+        assertEquals(8, requests.size) // two steps of four questions: preferences are never dropped
     }
 
     @Test
@@ -614,14 +611,18 @@ class MovieRepositoryTest {
     @Test
     fun withoutAGenreTheCategoriesAreTmdbsOwnLists() = runBlocking {
         body = listJson
+        repository().browsePage(BrowseCategory.ALL, genreId = null)
         repository().browsePage(BrowseCategory.POPULAR, genreId = null)
         repository().browsePage(BrowseCategory.TRENDING, genreId = null)
         repository().browsePage(BrowseCategory.TOP_RATED, genreId = null, page = 2)
 
         assertEquals(
-            listOf("/3/movie/popular", "/3/trending/movie/week", "/3/movie/top_rated"),
+            listOf("/3/discover/movie", "/3/movie/popular", "/3/trending/movie/week", "/3/movie/top_rated"),
             requests.map { it.path }
         )
+        // Verify discover browsePage has NO language restriction (all languages default)
+        assertNull(requests[0].params["with_original_language"])
+        assertEquals("popularity.desc", requests[0].params["sort_by"])
         assertEquals("2", requests.last().params["page"])
     }
 
@@ -658,12 +659,17 @@ class MovieRepositoryTest {
     @Test
     fun withAGenreTheCategoriesBecomeDiscoverQuestions() = runBlocking {
         body = listJson
+        repository().browsePage(BrowseCategory.ALL, genreId = 35)
         repository().browsePage(BrowseCategory.POPULAR, genreId = 35)
         repository().browsePage(BrowseCategory.TRENDING, genreId = 35)
         repository().browsePage(BrowseCategory.TOP_RATED, genreId = 35, page = 4)
 
         assertTrue(requests.all { it.path == "/3/discover/movie" && it.params["with_genres"] == "35" })
-        val (popular, trending, topRated) = requests
+        assertTrue(requests.all { it.params["with_original_language"] == null }) // No language restriction
+
+        val (all, popular, trending, topRated) = requests
+
+        assertEquals("popularity.desc", all.params["sort_by"])
 
         assertEquals("popularity.desc", popular.params["sort_by"])
         assertEquals("100", popular.params["vote_count.gte"])

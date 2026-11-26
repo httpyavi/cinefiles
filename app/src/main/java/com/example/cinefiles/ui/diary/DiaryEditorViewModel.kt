@@ -93,10 +93,10 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     private val _theme = MutableLiveData(DiaryTheme.DEFAULT)
     val theme: LiveData<DiaryTheme> = _theme
 
-    private val _cover = MutableLiveData<DiaryCover?>(null)
+    private val _attachments = MutableLiveData<List<DiaryCover>>(emptyList())
 
-    /** The page's cover picture, or null. */
-    val cover: LiveData<DiaryCover?> = _cover
+    /** All picture attachments on this page. */
+    val attachments: LiveData<List<DiaryCover>> = _attachments
 
     private val _message = MutableLiveData<Event<Int>>()
 
@@ -112,7 +112,7 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     val stills: LiveData<StillsState> = _stills
 
     private var savedSnapshot = ""
-    private var loadedLocalCover: String? = null           // the gallery picture the saved page uses
+    private var loadedLocalCovers: Set<String> = emptySet() // the gallery pictures the saved page uses
     private val importedThisTime = HashSet<String>()        // gallery pictures copied while editing, not saved yet
     private val saveLock = Mutex()
 
@@ -134,13 +134,14 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
                 createdAt = entry.createdAt
                 headline = entry.headline
                 bodyHtml = entry.bodyHtml
-                _cover.value = DiaryCover.parse(entry.coverImageUri)
+                val parsed = DiaryCover.parseList(entry.coverImageUri)
+                _attachments.value = parsed
                 _font.value = DiaryFont.of(entry.fontStyle)
                 _size.value = DiaryTextSize.of(entry.textSize)
                 _align.value = TextAlign.of(entry.textAlignment)
                 _theme.value = DiaryTheme.of(entry.canvasTheme)
                 savedSnapshot = snapshot()
-                loadedLocalCover = localName(_cover.value)
+                loadedLocalCovers = localNames(parsed)
                 _state.value = ready(entry.ratingSnapshot, entry.updatedAt)
             } else {
                 if (!repository.canWriteDiary(movieId)) {
@@ -198,28 +199,44 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
         if (_theme.value != theme) _theme.value = theme
     }
 
-    /** Copies a picture from the phone's gallery into the app, then makes it the page's cover. */
-    fun importCover(uri: Uri) {
+    /** Copies pictures from the phone's gallery into the app, then appends them to the page's attachments. */
+    fun importCovers(uris: List<Uri>) {
+        if (uris.isEmpty()) return
         viewModelScope.launch {
             _importing.value = true
-            val name = diaryImages.import(uri)
+            val added = ArrayList<DiaryCover>()
+            var anyFailed = false
+            for (uri in uris) {
+                val name = diaryImages.import(uri)
+                if (name == null) {
+                    anyFailed = true
+                } else {
+                    importedThisTime += name
+                    added += DiaryCover.local(name)
+                }
+            }
             _importing.value = false
-            if (name == null) {
-                _message.value = Event(R.string.diary_image_failed)
-            } else {
-                importedThisTime += name
-                _cover.value = DiaryCover.local(name)
+            if (anyFailed) _message.value = Event(R.string.diary_image_failed)
+            if (added.isNotEmpty()) {
+                _attachments.value = _attachments.value.orEmpty() + added
             }
         }
     }
 
-    /** Makes a still of the movie (a TMDB path) the page's cover. */
+    /** Appends a still of the movie (a TMDB path) to the page's attachments. */
     fun setStillAsCover(path: String) {
-        _cover.value = DiaryCover.tmdb(path)
+        val cover = DiaryCover.tmdb(path)
+        val current = _attachments.value.orEmpty()
+        if (cover !in current) {
+            _attachments.value = current + cover
+        }
     }
 
-    fun removeCover() {
-        _cover.value = null
+    /** Removes a single attachment at [index] without affecting the other attachments. */
+    fun removeAttachment(index: Int) {
+        val current = _attachments.value.orEmpty()
+        if (index !in current.indices) return
+        _attachments.value = current.toMutableList().apply { removeAt(index) }
     }
 
     /** Asks TMDB for the movie's official stills (once; the picker calls this when it opens). */
@@ -236,12 +253,12 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     // ---------- Saving ----------
 
     private fun snapshot(): String = listOf(
-        headline.trim(), bodyHtml, _cover.value?.encode().orEmpty(),
+        headline.trim(), bodyHtml, DiaryCover.encodeList(_attachments.value.orEmpty()).orEmpty(),
         (_font.value ?: DiaryFont.DEFAULT).name, (_size.value ?: DiaryTextSize.DEFAULT).name,
         (_align.value ?: TextAlign.DEFAULT).name, (_theme.value ?: DiaryTheme.DEFAULT).name
     ).joinToString("\u0000")
 
-    private fun isBlank() = DiaryText.isBlank(headline, bodyHtml, _cover.value?.encode())
+    private fun isBlank() = DiaryText.isBlank(headline, bodyHtml, DiaryCover.encodeList(_attachments.value.orEmpty()))
 
     /** The page has nothing on it (no headline, no words, no cover): there is nothing to save. */
     val isBlankPage: Boolean get() = _state.value is EditorState.Ready && isBlank()
@@ -272,7 +289,7 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
             return
         }
 
-        val cover = _cover.value
+        val attachments = _attachments.value.orEmpty()
         val entry = DiaryEntry(
             id = entryId,
             movieId = movieId,
@@ -282,7 +299,7 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
             ratingSnapshot = repository.savedMovie(movieId)?.userRating, // the rating as it is when the page is written
             headline = headline.trim(),
             bodyHtml = bodyHtml,
-            coverImageUri = cover?.encode(),
+            coverImageUri = DiaryCover.encodeList(attachments),
             fontStyle = (_font.value ?: DiaryFont.DEFAULT).name,
             textAlignment = (_align.value ?: TextAlign.DEFAULT).name,
             textSize = (_size.value ?: DiaryTextSize.DEFAULT).name,
@@ -291,20 +308,20 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
         entryId = repository.saveDiaryEntry(entry)
         savedSnapshot = current
 
-        // The gallery picture this page does not use any more (a replaced or removed cover, or a picture added and given up)
-        val used = localName(cover)
-        diaryImages.delete((setOfNotNull(loadedLocalCover) + importedThisTime) - setOfNotNull(used))
-        loadedLocalCover = used
+        // Any gallery pictures this page does not use any more are deleted
+        val used = localNames(attachments)
+        diaryImages.delete((loadedLocalCovers + importedThisTime) - used)
+        loadedLocalCovers = used
         importedThisTime.clear()
     }
 
-    /** Deletes this page (the screen asked first) and its cover picture. */
+    /** Deletes this page (the screen asked first) and its attached local pictures. */
     fun deletePage(onDone: () -> Unit) {
         viewModelScope.launch {
             saveLock.withLock {
                 if (entryId != 0L) repository.deleteDiaryEntry(entryId)
-                diaryImages.delete(setOfNotNull(loadedLocalCover) + importedThisTime)
-                loadedLocalCover = null
+                diaryImages.delete(loadedLocalCovers + importedThisTime)
+                loadedLocalCovers = emptySet()
                 importedThisTime.clear()
                 entryId = 0L
             }
@@ -317,5 +334,6 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
         importedThisTime.clear()
     }
 
-    private fun localName(cover: DiaryCover?): String? = cover?.takeIf { it.source == ImageSource.LOCAL }?.ref
+    private fun localNames(covers: List<DiaryCover>): Set<String> =
+        covers.filter { it.source == ImageSource.LOCAL }.map { it.ref }.toSet()
 }

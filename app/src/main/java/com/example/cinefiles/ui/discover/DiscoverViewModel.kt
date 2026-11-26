@@ -128,22 +128,19 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
         if (filtersFlow.value.isSearching) reload(debounce = false)
     }
 
+    /** Select a discovery category (All, Popular, Trending, Top Rated) without resetting genre. */
     fun selectCategory(category: BrowseCategory) {
         val before = filtersFlow.value
-        if (category == before.category && before.genreId == null) return
-        filtersFlow.value = before.copy(category = category, genreId = null)
+        if (category == before.category) return
+        filtersFlow.value = before.copy(category = category)
         reload(debounce = false)
     }
 
-    /** A genre chip, or null when the chip was switched off. */
+    /** Select a genre (or null for "All Genres") without resetting discovery category. */
     fun selectGenre(genreId: Int?) {
         val before = filtersFlow.value
-        if (genreId == null) {
-            selectCategory(BrowseCategory.ALL)
-            return
-        }
-        if (before.category == BrowseCategory.GENRE && before.genreId == genreId) return
-        filtersFlow.value = before.copy(category = BrowseCategory.GENRE, genreId = genreId)
+        if (genreId == before.genreId) return
+        filtersFlow.value = before.copy(genreId = genreId)
         if (filtersFlow.value.isSearching) {
             autoPagesLeft = MAX_AUTO_PAGES
             if (requestJob?.isActive != true) requestJob = viewModelScope.launch { loadMoreWhileShort() }
@@ -152,8 +149,9 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Reset both filters to default: All discovery feed and All Genres. */
     fun clearFilters() {
-        filtersFlow.value = DiscoverFilters(category = BrowseCategory.ALL)
+        filtersFlow.value = DiscoverFilters(category = BrowseCategory.ALL, genreId = null)
         reload(debounce = false)
     }
 
@@ -194,7 +192,11 @@ class DiscoverViewModel(app: Application) : AndroidViewModel(app) {
         val result = if (filters.isSearching) {
             repository.searchPage(filters.query, number)
         } else {
-            repository.browsePage(category = filters.category, genreId = filters.genreId, page = number)
+            repository.browsePage(
+                category = filters.category,
+                genreId = filters.genreId,
+                page = number
+            )
         }
 
         result

@@ -47,11 +47,14 @@ class DiaryListViewModel(app: Application, handle: SavedStateHandle) : AndroidVi
         viewModelScope.launch { _newPage.value = Event(repository.canWriteDiary(movieId)) }
     }
 
-    /** Deletes the page, and its cover picture when that is a copy of a gallery picture kept in the app. */
+    /** Deletes the page, and its attached local gallery pictures kept in the app. */
     fun delete(entry: DiaryEntry) {
         viewModelScope.launch {
             repository.deleteDiaryEntry(entry.id)
-            DiaryCover.parse(entry.coverImageUri)?.takeIf { it.source == ImageSource.LOCAL }?.let { diaryImages.delete(listOf(it.ref)) }
+            val localNames = DiaryCover.parseList(entry.coverImageUri)
+                .filter { it.source == ImageSource.LOCAL }
+                .map { it.ref }
+            if (localNames.isNotEmpty()) diaryImages.delete(localNames)
         }
     }
 }

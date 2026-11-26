@@ -2,9 +2,11 @@ package com.example.cinefiles.ui.diary
 
 import android.graphics.Typeface
 import android.text.Editable
+import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.style.AlignmentSpan
 import android.text.style.QuoteSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
@@ -31,6 +33,9 @@ object RichText {
 
     /** The kind of a paragraph. */
     enum class Block { BODY, HEADING, QUOTE }
+
+    /** Per-paragraph alignment (each paragraph is aligned independently). */
+    enum class ParagraphAlign { LEFT, CENTER, RIGHT }
 
     private const val HEADING_SIZE = 1.4f      // what an <h2> is in HtmlCompat.fromHtml
     private const val HEADING_MIN_SIZE = 1.2f  // a paragraph covered by a bigger span than this is a heading
@@ -72,7 +77,15 @@ object RichText {
     }
 
     private fun paragraphHtml(text: Spanned, start: Int, end: Int): String {
-        if (start == end) return EMPTY_PARAGRAPH
+        val align = alignmentOf(text, start, end)
+        val alignAttr = when (align) {
+            ParagraphAlign.CENTER -> " style=\"text-align:center;\""
+            ParagraphAlign.RIGHT -> " style=\"text-align:right;\""
+            ParagraphAlign.LEFT -> ""
+        }
+        if (start == end) {
+            return if (alignAttr.isEmpty()) EMPTY_PARAGRAPH else "<p dir=\"ltr\"$alignAttr><br></p>"
+        }
         val block = blockOf(text, start, end)
         val slice = SpannableStringBuilder(text.subSequence(start, end)) // the spans are cut to the paragraph
         val clean = SpannableStringBuilder(slice.toString())
@@ -92,9 +105,9 @@ object RichText {
         val inner = HtmlCompat.toHtml(clean, HtmlCompat.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE).trim()
             .replace(OPEN_PARAGRAPH, "").removeSuffix(CLOSE_PARAGRAPH)
         return when (block) {
-            Block.BODY -> "<p dir=\"ltr\">$inner</p>"
-            Block.HEADING -> "<h2>$inner</h2>"
-            Block.QUOTE -> "<blockquote><p dir=\"ltr\">$inner</p></blockquote>"
+            Block.BODY -> "<p dir=\"ltr\"$alignAttr>$inner</p>"
+            Block.HEADING -> "<h2$alignAttr>$inner</h2>"
+            Block.QUOTE -> "<blockquote$alignAttr><p dir=\"ltr\"$alignAttr>$inner</p></blockquote>"
         }
     }
 
@@ -134,6 +147,12 @@ object RichText {
         return blockOf(text, from, paragraphEnd(text, start))
     }
 
+    /** The alignment of the paragraph that has the cursor (or the one the selection starts in). */
+    fun alignmentAt(text: Spanned, position: Int): ParagraphAlign {
+        val from = paragraphStart(text, position)
+        return alignmentOf(text, from, paragraphEnd(text, position))
+    }
+
     // ---------- Changing ----------
 
     /** Switches [style] for the selection from [start] to [end] (see the class comment). */
@@ -167,6 +186,16 @@ object RichText {
             }
             Block.QUOTE -> splitIntoQuotes(text, from, to, quoteColor, quoteBar, quoteGap)
             Block.BODY -> Unit
+        }
+    }
+
+    /** Sets independent [align] on the paragraph(s) overlapping [start]..[end] without changing other paragraphs. */
+    fun setAlignment(text: Editable, align: ParagraphAlign, start: Int, end: Int) {
+        val from = paragraphStart(text, min(start, end))
+        val to = paragraphEnd(text, max(start, end))
+        removeAlignmentSpans(text, from, to)
+        if (align != ParagraphAlign.LEFT) {
+            splitAlignmentSpans(text, from, to, align)
         }
     }
 
@@ -299,8 +328,62 @@ object RichText {
         text.setSpan(PullQuoteSpan(color, bar, gap), from, to, flags)
     }
 
+    private fun alignmentOf(text: Spanned, start: Int, end: Int): ParagraphAlign {
+        val span = text.getSpans(0, text.length, AlignmentSpan::class.java).firstOrNull { span ->
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            s <= start && (e > start || (end == start && s == start && e == start))
+        } ?: return ParagraphAlign.LEFT
+        return toParagraphAlign(span.alignment)
+    }
+
+    private fun toParagraphAlign(alignment: Layout.Alignment): ParagraphAlign = when (alignment) {
+        Layout.Alignment.ALIGN_CENTER -> ParagraphAlign.CENTER
+        Layout.Alignment.ALIGN_OPPOSITE -> ParagraphAlign.RIGHT
+        Layout.Alignment.ALIGN_NORMAL -> ParagraphAlign.LEFT
+    }
+
+    private fun toLayoutAlignment(align: ParagraphAlign): Layout.Alignment = when (align) {
+        ParagraphAlign.CENTER -> Layout.Alignment.ALIGN_CENTER
+        ParagraphAlign.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
+        ParagraphAlign.LEFT -> Layout.Alignment.ALIGN_NORMAL
+    }
+
+    private fun removeAlignmentSpans(text: Editable, from: Int, to: Int) {
+        for (span in text.getSpans(0, text.length, AlignmentSpan::class.java)) {
+            val s = text.getSpanStart(span)
+            val e = text.getSpanEnd(span)
+            if ((e <= from && !(s == from && e == from)) || s > to) continue
+            val align = toParagraphAlign(span.alignment)
+            text.removeSpan(span)
+            if (align != ParagraphAlign.LEFT) {
+                if (s < from) splitAlignmentSpans(text, s, max(s, from - 1), align)
+                if (e > to + 1) splitAlignmentSpans(text, to + 1, e, align)
+            }
+        }
+    }
+
+    private fun splitAlignmentSpans(text: Editable, from: Int, to: Int, align: ParagraphAlign) {
+        var start = paragraphStart(text, from)
+        val endLimit = paragraphEnd(text, to)
+        while (start <= endLimit) {
+            val end = paragraphEnd(text, start)
+            setParagraphAlignment(text, start, min(end + 1, text.length), align)
+            if (end >= endLimit) break
+            start = end + 1
+        }
+    }
+
+    private fun setParagraphAlignment(text: Editable, start: Int, end: Int, align: ParagraphAlign) {
+        val from = paragraphStart(text, start)
+        var to = if (end >= text.length) text.length else paragraphEnd(text, max(end - 1, 0)).let { min(it + 1, text.length) }
+        if (to < from) to = from
+        val flags = if (from == to && to == text.length) Spannable.SPAN_INCLUSIVE_INCLUSIVE else Spanned.SPAN_PARAGRAPH
+        text.setSpan(AlignmentSpan.Standard(toLayoutAlignment(align)), from, to, flags)
+    }
+
     /** Keeps one bold span per heading and no twins: what fromHtml made of `<h2><b>..</b></h2>` would otherwise grow with every save. */
-    private fun tidy(text: Spannable) {
+    private fun tidy(text: Editable) {
         val seen = HashSet<Triple<Int, Int, Int>>()
         for (span in text.getSpans(0, text.length, StyleSpan::class.java)) {
             val key = Triple(span.style, text.getSpanStart(span), text.getSpanEnd(span))
@@ -316,6 +399,15 @@ object RichText {
                 if (bold.style == Typeface.BOLD && text.getSpanStart(bold) == s && text.getSpanEnd(bold) == e) {
                     text.setSpan(bold, s, e, Spannable.SPAN_INCLUSIVE_INCLUSIVE)
                 }
+            }
+        }
+        // Normalize paragraph alignment spans so each paragraph owns its own independent span
+        val existingAlignments = text.getSpans(0, text.length, AlignmentSpan::class.java)
+            .map { Triple(text.getSpanStart(it), text.getSpanEnd(it), toParagraphAlign(it.alignment)) }
+            .also { spans -> text.getSpans(0, text.length, AlignmentSpan::class.java).forEach { text.removeSpan(it) } }
+        for ((s, e, align) in existingAlignments) {
+            if (align != ParagraphAlign.LEFT && s <= text.length) {
+                splitAlignmentSpans(text, s, max(s, e - 1), align)
             }
         }
     }

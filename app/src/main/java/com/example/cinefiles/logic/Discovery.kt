@@ -186,31 +186,22 @@ object Discovery {
         limit: Int = DECK_SIZE,
         wanted: Int = MIN_DECK_SIZE
     ): List<Pick> {
-        val deck = ArrayList<Pick>()
-        val used = exclude.toMutableSet()
         val langCode = preferences.language
-
-        val maxRelax = if (langCode != null) 3 else MAX_RELAX
-        for (relax in 0..maxRelax) {
-            if (deck.size >= wanted) break
-            // awaitAll keeps the order of the questions, so the mix is the same as when they were asked one by one
-            val batches = coroutineScope {
-                plan(moodGenreIds, preferences, relax)
-                    .map { request -> async { request.source to fetch(request) } }
-                    .awaitAll()
-            }
-            val filteredBatches = if (langCode != null) {
-                batches.map { (source, movies) ->
-                    // A movie whose language TMDB does not know is kept
-                    source to movies.filter { movie -> movie.originalLanguage?.let { Languages.matches(langCode, it) } ?: true }
-                }
-            } else batches
-            val more = mix(filteredBatches, used, limit - deck.size)
-            deck.addAll(more)
-            used.addAll(more.map { it.movie.id })
-            if (langCode != null && deck.isNotEmpty() && relax >= 3) break
+        val requests = plan(moodGenreIds, preferences, relax = 0)
+        // awaitAll keeps the order of the questions, so the mix is the same as when they were asked one by one
+        val batches = coroutineScope {
+            requests
+                .map { request -> async { request.source to fetch(request).filter(request::matches) } }
+                .awaitAll()
         }
-        return deck
+        val filteredBatches = if (langCode != null) {
+            batches.map { (source, movies) ->
+                source to movies.filter { movie ->
+                    movie.originalLanguage != null && Languages.matches(langCode, movie.originalLanguage)
+                }
+            }
+        } else batches
+        return mix(filteredBatches, exclude, limit)
     }
 
     // ---------- What the Preferences screen's choices mean ----------

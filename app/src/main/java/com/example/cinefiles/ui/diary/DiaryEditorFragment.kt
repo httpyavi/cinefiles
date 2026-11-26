@@ -18,6 +18,7 @@ import com.bumptech.glide.Glide
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
 import com.example.cinefiles.databinding.FragmentDiaryEditorBinding
+import com.example.cinefiles.databinding.ItemDiaryAttachmentBinding
 import com.example.cinefiles.logic.DiaryCover
 import com.example.cinefiles.logic.DiaryFont
 import com.example.cinefiles.logic.DiaryTextSize
@@ -63,9 +64,9 @@ class DiaryEditorFragment : Fragment() {
 
     private val flushBody = Runnable { _binding?.let { flush() } }
 
-    /** The phone's own photo picker (it falls back to the system file picker on phones that do not have one). */
-    private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) viewModel.importCover(uri)
+    /** The phone's own multi-photo picker (it falls back to the system file picker on phones that do not have one). */
+    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+        if (uris.isNotEmpty()) viewModel.importCovers(uris)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -92,15 +93,13 @@ class DiaryEditorFragment : Fragment() {
         binding.editorSave.setOnClickListener { save() }
         binding.movieLink.setOnClickListener { findNavController().openMovieDetails(movieId, returnIfOpenBelow = true) }
         binding.coverAdd.setOnClickListener { chooseCoverSource() }
-        binding.coverReplace.setOnClickListener { chooseCoverSource() }
-        binding.coverRemove.setOnClickListener { viewModel.removeCover() }
 
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
         viewModel.font.observe(viewLifecycleOwner) { font = it; applyStyle() }
         viewModel.size.observe(viewLifecycleOwner) { size = it; applyStyle() }
         viewModel.align.observe(viewLifecycleOwner) { align = it; applyStyle(); refreshFormatState() }
         viewModel.theme.observe(viewLifecycleOwner) { theme = it; applyStyle() }
-        viewModel.cover.observe(viewLifecycleOwner) { showCover(it) }
+        viewModel.attachments.observe(viewLifecycleOwner) { showAttachments(it) }
         viewModel.message.observe(viewLifecycleOwner) { event -> event.getIfNotHandled()?.let { showMessage(it) } }
         viewModel.importing.observe(viewLifecycleOwner) { binding.editorImporting.isVisible = it }
     }
@@ -139,10 +138,9 @@ class DiaryEditorFragment : Fragment() {
         binding.formatUnderline.paint.isUnderlineText = true
         binding.formatHeading.setOnClickListener { toggleBlock(RichText.Block.HEADING) }
         binding.formatQuote.setOnClickListener { toggleBlock(RichText.Block.QUOTE) }
-        binding.alignLeft.setOnClickListener { viewModel.setAlign(TextAlign.LEFT) }
-        binding.alignCenter.setOnClickListener { viewModel.setAlign(TextAlign.CENTER) }
-        binding.alignRight.setOnClickListener { viewModel.setAlign(TextAlign.RIGHT) }
-        binding.alignJustify.setOnClickListener { viewModel.setAlign(TextAlign.JUSTIFY) }
+        binding.alignLeft.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.LEFT) }
+        binding.alignCenter.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.CENTER) }
+        binding.alignRight.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.RIGHT) }
     }
 
     // ---------- Formatting ----------
@@ -168,6 +166,15 @@ class DiaryEditorFragment : Fragment() {
         scheduleFlush()
     }
 
+    private fun setParagraphAlign(paragraphAlign: RichText.ParagraphAlign) {
+        val body = binding.bodyInput
+        val text = body.text ?: return
+        body.requestFocus()
+        RichText.setAlignment(text, paragraphAlign, body.selectionStart.coerceAtLeast(0), body.selectionEnd.coerceAtLeast(0))
+        refreshFormatState()
+        scheduleFlush()
+    }
+
     /** The buttons light up for what applies where the cursor is. */
     private fun refreshFormatState() {
         val b = _binding ?: return
@@ -180,10 +187,10 @@ class DiaryEditorFragment : Fragment() {
         val block = RichText.blockAt(text, start)
         b.formatHeading.isSelected = block == RichText.Block.HEADING
         b.formatQuote.isSelected = block == RichText.Block.QUOTE
-        b.alignLeft.isSelected = align == TextAlign.LEFT
-        b.alignCenter.isSelected = align == TextAlign.CENTER
-        b.alignRight.isSelected = align == TextAlign.RIGHT
-        b.alignJustify.isSelected = align == TextAlign.JUSTIFY
+        val paragraphAlign = RichText.alignmentAt(text, start)
+        b.alignLeft.isSelected = paragraphAlign == RichText.ParagraphAlign.LEFT
+        b.alignCenter.isSelected = paragraphAlign == RichText.ParagraphAlign.CENTER
+        b.alignRight.isSelected = paragraphAlign == RichText.ParagraphAlign.RIGHT
     }
 
     private fun scheduleFlush() {
@@ -259,24 +266,37 @@ class DiaryEditorFragment : Fragment() {
         b.coverAdd.iconTint = android.content.res.ColorStateList.valueOf(context.themeColor(theme.secondaryText))
 
         b.bodyInput.applyDiaryText(font, theme, baseSp = size.bodySp)
-        b.bodyInput.applyAlignment(align)
+        b.bodyInput.gravity = android.view.Gravity.TOP or android.view.Gravity.START
         b.bodyInput.text?.let { RichText.restyleQuotes(it, quoteColor(), quoteBar(), quoteGap()) }
         b.bodyInput.setLineSpacing(0f, BODY_LINE_SPACING)
     }
 
-    private fun showCover(cover: DiaryCover?) {
+    private fun showAttachments(attachments: List<DiaryCover>) {
         val b = _binding ?: return
-        b.coverBox.isVisible = cover != null
-        b.coverAdd.isVisible = cover == null
-        if (cover == null) {
-            Glide.with(b.coverImage).clear(b.coverImage)
-            return
+        b.attachmentsScroll.isVisible = attachments.isNotEmpty()
+        b.attachmentsContainer.removeAllViews()
+        if (attachments.isEmpty()) return
+
+        val diaryImages = (requireActivity().application as CineFilesApp).diaryImages
+        val inflater = LayoutInflater.from(requireContext())
+        attachments.forEachIndexed { index, cover ->
+            val item = ItemDiaryAttachmentBinding.inflate(inflater, b.attachmentsContainer, false)
+            if (attachments.size == 1) {
+                // Single attachment stretches cleanly across the page width like a cover
+                val pageWidth = (resources.displayMetrics.widthPixels - 2 * resources.getDimensionPixelSize(R.dimen.space_24)).coerceAtLeast(1)
+                item.root.layoutParams = (item.root.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                    width = pageWidth
+                    marginEnd = 0
+                }
+            }
+            val model: Any? = when (cover.source) {
+                ImageSource.TMDB -> ImageUrls.backdrop(cover.ref)
+                ImageSource.LOCAL -> diaryImages.file(cover.ref)
+            }
+            Glide.with(item.attachmentImage).load(model).centerCrop().error(R.drawable.bg_poster_fallback).into(item.attachmentImage)
+            item.attachmentRemove.setOnClickListener { viewModel.removeAttachment(index) }
+            b.attachmentsContainer.addView(item.root)
         }
-        val model: Any? = when (cover.source) {
-            ImageSource.TMDB -> ImageUrls.backdrop(cover.ref)
-            ImageSource.LOCAL -> (requireActivity().application as CineFilesApp).diaryImages.file(cover.ref)
-        }
-        Glide.with(b.coverImage).load(model).centerCrop().error(R.drawable.bg_poster_fallback).into(b.coverImage)
     }
 
     private fun quoteColor() = requireContext().themeColor(theme.accent)
@@ -336,7 +356,7 @@ class DiaryEditorFragment : Fragment() {
             .setTitle(R.string.diary_image_source_title)
             .setItems(options) { _, which ->
                 if (which == 0) {
-                    pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 } else {
                     DiaryStillsSheet.show(childFragmentManager)
                 }

@@ -36,6 +36,16 @@ class DiaryTextTest {
         assertNull(DiaryCover.parse(":abc"))
     }
 
+    @Test
+    fun multipleAttachmentsAreEncodedAndRestoredInOrder() {
+        val covers = listOf(DiaryCover.local("one.jpg"), DiaryCover.tmdb("/two.jpg"))
+        val encoded = DiaryCover.encodeList(covers)
+        assertEquals(covers, DiaryCover.parseList(encoded))
+        assertEquals(DiaryCover.local("one.jpg"), DiaryCover.parse(encoded))
+        assertTrue(DiaryCover.parseList(null).isEmpty())
+        assertNull(DiaryCover.encodeList(emptyList()))
+    }
+
     // ---------- Words ----------
 
     @Test

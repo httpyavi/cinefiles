@@ -33,8 +33,9 @@ import com.example.cinefiles.util.showMessage
 
 /**
  * Discover screen: ONE single horizontally scrollable filter row with subtle separator
- * (All · Popular · Trending · Top Rated | Action · Adventure · Animation · ...),
- * and a 3-column movie grid that actually updates movie results when any filter is selected.
+ * (All · Popular · Trending · Top Rated | All Genres · Action · Adventure · Animation · ...),
+ * with TWO independent selections (Discovery Type and Genre) that actually filter results,
+ * and displays movies in ALL languages by default.
  */
 class DiscoverFragment : Fragment() {
 
@@ -46,12 +47,11 @@ class DiscoverFragment : Fragment() {
     // Single 3-column grid adapter for all Discover results
     private lateinit var discoverAdapter: PosterAdapter
 
-    private var allChipId: Int = 0
-    private var activeFilterChipId: Int = 0
-    private var isUpdatingChips: Boolean = false
+    private var allCategoryChipId: Int = 0
+    private var allGenreChipId: Int = 0
 
-    private val chipCategories = HashMap<Int, BrowseCategory>()
-    private val chipGenreIds = HashMap<Int, Int>()
+    private val categoryChipIds = HashMap<BrowseCategory, Int>()
+    private val genreChipIds = HashMap<Int, Int>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -82,8 +82,8 @@ class DiscoverFragment : Fragment() {
     override fun onDestroyView() {
         hideKeyboard()
         super.onDestroyView()
-        chipCategories.clear()
-        chipGenreIds.clear()
+        categoryChipIds.clear()
+        genreChipIds.clear()
         _binding = null
     }
 
@@ -106,72 +106,70 @@ class DiscoverFragment : Fragment() {
 
     /**
      * Builds all filters in ONE single horizontally scrollable row:
-     * Curated (All · Popular · Trending · Top Rated) | Genres (Action · Adventure · ...).
+     * Curated Discovery Type (All · Popular · Trending · Top Rated) | Genres (All Genres · Action · Adventure · ...).
+     * The two groups operate completely independently: selecting one does NOT reset the other.
      */
     private fun setUpFilterChips() {
         val curatedGroup = binding.filterChipsCurated
         val genreGroup = binding.filterChipsGenres
 
-        // Curated discovery filters
+        // 1. Discovery Type filters: All · Popular · Trending · Top Rated
         val allChip = curatedGroup.addChoiceChip(getString(R.string.discover_all))
-        allChipId = allChip.id
-        chipCategories[allChip.id] = BrowseCategory.ALL
-        allChip.setOnClickListener { selectFilter(allChip.id, isCurated = true) }
+        allCategoryChipId = allChip.id
+        categoryChipIds[BrowseCategory.ALL] = allChip.id
+        allChip.setOnClickListener { selectCategory(BrowseCategory.ALL) }
 
         val popularChip = curatedGroup.addChoiceChip(getString(R.string.discover_popular))
-        chipCategories[popularChip.id] = BrowseCategory.POPULAR
-        popularChip.setOnClickListener { selectFilter(popularChip.id, isCurated = true) }
+        categoryChipIds[BrowseCategory.POPULAR] = popularChip.id
+        popularChip.setOnClickListener {
+            val current = viewModel.filters.value?.category ?: BrowseCategory.ALL
+            selectCategory(if (current == BrowseCategory.POPULAR) BrowseCategory.ALL else BrowseCategory.POPULAR)
+        }
 
         val trendingChip = curatedGroup.addChoiceChip(getString(R.string.discover_trending))
-        chipCategories[trendingChip.id] = BrowseCategory.TRENDING
-        trendingChip.setOnClickListener { selectFilter(trendingChip.id, isCurated = true) }
+        categoryChipIds[BrowseCategory.TRENDING] = trendingChip.id
+        trendingChip.setOnClickListener {
+            val current = viewModel.filters.value?.category ?: BrowseCategory.ALL
+            selectCategory(if (current == BrowseCategory.TRENDING) BrowseCategory.ALL else BrowseCategory.TRENDING)
+        }
 
         val topRatedChip = curatedGroup.addChoiceChip(getString(R.string.discover_top_rated))
-        chipCategories[topRatedChip.id] = BrowseCategory.TOP_RATED
-        topRatedChip.setOnClickListener { selectFilter(topRatedChip.id, isCurated = true) }
+        categoryChipIds[BrowseCategory.TOP_RATED] = topRatedChip.id
+        topRatedChip.setOnClickListener {
+            val current = viewModel.filters.value?.category ?: BrowseCategory.ALL
+            selectCategory(if (current == BrowseCategory.TOP_RATED) BrowseCategory.ALL else BrowseCategory.TOP_RATED)
+        }
 
-        // Genre filters in alphabetical order: Action, Adventure, Animation, Comedy, Crime, etc.
+        // 2. Genre filters: All Genres (default) · Action · Adventure · Animation · ...
+        val allGenresChip = genreGroup.addChoiceChip(getString(R.string.discover_all_genres))
+        allGenreChipId = allGenresChip.id
+        allGenresChip.setOnClickListener { selectGenre(null) }
+
         for ((genreId, name) in Genres.all) {
             val chip = genreGroup.addChoiceChip(name)
-            chipGenreIds[chip.id] = genreId
-            chip.setOnClickListener { selectFilter(chip.id, isCurated = false) }
+            genreChipIds[genreId] = chip.id
+            chip.setOnClickListener {
+                val current = viewModel.filters.value?.genreId
+                selectGenre(if (current == genreId) null else genreId)
+            }
         }
 
-        // Default selection: ALL
-        activeFilterChipId = allChipId
-        curatedGroup.check(allChipId)
+        // Default initial selections
+        curatedGroup.check(allCategoryChipId)
+        genreGroup.check(allGenreChipId)
     }
 
-    private fun selectFilter(chipId: Int, isCurated: Boolean) {
-        if (activeFilterChipId == chipId) {
-            // Ensure the chip remains visually checked
-            if (isCurated) binding.filterChipsCurated.check(chipId)
-            else binding.filterChipsGenres.check(chipId)
-            return
-        }
+    private fun selectCategory(category: BrowseCategory) {
+        val chipId = categoryChipIds[category] ?: allCategoryChipId
+        binding.filterChipsCurated.check(chipId)
+        viewModel.selectCategory(category)
+        scrollToChip(chipId)
+    }
 
-        activeFilterChipId = chipId
-        isUpdatingChips = true
-        try {
-            if (isCurated) {
-                binding.filterChipsGenres.clearCheck()
-                binding.filterChipsCurated.check(chipId)
-            } else {
-                binding.filterChipsCurated.clearCheck()
-                binding.filterChipsGenres.check(chipId)
-            }
-        } finally {
-            isUpdatingChips = false
-        }
-
-        val category = chipCategories[chipId]
-        val genreId = chipGenreIds[chipId]
-        if (category != null) {
-            viewModel.selectCategory(category)
-        } else if (genreId != null) {
-            viewModel.selectGenre(genreId)
-        }
-
+    private fun selectGenre(genreId: Int?) {
+        val chipId = if (genreId != null) genreChipIds[genreId] ?: allGenreChipId else allGenreChipId
+        binding.filterChipsGenres.check(chipId)
+        viewModel.selectGenre(genreId)
         scrollToChip(chipId)
     }
 
@@ -213,7 +211,8 @@ class DiscoverFragment : Fragment() {
             message = R.string.discover_empty_message,
             action = EmptyAction(R.string.discover_clear_filters) {
                 viewModel.clearFilters()
-                selectFilter(allChipId, isCurated = true)
+                selectCategory(BrowseCategory.ALL)
+                selectGenre(null)
             }
         )
         binding.stateError.errorRetry.setOnClickListener { viewModel.retry() }
@@ -243,6 +242,17 @@ class DiscoverFragment : Fragment() {
             }
             binding.searchClear.isVisible = filters.query.isNotEmpty()
             binding.searchNote.isVisible = filters.isSearching
+
+            // Keep chips synchronized with active filters
+            val targetCategoryChipId = categoryChipIds[filters.category] ?: allCategoryChipId
+            if (binding.filterChipsCurated.checkedChipId != targetCategoryChipId) {
+                binding.filterChipsCurated.check(targetCategoryChipId)
+            }
+
+            val targetGenreChipId = if (filters.genreId != null) genreChipIds[filters.genreId] ?: allGenreChipId else allGenreChipId
+            if (binding.filterChipsGenres.checkedChipId != targetGenreChipId) {
+                binding.filterChipsGenres.check(targetGenreChipId)
+            }
         }
 
         viewModel.state.observe(viewLifecycleOwner) { state ->

@@ -119,6 +119,7 @@
     <dimen name="popcorn_size">40dp</dimen>               <!-- one bucket of the rating on Details -->
     <dimen name="popcorn_gap">8dp</dimen>
     <dimen name="popcorn_size_small">16dp</dimen>         <!-- a read-only rating in the diary list -->
+    <dimen name="popcorn_size_diary_header">12dp</dimen>  <!-- slightly smaller rating in the diary editor header -->
     <dimen name="popcorn_gap_small">2dp</dimen>
     <dimen name="crew_label_width">124dp</dimen>          <!-- the role column of the Crew section ("Cinematography" fits on one line) -->
     <dimen name="diary_cover_width">64dp</dimen>          <!-- the small poster of a diary page in the list -->
