@@ -45,12 +45,10 @@
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
-                android:drawablePadding="@dimen/space_4"
                 android:ellipsize="end"
                 android:focusable="true"
                 android:maxLines="2"
                 android:textAppearance="@style/TextAppearance.CineFiles.Headline"
-                app:drawableEndCompat="@drawable/ic_chevron_right"
                 tools:text="Interstellar" />
 
             <LinearLayout

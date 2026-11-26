@@ -21,6 +21,7 @@ import com.example.cinefiles.databinding.FragmentDiaryEditorBinding
 import com.example.cinefiles.databinding.ItemDiaryAttachmentBinding
 import com.example.cinefiles.logic.DiaryCover
 import com.example.cinefiles.logic.DiaryFont
+import com.example.cinefiles.logic.DiaryText
 import com.example.cinefiles.logic.DiaryTextSize
 import com.example.cinefiles.logic.DiaryTheme
 import com.example.cinefiles.logic.ImageSource
@@ -64,8 +65,8 @@ class DiaryEditorFragment : Fragment() {
 
     private val flushBody = Runnable { _binding?.let { flush() } }
 
-    /** The phone's own multi-photo picker (it falls back to the system file picker on phones that do not have one). */
-    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+    /** The phone's own multi-photo picker (capped at [DiaryText.MAX_PHOTOS]). */
+    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(DiaryText.MAX_PHOTOS)) { uris ->
         if (uris.isNotEmpty()) viewModel.importCovers(uris)
     }
 
@@ -141,6 +142,7 @@ class DiaryEditorFragment : Fragment() {
         binding.alignLeft.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.LEFT) }
         binding.alignCenter.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.CENTER) }
         binding.alignRight.setOnClickListener { setParagraphAlign(RichText.ParagraphAlign.RIGHT) }
+        binding.formatPhoto.setOnClickListener { chooseCoverSource() }
     }
 
     // ---------- Formatting ----------
@@ -264,6 +266,7 @@ class DiaryEditorFragment : Fragment() {
 
         b.coverAdd.setTextColor(context.themeColor(theme.secondaryText))
         b.coverAdd.iconTint = android.content.res.ColorStateList.valueOf(context.themeColor(theme.secondaryText))
+        b.photoCount.setTextColor(context.themeColor(theme.secondaryText))
 
         b.bodyInput.applyDiaryText(font, theme, baseSp = size.bodySp)
         b.bodyInput.gravity = android.view.Gravity.TOP or android.view.Gravity.START
@@ -274,6 +277,15 @@ class DiaryEditorFragment : Fragment() {
     private fun showAttachments(attachments: List<DiaryCover>) {
         val b = _binding ?: return
         b.attachmentsScroll.isVisible = attachments.isNotEmpty()
+        b.photoCount.isVisible = attachments.isNotEmpty()
+        if (attachments.isNotEmpty()) {
+            b.photoCount.text = getString(R.string.diary_photos_count, attachments.size)
+        }
+        val atLimit = attachments.size >= DiaryText.MAX_PHOTOS
+        b.coverAdd.isEnabled = !atLimit
+        b.coverAdd.alpha = if (atLimit) 0.45f else 1f
+        b.formatPhoto.alpha = if (atLimit) 0.45f else 1f
+
         b.attachmentsContainer.removeAllViews()
         if (attachments.isEmpty()) return
 
@@ -349,8 +361,12 @@ class DiaryEditorFragment : Fragment() {
             .show()
     }
 
-    /** "Add a cover picture": from the phone's photos, or a still of the movie. */
+    /** "Add photos": from the phone's photos, or stills of the movie (up to 10 photos). */
     private fun chooseCoverSource() {
+        if ((viewModel.attachments.value?.size ?: 0) >= DiaryText.MAX_PHOTOS) {
+            showMessage(R.string.diary_photos_limit_reached)
+            return
+        }
         val options = arrayOf(getString(R.string.diary_image_from_phone), getString(R.string.diary_image_from_movie))
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.diary_image_source_title)

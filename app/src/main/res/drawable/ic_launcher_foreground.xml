@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Explicit 108dp adaptive icon canvas prevents AdaptiveIconDrawable from stretching the logo edge-to-edge -->
     <item
-        android:width="56dp"
-        android:height="36dp"
+        android:width="108dp"
+        android:height="108dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item
+        android:width="54dp"
+        android:height="35dp"
         android:drawable="@drawable/cinefiles_logo_white"
         android:gravity="center" />
 </layer-list>

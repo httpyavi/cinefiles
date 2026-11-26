@@ -47,7 +47,6 @@ class DiaryEntryAdapter(
         item.entryPoster.loadImage(ImageUrls.poster(entry.posterPath))
         item.entryTitle.text = entry.movieTitle
         item.entryTitle.setTextColor(context.themeColor(theme.accent))
-        item.entryTitle.compoundDrawablesRelative[2]?.setTint(context.themeColor(theme.accent))
         item.entryTitle.contentDescription = context.getString(R.string.diary_open_movie_description, entry.movieTitle)
         item.entryTitle.setOnClickListener { onOpenMovie(entry) }
         item.entryPoster.setOnClickListener { onOpenMovie(entry) }

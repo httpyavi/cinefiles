@@ -100,6 +100,8 @@ object HtmlText {
 /** Questions about the words of a page. */
 object DiaryText {
 
+    const val MAX_PHOTOS = 10
+
     /** The words of a page's body with no formatting marks. */
     fun plainBody(bodyHtml: String): String = HtmlText.toPlain(bodyHtml)
 

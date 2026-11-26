@@ -179,34 +179,6 @@
                     tools:ignore="LabelFor"
                     tools:text="A film about trust" />
 
-                <!-- Picture attachments (zero, one, or multiple) + add button -->
-                <HorizontalScrollView
-                    android:id="@+id/attachmentsScroll"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:overScrollMode="never"
-                    android:scrollbars="none"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <LinearLayout
-                        android:id="@+id/attachmentsContainer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal" />
-                </HorizontalScrollView>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/coverAdd"
-                    style="@style/Widget.CineFiles.Button.Text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_8"
-                    android:text="@string/diary_cover_add"
-                    app:icon="@drawable/ic_image"
-                    app:iconTint="@color/text_secondary" />
-
                 <View
                     android:id="@+id/headerRule"
                     android:layout_width="@dimen/diary_rule_width"
@@ -227,6 +199,51 @@
                     android:inputType="textCapSentences|textMultiLine"
                     android:minHeight="@dimen/diary_body_min_height"
                     android:padding="0dp" />
+
+                <!-- Photo attachments inside the diary content (Apple Notes style, up to 10 photos) -->
+                <HorizontalScrollView
+                    android:id="@+id/attachmentsScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_16"
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:id="@+id/attachmentsContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/coverAdd"
+                        style="@style/Widget.CineFiles.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/diary_cover_add"
+                        app:icon="@drawable/ic_image"
+                        app:iconTint="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/photoCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                        android:visibility="gone"
+                        tools:text="3 / 10 photos"
+                        tools:visibility="visible" />
+                </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
@@ -331,6 +348,20 @@
                 style="@style/Widget.CineFiles.FormatButton"
                 android:contentDescription="@string/diary_align_right"
                 android:src="@drawable/ic_align_right" />
+
+            <View
+                android:layout_width="@dimen/glass_stroke_width"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/space_4"
+                android:layout_marginEnd="@dimen/space_8"
+                android:background="@color/glass_stroke"
+                android:importantForAccessibility="no" />
+
+            <ImageButton
+                android:id="@+id/formatPhoto"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_cover_add"
+                android:src="@drawable/ic_image" />
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>

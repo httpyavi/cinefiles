@@ -462,7 +462,9 @@
     <string name="diary_missing_title">Page not found</string>
     <string name="diary_meta_rated">%1$s · Rated %2$s</string>
     <string name="diary_headline_hint">Headline (optional)</string>
-    <string name="diary_cover_add">Add a cover picture</string>
+    <string name="diary_cover_add">Add photos</string>
+    <string name="diary_photos_count">%1$d / 10 photos</string>
+    <string name="diary_photos_limit_reached">Maximum of 10 photos per diary entry reached.</string>
     <string name="diary_cover_description">The cover picture of this page</string>
     <string name="diary_cover_replace">Replace the cover picture</string>
     <string name="diary_cover_remove">Remove the cover picture</string>

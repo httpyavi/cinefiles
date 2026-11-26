@@ -67,16 +67,8 @@ class DiaryListFragment : Fragment() {
         binding.diaryList.adapter = adapter
         binding.diaryList.itemAnimator = null
 
-        // "Diary: Interstellar" for one movie, "My Diary" for all of them
-        viewModel.movieTitle.observe(viewLifecycleOwner) { title ->
-            binding.diaryTitle.text = if (title != null) getString(R.string.diary_list_movie_title, title) else getString(R.string.diary_list_title)
-        }
-        if (forOneMovie) {
-            // "Diary: Interstellar" is a link to that movie's Details, like the movie's name on a page
-            binding.diaryTitle.isClickable = true
-            binding.diaryTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_chevron_right, 0)
-            binding.diaryTitle.setOnClickListener { findNavController().openMovieDetails(viewModel.movieId, returnIfOpenBelow = true) }
-        }
+        // Keep the diary header clean ("My Diary") without long movie titles overcrowding it
+        binding.diaryTitle.setText(R.string.diary_list_title)
 
         binding.stateEmpty.show(
             icon = R.drawable.ic_book,

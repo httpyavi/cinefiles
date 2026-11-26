@@ -44,6 +44,10 @@ class DiaryTextTest {
         assertEquals(DiaryCover.local("one.jpg"), DiaryCover.parse(encoded))
         assertTrue(DiaryCover.parseList(null).isEmpty())
         assertNull(DiaryCover.encodeList(emptyList()))
+
+        val ten = (1..DiaryText.MAX_PHOTOS).map { DiaryCover.local("photo_$it.jpg") }
+        assertEquals(10, DiaryText.MAX_PHOTOS)
+        assertEquals(ten, DiaryCover.parseList(DiaryCover.encodeList(ten)))
     }
 
     // ---------- Words ----------

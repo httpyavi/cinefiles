@@ -199,14 +199,22 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
         if (_theme.value != theme) _theme.value = theme
     }
 
-    /** Copies pictures from the phone's gallery into the app, then appends them to the page's attachments. */
+    /** Copies pictures from the phone's gallery into the app, up to [DiaryText.MAX_PHOTOS] per entry. */
     fun importCovers(uris: List<Uri>) {
         if (uris.isEmpty()) return
+        val current = _attachments.value.orEmpty()
+        val remaining = DiaryText.MAX_PHOTOS - current.size
+        if (remaining <= 0) {
+            _message.value = Event(R.string.diary_photos_limit_reached)
+            return
+        }
+        val toImport = uris.take(remaining)
+        val truncated = uris.size > remaining
         viewModelScope.launch {
             _importing.value = true
             val added = ArrayList<DiaryCover>()
             var anyFailed = false
-            for (uri in uris) {
+            for (uri in toImport) {
                 val name = diaryImages.import(uri)
                 if (name == null) {
                     anyFailed = true
@@ -216,17 +224,25 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
                 }
             }
             _importing.value = false
-            if (anyFailed) _message.value = Event(R.string.diary_image_failed)
+            if (anyFailed) {
+                _message.value = Event(R.string.diary_image_failed)
+            } else if (truncated) {
+                _message.value = Event(R.string.diary_photos_limit_reached)
+            }
             if (added.isNotEmpty()) {
                 _attachments.value = _attachments.value.orEmpty() + added
             }
         }
     }
 
-    /** Appends a still of the movie (a TMDB path) to the page's attachments. */
+    /** Appends a still of the movie (a TMDB path) to the page's attachments, up to [DiaryText.MAX_PHOTOS]. */
     fun setStillAsCover(path: String) {
-        val cover = DiaryCover.tmdb(path)
         val current = _attachments.value.orEmpty()
+        if (current.size >= DiaryText.MAX_PHOTOS) {
+            _message.value = Event(R.string.diary_photos_limit_reached)
+            return
+        }
+        val cover = DiaryCover.tmdb(path)
         if (cover !in current) {
             _attachments.value = current + cover
         }
