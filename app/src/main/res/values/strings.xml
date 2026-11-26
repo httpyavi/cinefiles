@@ -280,6 +280,25 @@
     <string name="profile_taste_empty_cta">Explore movies</string>
     <string name="profile_taste_none">—</string>
     <string name="profile_taste_value">%1$s · %2$s</string>
+    <string name="profile_taste_support_pair">Your favorites lean toward %1$s and %2$s.</string>
+    <plurals name="profile_taste_support_single">
+        <item quantity="one">You\'ve liked %1$d %2$s movie.</item>
+        <item quantity="other">You\'ve liked %1$d %2$s movies.</item>
+    </plurals>
+    <string name="profile_taste_personality_romantic">You\'re a hopeless romantic who loves stories that make your heart ache and butterflies take flight.</string>
+    <string name="profile_taste_personality_drama_romance">You\'re drawn to tender, emotionally rich stories where love and longing take center stage.</string>
+    <string name="profile_taste_personality_mind_bending">You gravitate toward mind-bending stories that leave you thinking long after the credits roll.</string>
+    <string name="profile_taste_personality_thrill_seeker">You love a little chaos, big adventures, and movies that keep you on the edge of your seat.</string>
+    <string name="profile_taste_personality_deep_feeler">You\'re drawn to deeply human stories rich with emotion, tension, and unforgettable performances.</string>
+    <string name="profile_taste_personality_comedy_lover">You watch for the joy of it—sharp wit, warm chaos, and stories that leave you smiling.</string>
+    <string name="profile_taste_personality_romcom_fan">You\'re a fan of sparkling chemistry, quick banter, and feel-good stories with real heart.</string>
+    <string name="profile_taste_personality_suspense_fan">You love high-stakes twists, shadowy motives, and tension that never lets up.</string>
+    <string name="profile_taste_personality_horror_fan">You thrive on atmosphere, tension, and the thrill of a story that lingers in the dark.</string>
+    <string name="profile_taste_personality_dreamer">You\'re a dreamer at heart, drawn to sweeping worlds, imagination, and cinematic wonder.</string>
+    <string name="profile_taste_personality_curious_mind">You\'re endlessly curious, drawn to defining moments and stories rooted in the real world.</string>
+    <string name="profile_taste_personality_music_soul">You feel movies through rhythm and sound, drawn to stories where music drives the soul.</string>
+    <string name="profile_taste_personality_frontier_spirit">You love wide horizons, quiet grit, and classic tales of frontier justice.</string>
+    <string name="profile_taste_personality_eclectic">You\'ve got an eclectic eye, finding standout moments across every kind of story.</string>
     <plurals name="profile_taste_liked">
         <item quantity="one">%1$d liked movie</item>
         <item quantity="other">%1$d liked movies</item>

@@ -7,7 +7,7 @@
     android:id="@+id/optionCard"
     style="@style/Widget.CineFiles.Card"
     android:layout_width="@dimen/diary_option_width"
-    android:layout_height="wrap_content"
+    android:layout_height="@dimen/diary_option_height"
     android:layout_marginEnd="@dimen/space_8"
     android:clickable="true"
     android:focusable="true"
@@ -16,7 +16,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:paddingStart="@dimen/space_8"
@@ -27,7 +27,9 @@
         <TextView
             android:id="@+id/optionSample"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
             android:importantForAccessibility="no"
             android:text="@string/diary_font_sample"
             android:textAppearance="@style/TextAppearance.CineFiles.Title" />
@@ -37,8 +39,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_4"
-            android:gravity="center"
+            android:gravity="center_horizontal|top"
             android:maxLines="2"
+            android:minLines="2"
             android:textAppearance="@style/TextAppearance.CineFiles.Caption"
             tools:text="Midnight Obsidian" />
     </LinearLayout>

@@ -163,87 +163,14 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- The headline (optional) -->
-                <EditText
-                    android:id="@+id/headlineInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:background="@null"
-                    android:hint="@string/diary_headline_hint"
-                    android:imeOptions="actionNext"
-                    android:importantForAutofill="no"
-                    android:inputType="textCapSentences"
-                    android:maxLength="@integer/diary_headline_max_length"
-                    android:padding="0dp"
-                    tools:ignore="LabelFor"
-                    tools:text="A film about trust" />
-
-                <View
-                    android:id="@+id/headerRule"
-                    android:layout_width="@dimen/diary_rule_width"
-                    android:layout_height="@dimen/diary_rule_height"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:importantForAccessibility="no" />
-
-                <!-- The body: one continuous canvas, no border -->
-                <com.example.cinefiles.ui.diary.RichEditText
-                    android:id="@+id/bodyInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:background="@null"
-                    android:gravity="top"
-                    android:hint="@string/diary_text_hint"
-                    android:importantForAutofill="no"
-                    android:inputType="textCapSentences|textMultiLine"
-                    android:minHeight="@dimen/diary_body_min_height"
-                    android:padding="0dp" />
-
-                <!-- Photo attachments inside the diary content (Apple Notes style, up to 10 photos) -->
-                <HorizontalScrollView
-                    android:id="@+id/attachmentsScroll"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:overScrollMode="never"
-                    android:scrollbars="none"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <LinearLayout
-                        android:id="@+id/attachmentsContainer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal" />
-                </HorizontalScrollView>
-
+                <!-- Document content: interleaved text blocks and inline photos -->
                 <LinearLayout
+                    android:id="@+id/documentContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_8"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/coverAdd"
-                        style="@style/Widget.CineFiles.Button.Text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diary_cover_add"
-                        app:icon="@drawable/ic_image"
-                        app:iconTint="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/photoCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_12"
-                        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
-                        android:visibility="gone"
-                        tools:text="3 / 10 photos"
-                        tools:visibility="visible" />
-                </LinearLayout>
+                    android:layout_marginTop="@dimen/space_16"
+                    android:minHeight="@dimen/diary_body_min_height"
+                    android:orientation="vertical" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 

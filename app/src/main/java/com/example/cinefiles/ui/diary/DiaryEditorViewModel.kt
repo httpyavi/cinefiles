@@ -103,6 +103,11 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
     /** A line to show once (a string resource). */
     val message: LiveData<Event<Int>> = _message
 
+    private val _photosToInsert = MutableLiveData<Event<List<DiaryCover>>>()
+
+    /** Newly picked/selected photos to insert at the editor's current cursor position. */
+    val photosToInsert: LiveData<Event<List<DiaryCover>>> = _photosToInsert
+
     private val _importing = MutableLiveData(false)
 
     /** True while a gallery picture is being copied into the app. */
@@ -183,6 +188,15 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
 
     fun currentBodyHtml(): String = bodyHtml
 
+    fun currentCoverUri(): String? = DiaryCover.encodeList(_attachments.value.orEmpty())
+
+    /** Keeps the attachment list synced with the inline photos currently in the document. */
+    fun syncAttachments(covers: List<DiaryCover>) {
+        if (_attachments.value != covers) {
+            _attachments.value = covers
+        }
+    }
+
     fun setFont(font: DiaryFont) {
         if (_font.value != font) _font.value = font
     }
@@ -231,11 +245,12 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
             }
             if (added.isNotEmpty()) {
                 _attachments.value = _attachments.value.orEmpty() + added
+                _photosToInsert.value = Event(added)
             }
         }
     }
 
-    /** Appends a still of the movie (a TMDB path) to the page's attachments, up to [DiaryText.MAX_PHOTOS]. */
+    /** Inserts a still of the movie (a TMDB path) into the document, up to [DiaryText.MAX_PHOTOS]. */
     fun setStillAsCover(path: String) {
         val current = _attachments.value.orEmpty()
         if (current.size >= DiaryText.MAX_PHOTOS) {
@@ -243,9 +258,8 @@ class DiaryEditorViewModel(app: Application, handle: SavedStateHandle) : Android
             return
         }
         val cover = DiaryCover.tmdb(path)
-        if (cover !in current) {
-            _attachments.value = current + cover
-        }
+        _attachments.value = current + cover
+        _photosToInsert.value = Event(listOf(cover))
     }
 
     /** Removes a single attachment at [index] without affecting the other attachments. */

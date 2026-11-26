@@ -2,13 +2,18 @@ package com.example.cinefiles.ui.diary
 
 import android.graphics.Typeface
 import android.os.Bundle
+import android.text.InputType
+import android.text.SpannableStringBuilder
 import android.text.format.DateFormat
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -18,9 +23,11 @@ import com.bumptech.glide.Glide
 import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
 import com.example.cinefiles.databinding.FragmentDiaryEditorBinding
-import com.example.cinefiles.databinding.ItemDiaryAttachmentBinding
+import com.example.cinefiles.databinding.ItemDiaryInlinePhotoBinding
 import com.example.cinefiles.logic.DiaryCover
+import com.example.cinefiles.logic.DiaryDocument
 import com.example.cinefiles.logic.DiaryFont
+import com.example.cinefiles.logic.DiarySegment
 import com.example.cinefiles.logic.DiaryText
 import com.example.cinefiles.logic.DiaryTextSize
 import com.example.cinefiles.logic.DiaryTheme
@@ -38,16 +45,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.Date
 
 /**
- * The Diary editor: a page written like a post on Substack, with no boxes and no cells. At the top the movie's name (tap it for the movie's
- * Details), the date and the rating; then an optional headline, an optional cover picture and ONE continuous body. It only draws what
- * DiaryEditorViewModel says and forwards taps; the two text fields ARE the editor.
+ * The Diary editor: a clean document-style editor inspired by Apple Notes. At the top the movie's name (tap it for Details),
+ * the date and the rating; then a continuous flow of rich-text paragraphs and inline photos.
  *
- *  - The strip at the bottom has bold, italic, underline, heading, pull-quote and left / center / right / justify (RichText.kt). The first five
- *    work on the words (or the paragraph) with the cursor, the alignment is the whole page's. "Style" (DiaryStyleSheet) changes the font, the
- *    text size and the canvas theme, live.
- *  - The cover is a picture from the phone's photos (copied into the app, so it never breaks) or a still of the movie from TMDB (DiaryStillsSheet).
- *  - The page is saved when you leave it, when the app goes to the background and with the Save button. A page with nothing on it is never
- *    saved; leaving a saved page that was emptied asks whether to delete it.
+ *  - The strip at the bottom has bold, italic, underline, heading, pull-quote, alignments, and Add Photo.
+ *  - "Style" (DiaryStyleSheet) changes the font, the text size and the canvas theme, live.
+ *  - Photos are inserted directly at the cursor position and saved in exact document order.
  */
 class DiaryEditorFragment : Fragment() {
 
@@ -56,7 +59,12 @@ class DiaryEditorFragment : Fragment() {
 
     private val viewModel: DiaryEditorViewModel by viewModels()
 
-    private var textFilled = false // the two text fields hold the page's words (reset with the view)
+    private var documentFilled = false
+    private var suppressTextWatchers = false
+    private var activeEditor: RichEditText? = null
+    private var pendingInsertEditor: RichEditText? = null
+    private var pendingInsertPos: Int = 0
+
     private var movieId = 0
     private var font = DiaryFont.DEFAULT
     private var size = DiaryTextSize.DEFAULT
@@ -79,12 +87,13 @@ class DiaryEditorFragment : Fragment() {
         binding.editorTopBar.applySystemBarsPadding(top = true, bottom = false)
         binding.formatBar.applySystemBarsPadding(top = false, bottom = true)
 
-        // A headline can be long: it wraps over a few lines (a text field that is not multi-line scrolls sideways unless told not to)
-        binding.headlineInput.setHorizontallyScrolling(false)
-        binding.headlineInput.maxLines = HEADLINE_MAX_LINES
-
         setUpFormatBar()
-        setUpTexts()
+
+        binding.documentContainer.setOnClickListener {
+            val last = currentEditors().lastOrNull() ?: return@setOnClickListener
+            last.requestFocus()
+            last.setSelection(last.text?.length ?: 0)
+        }
 
         binding.editorBack.setOnClickListener { leave() }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
@@ -93,14 +102,16 @@ class DiaryEditorFragment : Fragment() {
         binding.editorStyle.setOnClickListener { DiaryStyleSheet.show(childFragmentManager) }
         binding.editorSave.setOnClickListener { save() }
         binding.movieLink.setOnClickListener { findNavController().openMovieDetails(movieId, returnIfOpenBelow = true) }
-        binding.coverAdd.setOnClickListener { chooseCoverSource() }
 
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
         viewModel.font.observe(viewLifecycleOwner) { font = it; applyStyle() }
         viewModel.size.observe(viewLifecycleOwner) { size = it; applyStyle() }
         viewModel.align.observe(viewLifecycleOwner) { align = it; applyStyle(); refreshFormatState() }
         viewModel.theme.observe(viewLifecycleOwner) { theme = it; applyStyle() }
-        viewModel.attachments.observe(viewLifecycleOwner) { showAttachments(it) }
+        viewModel.attachments.observe(viewLifecycleOwner) { updatePhotoLimitState(it.size) }
+        viewModel.photosToInsert.observe(viewLifecycleOwner) { event ->
+            event.getIfNotHandled()?.let { insertPhotos(it) }
+        }
         viewModel.message.observe(viewLifecycleOwner) { event -> event.getIfNotHandled()?.let { showMessage(it) } }
         viewModel.importing.observe(viewLifecycleOwner) { binding.editorImporting.isVisible = it }
     }
@@ -114,24 +125,15 @@ class DiaryEditorFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding.root.removeCallbacks(flushBody)
-        textFilled = false
+        documentFilled = false
+        activeEditor = null
+        pendingInsertEditor = null
         _binding = null
     }
 
     // ---------- Setup ----------
 
-    private fun setUpTexts() {
-        binding.headlineInput.doAfterTextChanged { if (textFilled) viewModel.onHeadlineChanged(it?.toString().orEmpty()) }
-        binding.bodyInput.doAfterTextChanged {
-            if (!textFilled) return@doAfterTextChanged
-            // Turning the words into HTML is a little work: do it a moment after the typing pauses (and always before saving)
-            binding.root.removeCallbacks(flushBody)
-            binding.root.postDelayed(flushBody, FLUSH_DELAY_MS)
-        }
-        binding.bodyInput.onSelectionChangedListener = { _, _ -> refreshFormatState() }
-    }
-
-    /** The strip: bold, italic, underline, heading and pull-quote act on the body's cursor or selection; the alignments on the page. */
+    /** The strip: bold, italic, underline, heading, pull-quote, alignments, and Add Photo. */
     private fun setUpFormatBar() {
         binding.formatBold.setOnClickListener { toggleInline(Typeface.BOLD) }
         binding.formatItalic.setOnClickListener { toggleInline(Typeface.ITALIC) }
@@ -147,8 +149,17 @@ class DiaryEditorFragment : Fragment() {
 
     // ---------- Formatting ----------
 
+    private fun targetEditor(): RichEditText? =
+        activeEditor?.takeIf { it.parent === binding.documentContainer } ?: currentEditors().firstOrNull()
+
+    private fun currentEditors(): List<RichEditText> =
+        binding.documentContainer.children.filterIsInstance<RichEditText>().toList()
+
+    private fun currentCovers(): List<DiaryCover> =
+        binding.documentContainer.children.mapNotNull { it.tag as? DiaryCover }.toList()
+
     private fun toggleInline(style: Int) {
-        val body = binding.bodyInput
+        val body = targetEditor() ?: return
         val text = body.text ?: return
         body.requestFocus()
         RichText.toggle(text, style, body.selectionStart.coerceAtLeast(0), body.selectionEnd.coerceAtLeast(0))
@@ -157,7 +168,7 @@ class DiaryEditorFragment : Fragment() {
     }
 
     private fun toggleBlock(block: RichText.Block) {
-        val body = binding.bodyInput
+        val body = targetEditor() ?: return
         val text = body.text ?: return
         body.requestFocus()
         RichText.toggleBlock(
@@ -169,7 +180,7 @@ class DiaryEditorFragment : Fragment() {
     }
 
     private fun setParagraphAlign(paragraphAlign: RichText.ParagraphAlign) {
-        val body = binding.bodyInput
+        val body = targetEditor() ?: return
         val text = body.text ?: return
         body.requestFocus()
         RichText.setAlignment(text, paragraphAlign, body.selectionStart.coerceAtLeast(0), body.selectionEnd.coerceAtLeast(0))
@@ -180,9 +191,10 @@ class DiaryEditorFragment : Fragment() {
     /** The buttons light up for what applies where the cursor is. */
     private fun refreshFormatState() {
         val b = _binding ?: return
-        val text = b.bodyInput.text ?: return
-        val start = b.bodyInput.selectionStart.coerceAtLeast(0)
-        val end = b.bodyInput.selectionEnd.coerceAtLeast(0)
+        val editor = targetEditor() ?: return
+        val text = editor.text ?: return
+        val start = editor.selectionStart.coerceAtLeast(0)
+        val end = editor.selectionEnd.coerceAtLeast(0)
         b.formatBold.isSelected = RichText.isActive(text, Typeface.BOLD, start, end)
         b.formatItalic.isSelected = RichText.isActive(text, Typeface.ITALIC, start, end)
         b.formatUnderline.isSelected = RichText.isActive(text, RichText.UNDERLINE, start, end)
@@ -200,12 +212,27 @@ class DiaryEditorFragment : Fragment() {
         binding.root.postDelayed(flushBody, FLUSH_DELAY_MS)
     }
 
-    /** Hands the ViewModel what the body says right now (as HTML). */
+    /** Serializes the document blocks (text + inline photos in order) and hands them to the ViewModel. */
     private fun flush() {
         val b = _binding ?: return
-        if (!textFilled) return
-        viewModel.onBodyChanged(RichText.toHtml(b.bodyInput.text ?: return))
-        viewModel.onHeadlineChanged(b.headlineInput.text?.toString().orEmpty())
+        if (!documentFilled) return
+        val segments = ArrayList<DiarySegment>()
+        val covers = ArrayList<DiaryCover>()
+        for (child in b.documentContainer.children) {
+            when {
+                child is RichEditText -> {
+                    val editable = child.text ?: continue
+                    segments += DiarySegment.Text(RichText.toHtml(editable))
+                }
+                child.tag is DiaryCover -> {
+                    val cover = child.tag as DiaryCover
+                    segments += DiarySegment.Photo(cover)
+                    covers += cover
+                }
+            }
+        }
+        viewModel.onBodyChanged(DiaryDocument.encode(segments))
+        viewModel.syncAttachments(covers)
     }
 
     // ---------- Drawing what the ViewModel says ----------
@@ -238,17 +265,176 @@ class DiaryEditorFragment : Fragment() {
         binding.pageRating.isVisible = ready.ratingSnapshot != null
         binding.pageRating.rating = ready.ratingSnapshot
 
-        // The two fields are filled once per screen with the words the ViewModel holds (after a screen turn, the latest ones)
-        if (!textFilled) {
-            binding.headlineInput.setText(viewModel.currentHeadline())
-            binding.bodyInput.setText(RichText.toSpanned(viewModel.currentBodyHtml(), quoteColor(), quoteBar(), quoteGap()))
-            textFilled = true
+        if (!documentFilled) {
+            populateDocument(viewModel.currentBodyHtml(), viewModel.currentCoverUri())
+            documentFilled = true
         }
         applyStyle()
         refreshFormatState()
     }
 
-    /** The page's font, size, alignment and theme: the screen's background, the movie link, the headline, the cover tools and the body. */
+    private fun populateDocument(bodyHtml: String, legacyCoverUri: String?) {
+        binding.documentContainer.removeAllViews()
+        val segments = DiaryDocument.parse(bodyHtml, legacyCoverUri)
+        val hasPhotos = segments.any { it is DiarySegment.Photo }
+        var firstEditorAdded = false
+        for (segment in segments) {
+            when (segment) {
+                is DiarySegment.Text -> {
+                    val spanned = RichText.toSpanned(segment.html, quoteColor(), quoteBar(), quoteGap())
+                    val editor = createEditor(spanned, showHint = !firstEditorAdded && !hasPhotos)
+                    binding.documentContainer.addView(editor)
+                    if (!firstEditorAdded) {
+                        activeEditor = editor
+                        firstEditorAdded = true
+                    }
+                }
+                is DiarySegment.Photo -> {
+                    binding.documentContainer.addView(createPhotoView(segment.cover))
+                }
+            }
+        }
+    }
+
+    private fun createEditor(initialText: CharSequence, showHint: Boolean): RichEditText {
+        val editor = RichEditText(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            background = null
+            setPadding(0, 0, 0, 0)
+            gravity = Gravity.TOP or Gravity.START
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            isHorizontalScrollBarEnabled = false
+            setText(initialText)
+            if (showHint) setHint(R.string.diary_text_hint)
+        }
+        applyStyleToEditor(editor)
+        editor.doAfterTextChanged {
+            if (documentFilled && !suppressTextWatchers) {
+                scheduleFlush()
+            }
+        }
+        editor.onSelectionChangedListener = { _, _ ->
+            if (editor.isFocused || activeEditor == editor) refreshFormatState()
+        }
+        editor.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                activeEditor = editor
+                refreshFormatState()
+            }
+        }
+        return editor
+    }
+
+    private fun createPhotoView(cover: DiaryCover): View {
+        val item = ItemDiaryInlinePhotoBinding.inflate(layoutInflater, binding.documentContainer, false)
+        item.root.tag = cover
+        val diaryImages = (requireActivity().application as CineFilesApp).diaryImages
+        val model: Any? = when (cover.source) {
+            ImageSource.TMDB -> ImageUrls.backdrop(cover.ref)
+            ImageSource.LOCAL -> diaryImages.file(cover.ref)
+        }
+        Glide.with(item.inlinePhotoImage).load(model).centerCrop().error(R.drawable.bg_poster_fallback).into(item.inlinePhotoImage)
+        item.inlinePhotoRemove.setOnClickListener { removePhotoView(item.root) }
+        return item.root
+    }
+
+    private fun insertPhotos(covers: List<DiaryCover>) {
+        if (covers.isEmpty() || _binding == null) return
+        val target = pendingInsertEditor?.takeIf { it.parent === binding.documentContainer }
+            ?: activeEditor?.takeIf { it.parent === binding.documentContainer }
+            ?: currentEditors().lastOrNull()
+            ?: createEditor("", showHint = false).also { binding.documentContainer.addView(it) }
+
+        val editable = target.text ?: SpannableStringBuilder()
+        val pos = (if (target === pendingInsertEditor) pendingInsertPos else target.selectionStart).coerceIn(0, editable.length)
+
+        val before = SpannableStringBuilder(editable.subSequence(0, pos))
+        val after = SpannableStringBuilder(editable.subSequence(pos, editable.length))
+        // Trim a single newline right at the split boundary so inserted photos sit cleanly between paragraphs
+        if (before.endsWith('\n')) before.delete(before.length - 1, before.length)
+        if (after.startsWith('\n')) after.delete(0, 1)
+
+        suppressTextWatchers = true
+        target.setText(before)
+        target.hint = null
+        suppressTextWatchers = false
+
+        var insertIndex = binding.documentContainer.indexOfChild(target) + 1
+        var lastInsertedEditor: RichEditText = target
+        covers.forEachIndexed { idx, cover ->
+            val photoView = createPhotoView(cover)
+            binding.documentContainer.addView(photoView, insertIndex++)
+            val trailingText: CharSequence = if (idx == covers.lastIndex) after else ""
+            val nextEditor = createEditor(trailingText, showHint = false)
+            binding.documentContainer.addView(nextEditor, insertIndex++)
+            lastInsertedEditor = nextEditor
+        }
+
+        lastInsertedEditor.requestFocus()
+        lastInsertedEditor.setSelection(0)
+        activeEditor = lastInsertedEditor
+        pendingInsertEditor = lastInsertedEditor
+        pendingInsertPos = 0
+        refreshFormatState()
+        flush()
+    }
+
+    private fun removePhotoView(photoView: View) {
+        val container = binding.documentContainer
+        val index = container.indexOfChild(photoView)
+        if (index < 0) return
+
+        val prev = container.getChildAt(index - 1) as? RichEditText
+        val next = container.getChildAt(index + 1) as? RichEditText
+        container.removeViewAt(index)
+
+        if (prev != null && next != null) {
+            val prevText = prev.text ?: SpannableStringBuilder()
+            val nextText = next.text ?: SpannableStringBuilder()
+            val joinPos = prevText.length
+            val merged = SpannableStringBuilder(prevText)
+            if (prevText.isNotEmpty() && nextText.isNotEmpty()) {
+                merged.append('\n')
+            }
+            merged.append(nextText)
+
+            suppressTextWatchers = true
+            prev.setText(merged)
+            suppressTextWatchers = false
+
+            container.removeView(next)
+            prev.requestFocus()
+            prev.setSelection(joinPos.coerceIn(0, prev.text?.length ?: 0))
+            activeEditor = prev
+        }
+
+        updateFirstEditorHint()
+        refreshFormatState()
+        flush()
+    }
+
+    private fun updateFirstEditorHint() {
+        val hasPhotos = currentCovers().isNotEmpty()
+        val editors = currentEditors()
+        editors.forEachIndexed { index, editor ->
+            if (index == 0 && !hasPhotos) {
+                editor.setHint(R.string.diary_text_hint)
+            } else {
+                editor.hint = null
+            }
+        }
+    }
+
+    private fun updatePhotoLimitState(photoCount: Int) {
+        val b = _binding ?: return
+        val atLimit = photoCount >= DiaryText.MAX_PHOTOS
+        b.formatPhoto.alpha = if (atLimit) 0.45f else 1f
+    }
+
+    /** The page's font, size, alignment and theme: the screen's background, the movie link, and all text blocks. */
     private fun applyStyle() {
         val b = _binding ?: return
         val context = requireContext()
@@ -258,57 +444,17 @@ class DiaryEditorFragment : Fragment() {
         b.movieTitle.setTextColor(context.themeColor(theme.accent))
         b.movieTitle.compoundDrawablesRelative[2]?.setTint(context.themeColor(theme.accent))
         b.pageDate.applyDiaryText(font, theme, baseSp = META_SP, secondary = true)
-        b.headerRule.setBackgroundColor(context.themeColor(theme.divider))
 
-        b.headlineInput.applyDiaryText(font, theme, baseSp = size.headlineSp)
-        b.headlineInput.paint.isFakeBoldText = true
-        b.headlineInput.applyAlignment(align)
-
-        b.coverAdd.setTextColor(context.themeColor(theme.secondaryText))
-        b.coverAdd.iconTint = android.content.res.ColorStateList.valueOf(context.themeColor(theme.secondaryText))
-        b.photoCount.setTextColor(context.themeColor(theme.secondaryText))
-
-        b.bodyInput.applyDiaryText(font, theme, baseSp = size.bodySp)
-        b.bodyInput.gravity = android.view.Gravity.TOP or android.view.Gravity.START
-        b.bodyInput.text?.let { RichText.restyleQuotes(it, quoteColor(), quoteBar(), quoteGap()) }
-        b.bodyInput.setLineSpacing(0f, BODY_LINE_SPACING)
+        for (editor in currentEditors()) {
+            applyStyleToEditor(editor)
+        }
     }
 
-    private fun showAttachments(attachments: List<DiaryCover>) {
-        val b = _binding ?: return
-        b.attachmentsScroll.isVisible = attachments.isNotEmpty()
-        b.photoCount.isVisible = attachments.isNotEmpty()
-        if (attachments.isNotEmpty()) {
-            b.photoCount.text = getString(R.string.diary_photos_count, attachments.size)
-        }
-        val atLimit = attachments.size >= DiaryText.MAX_PHOTOS
-        b.coverAdd.isEnabled = !atLimit
-        b.coverAdd.alpha = if (atLimit) 0.45f else 1f
-        b.formatPhoto.alpha = if (atLimit) 0.45f else 1f
-
-        b.attachmentsContainer.removeAllViews()
-        if (attachments.isEmpty()) return
-
-        val diaryImages = (requireActivity().application as CineFilesApp).diaryImages
-        val inflater = LayoutInflater.from(requireContext())
-        attachments.forEachIndexed { index, cover ->
-            val item = ItemDiaryAttachmentBinding.inflate(inflater, b.attachmentsContainer, false)
-            if (attachments.size == 1) {
-                // Single attachment stretches cleanly across the page width like a cover
-                val pageWidth = (resources.displayMetrics.widthPixels - 2 * resources.getDimensionPixelSize(R.dimen.space_24)).coerceAtLeast(1)
-                item.root.layoutParams = (item.root.layoutParams as ViewGroup.MarginLayoutParams).apply {
-                    width = pageWidth
-                    marginEnd = 0
-                }
-            }
-            val model: Any? = when (cover.source) {
-                ImageSource.TMDB -> ImageUrls.backdrop(cover.ref)
-                ImageSource.LOCAL -> diaryImages.file(cover.ref)
-            }
-            Glide.with(item.attachmentImage).load(model).centerCrop().error(R.drawable.bg_poster_fallback).into(item.attachmentImage)
-            item.attachmentRemove.setOnClickListener { viewModel.removeAttachment(index) }
-            b.attachmentsContainer.addView(item.root)
-        }
+    private fun applyStyleToEditor(editor: RichEditText) {
+        editor.applyDiaryText(font, theme, baseSp = size.bodySp)
+        editor.gravity = Gravity.TOP or Gravity.START
+        editor.text?.let { RichText.restyleQuotes(it, quoteColor(), quoteBar(), quoteGap()) }
+        editor.setLineSpacing(0f, BODY_LINE_SPACING)
     }
 
     private fun quoteColor() = requireContext().themeColor(theme.accent)
@@ -363,7 +509,11 @@ class DiaryEditorFragment : Fragment() {
 
     /** "Add photos": from the phone's photos, or stills of the movie (up to 10 photos). */
     private fun chooseCoverSource() {
-        if ((viewModel.attachments.value?.size ?: 0) >= DiaryText.MAX_PHOTOS) {
+        val currentEditor = targetEditor()
+        pendingInsertEditor = currentEditor
+        pendingInsertPos = currentEditor?.selectionStart?.coerceAtLeast(0) ?: 0
+
+        if (currentCovers().size >= DiaryText.MAX_PHOTOS) {
             showMessage(R.string.diary_photos_limit_reached)
             return
         }
@@ -381,7 +531,6 @@ class DiaryEditorFragment : Fragment() {
     }
 
     private companion object {
-        const val HEADLINE_MAX_LINES = 4
         const val FLUSH_DELAY_MS = 350L
         const val MOVIE_SP = 16f
         const val META_SP = 13f

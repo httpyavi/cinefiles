@@ -96,4 +96,64 @@ class DiaryTextTest {
         assertEquals("I loved it a lot", DiaryText.preview("<p>I loved it</p><p>  a   lot </p>"))
         assertEquals("", DiaryText.preview("<p><br></p>"))
     }
+
+    // ---------- Inline document photos ----------
+
+    @Test
+    fun inlinePhotosAndTextPreserveExactOrderAcrossSaveAndReopen() {
+        val segments = listOf(
+            DiarySegment.Text("<p dir=\"ltr\">Opening thoughts</p>"),
+            DiarySegment.Photo(DiaryCover.local("first.jpg")),
+            DiarySegment.Text("<p dir=\"ltr\">Middle reflection</p>"),
+            DiarySegment.Photo(DiaryCover.tmdb("/still.jpg")),
+            DiarySegment.Text("<p dir=\"ltr\">Closing note</p>")
+        )
+        val html = DiaryDocument.encode(segments)
+        val parsed = DiaryDocument.parse(html)
+
+        assertEquals(segments, parsed)
+        assertEquals(
+            listOf(DiaryCover.local("first.jpg"), DiaryCover.tmdb("/still.jpg")),
+            DiaryDocument.coversOf(html)
+        )
+        assertEquals("Opening thoughts\nMiddle reflection\nClosing note", DiaryText.plainBody(html))
+        assertEquals("Opening thoughts Middle reflection Closing note", DiaryText.preview(html))
+    }
+
+    @Test
+    fun consecutiveOrStandalonePhotosAlwaysNormalizeWithEditableTextSlots() {
+        val html = DiaryDocument.encode(
+            listOf(
+                DiarySegment.Photo(DiaryCover.local("one.jpg")),
+                DiarySegment.Photo(DiaryCover.local("two.jpg"))
+            )
+        )
+        val parsed = DiaryDocument.parse(html)
+        assertEquals(
+            listOf(
+                DiarySegment.Text(""),
+                DiarySegment.Photo(DiaryCover.local("one.jpg")),
+                DiarySegment.Text(""),
+                DiarySegment.Photo(DiaryCover.local("two.jpg")),
+                DiarySegment.Text("")
+            ),
+            parsed
+        )
+        assertFalse(DiaryText.isBlank("", html, null))
+    }
+
+    @Test
+    fun legacyCoverImageUriStillLoadsWhenBodyHasNoInlineImages() {
+        val parsed = DiaryDocument.parse("<p dir=\"ltr\">Old entry</p>", "local:legacy.jpg\ntmdb:/old.jpg")
+        assertEquals(
+            listOf(
+                DiarySegment.Text("<p dir=\"ltr\">Old entry</p>"),
+                DiarySegment.Photo(DiaryCover.local("legacy.jpg")),
+                DiarySegment.Text(""),
+                DiarySegment.Photo(DiaryCover.tmdb("/old.jpg")),
+                DiarySegment.Text("")
+            ),
+            parsed
+        )
+    }
 }

@@ -22,6 +22,7 @@ import com.example.cinefiles.databinding.FragmentProfileBinding
 import com.example.cinefiles.logic.CollectionTab
 import com.example.cinefiles.logic.MAX_FAVORITES
 import com.example.cinefiles.logic.Taste
+import com.example.cinefiles.logic.TastePersonality
 import com.example.cinefiles.ui.collection.CollectionViewModel
 import com.example.cinefiles.ui.mood.WatchFlowViewModel
 import com.example.cinefiles.util.applySystemBarsPadding
@@ -174,22 +175,38 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showTaste(taste: Taste) {
-        if (taste.likedCount == 0) {
+        if (!taste.hasEnoughData) {
             binding.tasteEmptyContainer.isVisible = true
             binding.tasteContentContainer.isVisible = false
+            return
+        }
+        binding.tasteEmptyContainer.isVisible = false
+        binding.tasteContentContainer.isVisible = true
+        binding.profileTaste.text = getString(personalityStringRes(taste.personality!!))
+        binding.profileTasteSupport.text = if (taste.secondaryGenre != null && taste.topGenre != null) {
+            getString(R.string.profile_taste_support_pair, taste.topGenre, taste.secondaryGenre)
         } else {
-            binding.tasteEmptyContainer.isVisible = false
-            binding.tasteContentContainer.isVisible = true
-            binding.profileTaste.text = if (taste.topGenre == null) {
-                likedMovies(taste.likedCount)
-            } else {
-                getString(R.string.profile_taste_value, taste.topGenre, likedMovies(taste.likedCount))
-            }
+            val genre = taste.topGenre.orEmpty()
+            resources.getQuantityString(R.plurals.profile_taste_support_single, taste.topGenreCount, taste.topGenreCount, genre)
         }
     }
 
-    private fun likedMovies(count: Int): String =
-        resources.getQuantityString(R.plurals.profile_taste_liked, count, count)
+    private fun personalityStringRes(personality: TastePersonality): Int = when (personality) {
+        TastePersonality.ROMANTIC -> R.string.profile_taste_personality_romantic
+        TastePersonality.DRAMA_ROMANCE -> R.string.profile_taste_personality_drama_romance
+        TastePersonality.MIND_BENDING -> R.string.profile_taste_personality_mind_bending
+        TastePersonality.THRILL_SEEKER -> R.string.profile_taste_personality_thrill_seeker
+        TastePersonality.DEEP_FEELER -> R.string.profile_taste_personality_deep_feeler
+        TastePersonality.COMEDY_LOVER -> R.string.profile_taste_personality_comedy_lover
+        TastePersonality.ROMCOM_FAN -> R.string.profile_taste_personality_romcom_fan
+        TastePersonality.SUSPENSE_FAN -> R.string.profile_taste_personality_suspense_fan
+        TastePersonality.HORROR_FAN -> R.string.profile_taste_personality_horror_fan
+        TastePersonality.DREAMER -> R.string.profile_taste_personality_dreamer
+        TastePersonality.CURIOUS_MIND -> R.string.profile_taste_personality_curious_mind
+        TastePersonality.MUSIC_SOUL -> R.string.profile_taste_personality_music_soul
+        TastePersonality.FRONTIER_SPIRIT -> R.string.profile_taste_personality_frontier_spirit
+        TastePersonality.ECLECTIC -> R.string.profile_taste_personality_eclectic
+    }
 
     // ---------- Profile photo, Edit Name & Clear Data Dialogs ----------
 

@@ -97,6 +97,100 @@ object HtmlText {
     private const val ASCII_MAX = 126
 }
 
+/** One element of a diary page's body: either rich text HTML or an inline photo. */
+sealed class DiarySegment {
+    data class Text(val html: String) : DiarySegment()
+    data class Photo(val cover: DiaryCover) : DiarySegment()
+}
+
+/**
+ * Splits and rejoins a diary page's body between rich-text paragraphs and inline `<img src="...">` tags
+ * so text and photos stay in their exact document order across saves.
+ */
+object DiaryDocument {
+
+    private val IMG_TAG = Regex("""<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
+
+    /**
+     * Parses [bodyHtml] into an alternating sequence of [DiarySegment.Text] and [DiarySegment.Photo].
+     * Always begins, separates consecutive photos, and ends with a [DiarySegment.Text] so the user
+     * can position the cursor before, between, or after any photo.
+     *
+     * For backwards compatibility, if [bodyHtml] contains no inline `<img>` tags and [legacyCoverUri]
+     * has attachments, those attachments are appended as [DiarySegment.Photo] elements.
+     */
+    fun parse(bodyHtml: String, legacyCoverUri: String? = null): List<DiarySegment> {
+        val raw = ArrayList<DiarySegment>()
+        var cursor = 0
+        var hasInlinePhotos = false
+        for (match in IMG_TAG.findAll(bodyHtml)) {
+            val textBefore = bodyHtml.substring(cursor, match.range.first)
+            if (textBefore.isNotEmpty()) raw += DiarySegment.Text(textBefore)
+            val cover = DiaryCover.parse(unescapeAttr(match.groupValues[1]))
+            if (cover != null) {
+                raw += DiarySegment.Photo(cover)
+                hasInlinePhotos = true
+            }
+            cursor = match.range.last + 1
+        }
+        val tail = bodyHtml.substring(cursor)
+        if (tail.isNotEmpty()) raw += DiarySegment.Text(tail)
+
+        if (!hasInlinePhotos) {
+            for (cover in DiaryCover.parseList(legacyCoverUri)) {
+                raw += DiarySegment.Photo(cover)
+            }
+        }
+        return normalize(raw)
+    }
+
+    /** Encodes [segments] back into `bodyHtml`, preserving exact document order. */
+    fun encode(segments: List<DiarySegment>): String = buildString {
+        for (segment in segments) {
+            when (segment) {
+                is DiarySegment.Text -> if (segment.html.isNotBlank()) append(segment.html)
+                is DiarySegment.Photo -> append("<img src=\"").append(escapeAttr(segment.cover.encode())).append("\">")
+            }
+        }
+    }
+
+    /** Extracts all inline photo covers from [bodyHtml] in document order. */
+    fun coversOf(bodyHtml: String): List<DiaryCover> =
+        IMG_TAG.findAll(bodyHtml).mapNotNull { DiaryCover.parse(unescapeAttr(it.groupValues[1])) }.toList()
+
+    private fun normalize(raw: List<DiarySegment>): List<DiarySegment> {
+        val out = ArrayList<DiarySegment>()
+        for (segment in raw) {
+            when (segment) {
+                is DiarySegment.Text -> {
+                    val prev = out.lastOrNull()
+                    if (prev is DiarySegment.Text) {
+                        out[out.lastIndex] = DiarySegment.Text(prev.html + segment.html)
+                    } else {
+                        out += segment
+                    }
+                }
+                is DiarySegment.Photo -> {
+                    if (out.isEmpty() || out.last() is DiarySegment.Photo) {
+                        out += DiarySegment.Text("")
+                    }
+                    out += segment
+                }
+            }
+        }
+        if (out.isEmpty() || out.last() is DiarySegment.Photo) {
+            out += DiarySegment.Text("")
+        }
+        return out
+    }
+
+    private fun escapeAttr(value: String): String =
+        value.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
+    private fun unescapeAttr(value: String): String =
+        value.replace("&quot;", "\"").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+}
+
 /** Questions about the words of a page. */
 object DiaryText {
 
@@ -107,7 +201,10 @@ object DiaryText {
 
     /** A page with nothing on it (no headline, no words, no attachments) is not worth saving. */
     fun isBlank(headline: String, bodyHtml: String, cover: String?): Boolean =
-        headline.isBlank() && plainBody(bodyHtml).isBlank() && DiaryCover.parseList(cover).isEmpty()
+        headline.isBlank() &&
+            plainBody(bodyHtml).isBlank() &&
+            DiaryCover.parseList(cover).isEmpty() &&
+            DiaryDocument.coversOf(bodyHtml).isEmpty()
 
     /** The first words of the body on one line (blank lines and runs of spaces squeezed), or "" when it has no words. */
     fun preview(bodyHtml: String): String = plainBody(bodyHtml).replace(Regex("\\s+"), " ")

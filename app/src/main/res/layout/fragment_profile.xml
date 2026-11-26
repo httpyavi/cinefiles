@@ -319,9 +319,18 @@
                         android:id="@+id/profileTaste"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_4"
+                        android:layout_marginTop="@dimen/space_8"
                         android:textAppearance="@style/TextAppearance.CineFiles.Headline"
-                        tools:text="Drama · 9 liked movies" />
+                        tools:text="You're drawn to deeply human stories rich with emotion, tension, and unforgettable performances." />
+
+                    <TextView
+                        android:id="@+id/profileTasteSupport"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:textAppearance="@style/TextAppearance.CineFiles.Caption"
+                        android:textColor="@color/text_secondary"
+                        tools:text="Your favorites lean toward Drama and Romance." />
                 </LinearLayout>
 
                 <!-- Empty taste view -->
