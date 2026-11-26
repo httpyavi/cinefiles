@@ -217,6 +217,20 @@
             android:paddingEnd="@dimen/screen_margin"
             android:paddingBottom="@dimen/space_8">
 
+            <ImageButton
+                android:id="@+id/formatPhoto"
+                style="@style/Widget.CineFiles.FormatButton"
+                android:contentDescription="@string/diary_cover_add"
+                android:src="@drawable/ic_image" />
+
+            <View
+                android:layout_width="@dimen/glass_stroke_width"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/space_4"
+                android:layout_marginEnd="@dimen/space_8"
+                android:background="@color/glass_stroke"
+                android:importantForAccessibility="no" />
+
             <TextView
                 android:id="@+id/formatBold"
                 style="@style/Widget.CineFiles.FormatButton"
@@ -275,20 +289,6 @@
                 style="@style/Widget.CineFiles.FormatButton"
                 android:contentDescription="@string/diary_align_right"
                 android:src="@drawable/ic_align_right" />
-
-            <View
-                android:layout_width="@dimen/glass_stroke_width"
-                android:layout_height="@dimen/icon_size"
-                android:layout_marginStart="@dimen/space_4"
-                android:layout_marginEnd="@dimen/space_8"
-                android:background="@color/glass_stroke"
-                android:importantForAccessibility="no" />
-
-            <ImageButton
-                android:id="@+id/formatPhoto"
-                style="@style/Widget.CineFiles.FormatButton"
-                android:contentDescription="@string/diary_cover_add"
-                android:src="@drawable/ic_image" />
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>
