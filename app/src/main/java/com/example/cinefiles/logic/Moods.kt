@@ -16,6 +16,8 @@ import com.example.cinefiles.R
  * @param genreIds    the main TMDB genre ids for this mood. Empty means "no filter" (Surprise Me).
  * @param tint        the mood's own accent color
  * @param illustrationRes the exact XML drawable illustration resource (null if missing)
+ * @param avoidGenreIds genres that clash with this mood (a horror film is no Happy pick, even when it is also a comedy).
+ *                      They are left out unless another chosen mood asks for them (Happy + Scared keeps horror).
  */
 data class Mood(
     val id: String,
@@ -25,7 +27,8 @@ data class Mood(
     @StringRes val line: Int,
     val genreIds: List<Int>,
     @ColorRes val tint: Int,
-    @DrawableRes val illustrationRes: Int? = null
+    @DrawableRes val illustrationRes: Int? = null,
+    val avoidGenreIds: List<Int> = emptyList()
 ) {
     /** "Surprise Me" is special: it cannot be combined with other moods. */
     val isSurprise: Boolean get() = id == Moods.SURPRISE_ID
@@ -37,6 +40,11 @@ data class Mood(
 object Moods {
 
     const val SURPRISE_ID = "surprise"
+
+    // TMDB genre ids that some moods avoid
+    private const val HORROR = 27
+    private const val THRILLER = 53
+    private const val WAR = 10752
 
     // EXACT 10 MOODS ONLY:
     // 1. HAPPY
@@ -51,13 +59,16 @@ object Moods {
     // 10. SURPRISE ME
     val all: List<Mood> = listOf(
         Mood("happy", R.string.mood_happy, R.string.mood_happy_short, R.string.mood_happy_hint,
-            R.string.mood_happy_line, listOf(35), R.color.mood_tint_happy, R.drawable.happy),
+            R.string.mood_happy_line, listOf(35), R.color.mood_tint_happy, R.drawable.happy,
+            avoidGenreIds = listOf(HORROR)),
 
         Mood("romantic", R.string.mood_romantic, R.string.mood_romantic_short, R.string.mood_romantic_hint,
-            R.string.mood_romantic_line, listOf(10749), R.color.mood_tint_romantic, R.drawable.romantic),
+            R.string.mood_romantic_line, listOf(10749), R.color.mood_tint_romantic, R.drawable.romantic,
+            avoidGenreIds = listOf(HORROR)),
 
         Mood("relaxed", R.string.mood_relaxed, R.string.mood_relaxed_short, R.string.mood_relaxed_hint,
-            R.string.mood_relaxed_line, listOf(16, 10751), R.color.mood_tint_relaxed, R.drawable.relaxed),
+            R.string.mood_relaxed_line, listOf(16, 10751), R.color.mood_tint_relaxed, R.drawable.relaxed,
+            avoidGenreIds = listOf(HORROR, THRILLER, WAR)),
 
         Mood("emotional", R.string.mood_emotional, R.string.mood_emotional_short, R.string.mood_emotional_hint,
             R.string.mood_emotional_line, listOf(18), R.color.mood_tint_emotional, R.drawable.emotional),
@@ -69,7 +80,8 @@ object Moods {
             R.string.mood_curious_line, listOf(9648, 878), R.color.mood_tint_curious, R.drawable.curious),
 
         Mood("nostalgic", R.string.mood_nostalgic, R.string.mood_nostalgic_short, R.string.mood_nostalgic_hint,
-            R.string.mood_nostalgic_line, listOf(36, 10751), R.color.mood_tint_nostalgic, R.drawable.nostalgic),
+            R.string.mood_nostalgic_line, listOf(36, 10751), R.color.mood_tint_nostalgic, R.drawable.nostalgic,
+            avoidGenreIds = listOf(HORROR)),
 
         Mood("scared", R.string.mood_scared, R.string.mood_scared_short, R.string.mood_scared_hint,
             R.string.mood_scared_line, listOf(27, 53), R.color.mood_tint_scared, R.drawable.scared),
@@ -88,4 +100,12 @@ object Moods {
     /** The genre ids of all the given moods together, each id once. Empty = any genre. */
     fun genreIdsFor(moodIds: List<String>): List<Int> =
         all.filter { it.id in moodIds }.flatMap { it.genreIds }.distinct()
+
+    /** The genres to leave out for these moods: what one of them avoids and none of them asks for. */
+    fun avoidedGenreIds(moods: List<Mood>): List<Int> {
+        val wanted = moods.flatMap { it.genreIds }.toSet()
+        return moods.flatMap { it.avoidGenreIds }.filter { it !in wanted }.distinct()
+    }
+
+    fun avoidedGenreIdsFor(moodIds: List<String>): List<Int> = avoidedGenreIds(all.filter { it.id in moodIds })
 }

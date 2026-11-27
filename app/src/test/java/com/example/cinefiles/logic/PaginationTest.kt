@@ -39,38 +39,4 @@ class PaginationTest {
         assertTrue(shouldLoadNextPage(totalItems = 20, lastVisiblePosition = 10, itemsLeft = 10))
         assertFalse(shouldLoadNextPage(totalItems = 20, lastVisiblePosition = 10, itemsLeft = 5))
     }
-
-    // ---------- The page counter of the swipe deck ----------
-
-    private val comedies = DiscoveryRequest(DiscoverySource.MOOD_MATCH, genreIds = listOf(35))
-    private val trending = DiscoveryRequest(DiscoverySource.TRENDING, genreIds = listOf(35))
-
-    @Test
-    fun everyQuestionStartsOnPageOne() {
-        assertEquals(1, PageCounter().pageFor(comedies))
-    }
-
-    @Test
-    fun eachAnswerMovesThatQuestionOnToTheNextPage() {
-        val pages = PageCounter()
-        pages.markAnswered(comedies)
-        pages.markAnswered(comedies)
-        assertEquals(3, pages.pageFor(comedies))
-        assertEquals(1, pages.pageFor(trending)) // other questions are not affected
-    }
-
-    @Test
-    fun aQuestionThatWasNotAnsweredIsAskedAgainOnTheSamePage() {
-        val pages = PageCounter()
-        pages.pageFor(comedies) // asked, but the network failed: markAnswered is never called
-        assertEquals(1, pages.pageFor(comedies))
-    }
-
-    @Test
-    fun resetStartsAgainFromPageOne() {
-        val pages = PageCounter()
-        pages.markAnswered(comedies)
-        pages.reset()
-        assertEquals(1, pages.pageFor(comedies))
-    }
 }

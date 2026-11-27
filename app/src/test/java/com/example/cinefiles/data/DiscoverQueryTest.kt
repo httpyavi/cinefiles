@@ -18,12 +18,11 @@ class DiscoverQueryTest {
     private val action = 28
 
     /** The first question the deck asks (the "fits your mood" one) for these choices, as TMDB parameters. */
-    private fun moodQuery(moods: List<Int>, preferences: Preferences = Preferences(), relax: Int = 0) =
-        Discovery.plan(moods, preferences, relax).first { it.source == DiscoverySource.MOOD_MATCH || it.source == DiscoverySource.EXPLORE }
-            .toDiscoverQuery()
+    private fun moodQuery(moods: List<Int>, preferences: Preferences = Preferences()) =
+        Discovery.plan(moods, preferences).first { it.source == DiscoverySource.MOOD_MATCH }.toDiscoverQuery()
 
     private fun query(source: DiscoverySource, preferences: Preferences = Preferences()) =
-        Discovery.plan(listOf(comedy), preferences, 0).first { it.source == source }.toDiscoverQuery()
+        Discovery.plan(listOf(comedy), preferences).first { it.source == source }.toDiscoverQuery()
 
     // ---------- Mood ----------
 
@@ -78,7 +77,7 @@ class DiscoverQueryTest {
     @Test
     fun lengthBecomesRuntimeLimits() {
         val short = moodQuery(listOf(comedy), Preferences(length = Length.UNDER_90_MIN))
-        assertNull(short.minRuntime)
+        assertEquals(40, short.minRuntime) // a quick watch is still a movie, not a short film
         assertEquals(89, short.maxRuntime)
 
         val medium = moodQuery(listOf(comedy), Preferences(length = Length.UNDER_2_HOURS))
@@ -123,20 +122,26 @@ class DiscoverQueryTest {
         assertEquals("popularity.desc", query(DiscoverySource.MOOD_MATCH).sortBy)
     }
 
-    // ---------- Loosening ----------
+    // ---------- Fewer votes: the only thing that is ever lowered ----------
 
     @Test
-    fun theLastRelaxStepDropsTheGenres() {
-        val prefs = Preferences(releasePeriod = ReleasePeriod.FROM_2015, language = "ko")
-        val q = moodQuery(listOf(comedy), prefs, relax = 5)
-        assertNull(q.withGenres)
-        assertNull(q.releasedFrom)
+    fun askingForLessKnownMoviesKeepsEveryOtherParameter() {
+        val prefs = Preferences(ReleasePeriod.FROM_2015, MinRating.EIGHT_PLUS, Length.UNDER_90_MIN, "ko")
+        val base = Discovery.plan(listOf(comedy, action), prefs).first()
+        val q = Discovery.withFewerVotes(base, 30)!!.toDiscoverQuery()
+        assertEquals(30, q.minVotes)
+        assertEquals(199, q.maxVotes) // 200 and up was asked already
+        assertEquals(base.toDiscoverQuery().copy(minVotes = 30, maxVotes = 199), q)
+        assertEquals("35|28", q.withGenres)
+        assertEquals("2015-01-01", q.releasedFrom)
+        assertEquals(8.0, q.minRating)
+        assertEquals(89, q.maxRuntime)
         assertEquals("ko", q.originalLanguage)
     }
 
     @Test
     fun aRequestWithNoLimitsAtAllIsStillAValidQuery() {
-        val q = DiscoveryRequest(DiscoverySource.EXPLORE).toDiscoverQuery()
+        val q = DiscoveryRequest(DiscoverySource.MOOD_MATCH).toDiscoverQuery()
         assertNull(q.withGenres)
         assertEquals(200, q.minVotes)
         assertEquals("popularity.desc", q.sortBy)

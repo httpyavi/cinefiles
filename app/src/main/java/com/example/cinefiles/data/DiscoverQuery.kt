@@ -1,6 +1,6 @@
 package com.example.cinefiles.data
 
-import com.example.cinefiles.logic.Languages
+import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.DiscoveryRequest
 import com.example.cinefiles.logic.DiscoverySource
 
@@ -11,6 +11,7 @@ import com.example.cinefiles.logic.DiscoverySource
  */
 data class DiscoverQuery(
     val withGenres: String?,        // "35|28": the pipe means OR (comedy OR action)
+    val withoutGenres: String?,     // "27,53": none of these (no horror, no thriller)
     val releasedFrom: String?,      // primary_release_date.gte, "2015-01-01"
     val releasedTo: String?,        // primary_release_date.lte, "1999-12-31"
     val minRating: Double?,         // vote_average.gte
@@ -22,16 +23,15 @@ data class DiscoverQuery(
     val sortBy: String
 )
 
-/** Ignore movies that only a handful of people rated: their rating means nothing. */
-const val DEFAULT_MIN_VOTES = 200
-
 fun DiscoveryRequest.toDiscoverQuery(): DiscoverQuery = DiscoverQuery(
     // Genres are joined with "|" (OR): a mood like "Excited" (Action, Adventure) wants either one
     withGenres = genreIds.takeIf { it.isNotEmpty() }?.joinToString("|"),
+    withoutGenres = withoutGenreIds.takeIf { it.isNotEmpty() }?.joinToString(","),
     releasedFrom = yearFrom?.let { "$it-01-01" },
     releasedTo = yearTo?.let { "$it-12-31" },
     minRating = minRating,
-    minVotes = minVotes ?: if (language == Languages.FILIPINO) 5 else DEFAULT_MIN_VOTES,
+    // Ignore movies that only a handful of people rated: their rating means nothing (Filipino movies: see Discovery)
+    minVotes = minVotes ?: Discovery.defaultMinVotes(language),
     maxVotes = maxVotes,
     minRuntime = minMinutes,
     maxRuntime = maxMinutes,
@@ -39,7 +39,7 @@ fun DiscoveryRequest.toDiscoverQuery(): DiscoverQuery = DiscoverQuery(
     sortBy = when (source) {
         // Best rated first (hidden gems too: their vote limits already keep them rare)
         DiscoverySource.TOP_RATED, DiscoverySource.HIDDEN_GEM -> "vote_average.desc"
-        // Everything else: the best-known first
+        // Everything else (close matches too): the best-known first
         else -> "popularity.desc"
     }
 )

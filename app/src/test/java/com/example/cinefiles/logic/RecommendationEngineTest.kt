@@ -1,6 +1,8 @@
 package com.example.cinefiles.logic
 
 import com.example.cinefiles.data.Movie
+import com.example.cinefiles.data.PicksPool
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -34,10 +36,11 @@ class RecommendationEngineTest {
         title: String = "Movie $id",
         poster: String? = "/p$id.jpg",
         votes: Int = 500,
-        language: String = "en"
+        language: String = "en",
+        minutes: Int? = null
     ) = Movie(
         id = id, title = title, posterPath = poster, backdropPath = null, voteAverage = rating,
-        releaseYear = year, genreIds = genres, voteCount = votes, originalLanguage = language
+        releaseYear = year, genreIds = genres, voteCount = votes, originalLanguage = language, runtimeMinutes = minutes
     )
 
     private fun ids(picks: List<Recommendation>) = picks.map { it.movie.id }
@@ -542,5 +545,174 @@ class RecommendationEngineTest {
         val picks = engine.recommend((1..8).map { movie(it, listOf(it + 1)) }, listOf(happy), listOf(movie(100, listOf(2))), emptyList())
         assertTrue(picks.isNotEmpty())
         picks.forEach { assertNotNull(it.reason) }
+    }
+
+    // ---------- the moods and the preferences are hard limits ----------
+
+    /** Korean, from 2015 on, rated 8 or more, under 90 minutes. */
+    private val strict = Preferences(ReleasePeriod.FROM_2015, MinRating.EIGHT_PLUS, Length.UNDER_90_MIN, "ko")
+
+    /** A movie that fits Happy and [strict]: each test breaks one thing of it. */
+    private fun fitting(id: Int, rating: Double = 8.4, minutes: Int? = 85) =
+        movie(id, listOf(comedy), rating = rating, year = 2019, votes = 3000, language = "ko", minutes = minutes)
+
+    private val anyGenre = RecommendationEngine(maxPerFirstGenre = 10) // the "three of a kind" limit is not the point here
+
+    @Test
+    fun noPickEverMissesTheMoodsGenresOrBreaksAPreference() {
+        val good = (1..4).map { fitting(it) }
+        val bad = listOf(
+            fitting(10).copy(genreIds = listOf(horror)),                    // not a Happy genre (even though a horror was liked)
+            fitting(11).copy(originalLanguage = "en"),                      // language
+            fitting(12).copy(originalLanguage = null),                      // unknown language
+            fitting(13).copy(voteAverage = 6.9, voteCount = 50_000),        // rating: famous, but under 8
+            fitting(14).copy(releaseYear = 2012),                           // release period
+            fitting(15).copy(releaseYear = null),                           // unknown year
+            fitting(16, minutes = 140)                                      // length
+        )
+
+        val picks = anyGenre.recommend(
+            bad + good, listOf(happy), liked = listOf(movie(100, listOf(horror))), passed = emptyList(), preferences = strict
+        )
+
+        assertEquals((1..4).toSet(), ids(picks).toSet())
+    }
+
+    @Test
+    fun everyChosenMoodsGenreIsAllowedAndNoOther() {
+        val candidates = listOf(fitting(1), fitting(2).copy(genreIds = listOf(romance)), fitting(3).copy(genreIds = listOf(drama)))
+
+        val picks = anyGenre.recommend(candidates, listOf(happy, romantic), emptyList(), emptyList(), preferences = strict)
+
+        assertEquals(setOf(1, 2), ids(picks).toSet())
+    }
+
+    @Test
+    fun surpriseMeLimitsNoGenreButEveryPreferenceStillCounts() {
+        val candidates = listOf(fitting(1).copy(genreIds = listOf(horror)), fitting(2).copy(originalLanguage = "ja"))
+
+        val picks = engine.recommend(candidates, listOf(surprise), emptyList(), emptyList(), preferences = strict)
+
+        assertEquals(listOf(1), ids(picks))
+    }
+
+    @Test
+    fun theRuntimeOfEveryPickIsCheckedAndTheNextBestTakesTheGap() = runBlocking {
+        // TMDB's list answers have no runtime. The two best rated are too long, and TMDB does not know the third's.
+        val realRuntimes = mapOf(1 to 150, 2 to 130, 3 to null, 4 to 85, 5 to 80, 6 to 88, 7 to 70)
+        val candidates = realRuntimes.keys.map { id -> fitting(id, rating = 9.0 - id * 0.1, minutes = null) }
+        val lookedUp = ArrayList<Int>()
+
+        val picks = anyGenre.recommendStrictly(
+            candidates, listOf(happy), emptyList(), emptyList(), strict,
+            lookUpRuntimes = { movies ->
+                lookedUp += movies.map { it.id }
+                movies.mapNotNull { movie -> realRuntimes[movie.id]?.let { movie.copy(runtimeMinutes = it) } }
+            }
+        )
+
+        assertEquals(listOf(4, 5, 6, 7), ids(picks))
+        assertTrue(picks.all { (it.movie.runtimeMinutes ?: Int.MAX_VALUE) <= 89 })
+        assertEquals("a runtime is looked up once", lookedUp.size, lookedUp.toSet().size)
+    }
+
+    @Test
+    fun overTwoHoursNeedsAKnownRuntimeOfAtLeastTwoHours() = runBlocking {
+        val long = strict.copy(length = Length.OVER_2_HOURS)
+        val candidates = listOf(fitting(1, minutes = 150), fitting(2, minutes = 100), fitting(3, minutes = null))
+
+        val picks = anyGenre.recommendStrictly(candidates, listOf(happy), emptyList(), emptyList(), long, lookUpRuntimes = { emptyList() })
+
+        assertEquals(listOf(1), ids(picks))
+    }
+
+    @Test
+    fun withoutALengthNoRuntimeIsLookedUp() = runBlocking {
+        var lookUps = 0
+
+        val picks = engine.recommendStrictly(
+            listOf(fitting(1, minutes = null)), listOf(happy), emptyList(), emptyList(), strict.copy(length = Length.ANY),
+            lookUpRuntimes = { lookUps++; it }
+        )
+
+        assertEquals(listOf(1), ids(picks))
+        assertEquals(0, lookUps)
+    }
+
+    @Test
+    fun tooFewFittingMoviesGiveFewerPicksNeverLooserOnes() = runBlocking {
+        // Twenty famous movies just under the 8.0 the user asked for, and only one that fits
+        val almost = (20..40).map { fitting(it, rating = 7.9).copy(voteCount = 40_000) }
+
+        val picks = engine.recommendStrictly(almost + fitting(1), listOf(happy), emptyList(), emptyList(), strict, lookUpRuntimes = { it })
+
+        assertEquals(listOf(1), ids(picks))
+    }
+
+    // ---------- never empty: the closest picks complete the list ----------
+
+    /** A pretend TMDB for the picks: every catalog movie that fits the limits asked for, minus the ids left out. */
+    private fun candidatesFrom(
+        catalog: List<Movie>,
+        asked: MutableList<DiscoveryRequest> = ArrayList()
+    ): suspend (DiscoveryRequest, Set<Int>) -> PicksPool = { limits, exclude ->
+        asked += limits
+        PicksPool(catalog.filter { it.id !in exclude && limits.matches(it) })
+    }
+
+    @Test
+    fun whenNothingFitsEveryChoiceTheClosestPicksAreShownNearestFirstAndSaySo() = runBlocking {
+        // Happy, Korean, 8+, under 90 minutes, 2015 on: no movie fits all of it
+        val nearest = (1..4).map { fitting(it, rating = 7.5, minutes = 100) }                         // a point lower, 10 minutes longer
+        val further = (11..20).map { fitting(it, rating = 6.0, minutes = 150).copy(releaseYear = 2001) } // much further off
+        val horrorComedy = fitting(30).copy(genreIds = listOf(comedy, horror))
+
+        val picks = anyGenre.recommendOrClosest(
+            anyGenre.limitsFor(listOf(happy), strict), listOf(happy), emptyList(), emptyList(),
+            candidatesFrom(nearest + further + horrorComedy), lookUpRuntimes = { it }
+        )
+
+        assertEquals(10, picks.size)
+        assertTrue(picks.all { it.reason == PickReason.CloseMatch })
+        assertTrue(ids(picks).containsAll((1..4).toList()))          // the nearest are all chosen...
+        assertEquals(6, ids(picks).count { it in 11..20 })          // ...and the further ones only fill the rest
+        assertEquals(picks.sortedByDescending { it.score }, picks)  // shown best match first
+        assertFalse(30 in ids(picks)) // still never a horror film for Happy
+    }
+
+    @Test
+    fun exactPicksComeFirstAndTheClosestOnlyFillTheRest() = runBlocking {
+        val fits = (1..3).map { fitting(it) }
+        val almost = (11..30).map { fitting(it, rating = 7.4) }
+
+        val picks = anyGenre.recommendOrClosest(
+            anyGenre.limitsFor(listOf(happy), strict), listOf(happy), emptyList(), emptyList(), candidatesFrom(fits + almost), { it }
+        )
+
+        assertEquals(10, picks.size)
+        assertEquals((1..3).toSet(), ids(picks).take(3).toSet())
+        assertTrue(picks.take(3).none { it.reason == PickReason.CloseMatch })
+        assertTrue(picks.drop(3).all { it.reason == PickReason.CloseMatch && it.movie.voteAverage == 7.4 })
+    }
+
+    @Test
+    fun withTenExactPicksNothingCloserIsLookedFor() = runBlocking {
+        val asked = ArrayList<DiscoveryRequest>()
+
+        val picks = anyGenre.recommendOrClosest(
+            anyGenre.limitsFor(listOf(happy), strict), listOf(happy), emptyList(), emptyList(),
+            candidatesFrom((1..15).map { fitting(it) }, asked), { it }
+        )
+
+        assertEquals(10, picks.size)
+        assertEquals(1, asked.size)
+        assertTrue(picks.none { it.reason == PickReason.CloseMatch })
+    }
+
+    @Test
+    fun theMoodsLimitsLeaveOutTheGenresTheyAvoid() {
+        val scared = Moods.all.first { it.id == "scared" }
+        assertEquals(listOf(horror), engine.limitsFor(listOf(happy), Preferences()).withoutGenreIds)
+        assertTrue(engine.limitsFor(listOf(happy, scared), Preferences()).withoutGenreIds.isEmpty())
     }
 }

@@ -238,7 +238,8 @@
     <string name="discovery_hidden_gem">Hidden gem</string>
     <string name="discovery_trending">Trending now</string>
     <string name="discovery_popular">Popular pick</string>
-    <string name="discovery_explore">Something different</string>
+    <string name="discovery_close_match">Close match</string>
+    <string name="swipe_close_matches_notice">Nothing fit every choice, so we added the closest movies (marked Close match).</string>
 
     <!-- Swipe screen: nothing to swipe -->
     <string name="swipe_empty_title">No movies for this mix</string>
@@ -397,6 +398,8 @@
     <string name="picks_reason_similar">Similar to %1$s</string>
     <string name="picks_reason_mood">Matches your %1$s mood</string>
     <string name="picks_reason_generic">Picked for you</string>
+    <string name="picks_reason_close">Close to what you asked for</string>
+    <string name="picks_subtitle_close">Not enough movies fit every choice, so some picks are the closest matches.</string>
     <string name="picks_bookmark_add">Add %1$s to your watchlist</string>
     <string name="picks_bookmark_remove">Remove %1$s from your watchlist</string>
     <string name="picks_quick_view_description">Quick view of %1$s</string>

@@ -6,14 +6,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.cinefiles.CineFilesApp
+import com.example.cinefiles.R
 import com.example.cinefiles.data.ApiError
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.friendlyError
-import com.example.cinefiles.logic.Discovery
-import com.example.cinefiles.logic.DiscoveryRequest
+import com.example.cinefiles.logic.DiscoveryFeed
 import com.example.cinefiles.logic.DiscoverySource
 import com.example.cinefiles.logic.Moods
-import com.example.cinefiles.logic.PageCounter
 import com.example.cinefiles.logic.Pick
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.SwipeDeck
@@ -40,18 +39,21 @@ sealed class SwipeScreenState {
         val top: Movie?,
         val second: Movie?,
         val third: Movie?,
-        val position: Int,       // the "7" in "7 of 10"
-        val total: Int,          // the "10"
+        val position: Int,       // the "7" in "7 of 10": counted inside the current batch
+        val total: Int,          // the "10": the cards of the current batch
         val likedCount: Int,     // session likes count
         val canUndo: Boolean,
-        val isFinished: Boolean, // every card in this round has been swiped: show the end screen
+        val isFinished: Boolean, // every card in this batch has been swiped: show the end screen
         val hasMore: Boolean,    // false once no new eligible movies remain
         val isLoadingMore: Boolean = false
     ) : SwipeScreenState()
 }
 
 /**
- * Holds the swipe discovery round (up to 10 movies per round).
+ * Holds the swipe discovery sitting: batches of 10 movies. After the 10th swipe of a batch the end screen offers
+ * "See recommendations" and "Discover 10 more movies" (the next 10 unseen movies, same moods and preferences).
+ * Which movies come up is decided by logic/Discovery.kt ([DiscoveryFeed]); one feed serves the whole sitting.
+ *
  * Session likes and permanent library collections remain strictly separate:
  * swiping right likes the movie for the CURRENT DISCOVERY SESSION only and does not
  * automatically save to the permanent Liked Movies collection.
@@ -65,6 +67,12 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _message = MutableLiveData<Event<ApiError>>()
     val message: LiveData<Event<ApiError>> = _message
+
+    private val _notice = MutableLiveData<Event<Int>>()
+
+    /** A one-time line for the screen: "Nothing fit every choice, so we added the closest movies". */
+    val notice: LiveData<Event<Int>> = _notice
+    private var closeMatchesExplained = false
 
     // Movies seen in this discovery session: never repeated during the session
     private val sessionSeenIds = HashSet<Int>()
@@ -82,18 +90,24 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
     private var started = false
     private var moodIds: List<String> = emptyList()
     private var preferences = Preferences()
+    private var feed = DiscoveryFeed(emptyList(), Preferences())
     private var deck = SwipeDeck(emptyList())
     private var loadJob: Job? = null
     private var moreJob: Job? = null
 
+    /** How many cards of [deck] belong to earlier batches: the current batch starts at this card. */
+    private var batchStart = 0
+
     private val reasons = HashMap<Int, DiscoverySource>()
     private var exhausted = false
-    private val pages = PageCounter()
     private var loadingMore = false
-    private var backgroundLoadFailed = false
 
     val topMovie: Movie? get() = deck.top
-    val lastSwipe: SwipeRecord? get() = deck.history.lastOrNull()
+
+    /** The swipe Undo would take back. Only swipes of the current batch can be taken back. */
+    val lastSwipe: SwipeRecord? get() = if (canUndo) deck.history.lastOrNull() else null
+
+    private val canUndo: Boolean get() = deck.position > batchStart && !loadingMore
 
     fun reasonOf(movieId: Int): DiscoverySource? = reasons[movieId]
 
@@ -109,16 +123,17 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
         load()
     }
 
-    /** Gets a fresh 10-movie deck. */
+    /** Gets a fresh 10-movie deck (a new sitting: TMDB is asked from its first page again). */
     fun load() {
         loadJob?.cancel()
         moreJob?.cancel()
+        loadingMore = false
         _screen.value = SwipeScreenState.Loading
 
         loadJob = viewModelScope.launch {
-            pages.reset()
+            feed = DiscoveryFeed(Moods.genreIdsFor(moodIds), preferences, Moods.avoidedGenreIdsFor(moodIds))
             sessionSeenIds.clear()
-            nextPicks(exclude = sessionSeenIds)
+            nextPicks()
                 .onSuccess { picks ->
                     picks.forEach { sessionSeenIds.add(it.movie.id) }
                     showFreshDeck(picks)
@@ -134,10 +149,11 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
         }
         reasons.clear()
         exhausted = false
-        backgroundLoadFailed = false
         addReasons(picks)
         deck = SwipeDeck(picks.map { it.movie })
+        batchStart = 0
         publish()
+        explainCloseMatches(picks)
     }
 
     /**
@@ -150,58 +166,54 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
         publish()
     }
 
-    /** Reverts the last swipe in the current discovery session. */
+    /** Reverts the last swipe of the current batch. */
     fun onUndone() {
+        if (!canUndo) return
         deck = deck.undo()
         publish()
     }
 
     /**
-     * Loads the next round of up to 10 movies.
-     * Does not repeat movies already seen in this session.
+     * "Discover 10 more movies" on the end screen: the next batch of up to 10 unseen movies, with exactly the same
+     * moods and preferences. Never repeats a movie already seen in this sitting.
      */
-    fun discoverMore() = loadMore(userAsked = true)
-    fun keepSwiping() = discoverMore()
-
-    private fun loadMore(userAsked: Boolean) {
-        if (moreJob?.isActive == true) return
+    fun discoverMore() {
+        if (moreJob?.isActive == true || !deck.isFinished) return
         moreJob = viewModelScope.launch {
             loadingMore = true
-            if (deck.isFinished) publish()
+            publish()
 
             val result = try {
-                nextPicks(exclude = sessionSeenIds)
+                nextPicks()
             } finally {
                 loadingMore = false
             }
 
-            val endScreenShowing = deck.isFinished
             result
                 .onSuccess { picks ->
-                    backgroundLoadFailed = false
                     if (picks.isEmpty()) {
                         exhausted = true
                     } else {
+                        exhausted = false
                         picks.forEach { sessionSeenIds.add(it.movie.id) }
                         addReasons(picks)
+                        batchStart = deck.total // the new batch starts after every card swiped so far
                         deck = deck.withMoreCards(picks.map { it.movie })
                     }
                 }
-                .onFailure { error ->
-                    if (userAsked) _message.value = Event(friendlyError(error)) else backgroundLoadFailed = true
-                }
-            if (endScreenShowing) publish()
+                .onFailure { error -> _message.value = Event(friendlyError(error)) }
+            publish()
+            result.getOrNull()?.let { explainCloseMatches(it) }
         }
     }
 
-    private suspend fun nextPicks(exclude: Set<Int>): Result<List<Pick>> = try {
-        val hidden = exclude + repository.idsWithState()
+    private suspend fun nextPicks(): Result<List<Pick>> = try {
+        val hidden = sessionSeenIds + repository.idsWithState()
         Result.success(
-            Discovery.buildDeck(
-                moodGenreIds = Moods.genreIdsFor(moodIds),
-                preferences = preferences,
+            feed.next(
                 exclude = hidden,
-                fetch = { request -> fetchPage(request) }
+                fetch = { request, page -> repository.moviesFor(request, page).getOrThrow() },
+                lookUpRuntimes = { movies -> repository.withRuntimes(movies).getOrThrow() }
             )
         )
     } catch (e: CancellationException) {
@@ -210,10 +222,11 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
         Result.failure(e)
     }
 
-    private suspend fun fetchPage(request: DiscoveryRequest): List<Movie> {
-        val movies = repository.moviesFor(request, pages.pageFor(request)).getOrThrow()
-        pages.markAnswered(request)
-        return movies
+    /** The first time close matches are dealt in this sitting, the screen says why (their cards say "Close match"). */
+    private fun explainCloseMatches(picks: List<Pick>) {
+        if (closeMatchesExplained || picks.none { it.source == DiscoverySource.CLOSE_MATCH }) return
+        closeMatchesExplained = true
+        _notice.value = Event(R.string.swipe_close_matches_notice)
     }
 
     private fun addReasons(picks: List<Pick>) {
@@ -221,14 +234,16 @@ class SwipeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun publish() {
+        val batchTotal = deck.total - batchStart
+        val batchSwiped = deck.position - batchStart
         _screen.value = SwipeScreenState.Ready(
             top = deck.top,
             second = deck.second,
             third = deck.third,
-            position = deck.shownPosition,
-            total = deck.total,
+            position = minOf(batchSwiped + 1, batchTotal),
+            total = batchTotal,
             likedCount = sessionLiked.size,
-            canUndo = deck.canUndo,
+            canUndo = canUndo,
             isFinished = deck.isFinished,
             hasMore = !exhausted,
             isLoadingMore = loadingMore

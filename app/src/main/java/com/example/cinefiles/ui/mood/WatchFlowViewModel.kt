@@ -10,11 +10,13 @@ import com.example.cinefiles.CineFilesApp
 import com.example.cinefiles.R
 import com.example.cinefiles.data.Movie
 import com.example.cinefiles.data.friendlyError
+import com.example.cinefiles.logic.Discovery
 import com.example.cinefiles.logic.Length
 import com.example.cinefiles.logic.MinRating
 import com.example.cinefiles.logic.Mood
 import com.example.cinefiles.logic.MoodSelection
 import com.example.cinefiles.logic.Moods
+import com.example.cinefiles.logic.PickReason
 import com.example.cinefiles.logic.MovieStatus
 import com.example.cinefiles.logic.Preferences
 import com.example.cinefiles.logic.RecommendationEngine
@@ -24,6 +26,7 @@ import com.example.cinefiles.logic.hasStatus
 import com.example.cinefiles.ui.picks.PicksState
 import com.example.cinefiles.util.Event
 import com.example.cinefiles.util.UndoInfo
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -177,18 +180,35 @@ class WatchFlowViewModel(app: Application) : AndroidViewModel(app) {
         val hasLiked = picksLiked.isNotEmpty()
         if (!hasMoodGenres && !hasPreferences && !hasLiked) return PicksState.Empty
 
+        // The moods' genres are a hard limit: TMDB is asked for exactly those. Only with no mood genre at all
+        // (Surprise Me) do the swiped-right movies choose which genres to ask for.
         val profile = engine.genreProfile(moods, picksLiked, picksPassed)
-        val pool = repository.picksCandidates(
-            genreIds = engine.topGenres(profile),
-            preferences = preferences,
-            seeds = engine.similarSeeds(picksLiked),
-            exclude = (picksLiked + picksPassed).map { it.id }.toSet()
-        ).getOrElse { return PicksState.Error(friendlyError(it)) }
+        val genreIds = moods.flatMap { it.genreIds }.distinct().ifEmpty { engine.topGenres(profile) }
+        val exact = Discovery.userLimits(genreIds, preferences, Moods.avoidedGenreIds(moods))
+        val seeds = engine.similarSeeds(picksLiked)
+        val sitting = (picksLiked + picksPassed).map { it.id }.toSet()
 
-        val picks = engine.recommend(pool.movies, moods, picksLiked, picksPassed, similarTo = pool.similarTo)
+        // The picks that fit the moods and ALL the preferences come first (a chosen length is checked on each pick's real
+        // runtime); when there are too few, the closest movies complete the list, each labelled as a close match
+        val picks = try {
+            engine.recommendOrClosest(
+                exact, moods, picksLiked, picksPassed,
+                candidatesWithin = { limits, taken ->
+                    // TMDB's "similar" lists are asked for the exact picks only: the close steps need no extra calls
+                    val similarSeeds = if (limits == exact) seeds else emptyList()
+                    repository.picksCandidatesWithin(limits, similarSeeds, sitting + taken).getOrThrow()
+                },
+                lookUpRuntimes = { movies -> repository.withRuntimes(movies).getOrThrow() }
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return PicksState.Error(friendlyError(e))
+        }
         if (picks.isEmpty()) return PicksState.Empty
+        val someAreClose = picks.any { it.reason == PickReason.CloseMatch }
         return PicksState.Ready(
-            summary = getApplication<Application>().getString(R.string.picks_subtitle),
+            summary = getApplication<Application>().getString(if (someAreClose) R.string.picks_subtitle_close else R.string.picks_subtitle),
             top = picks.first(),
             more = picks.drop(1),
             liked = picksLiked

@@ -176,6 +176,15 @@ class MovieRepositoryTest {
         assertNull(sent.params["primary_release_date.lte"])
         assertNull(sent.params["with_runtime.gte"])
         assertNull(sent.params["vote_count.lte"])
+        assertNull(sent.params["without_genres"])
+    }
+
+    @Test
+    fun genresAMoodAvoidsAreSentAsWithoutGenres() = runBlocking {
+        body = listJson
+        repository().discover(DiscoveryRequest(DiscoverySource.MOOD_MATCH, genreIds = listOf(16, 10751), withoutGenreIds = listOf(27, 53)))
+        assertEquals("27,53", requests.single().params["without_genres"])
+        assertEquals("16|10751", requests.single().params["with_genres"])
     }
 
     @Test
@@ -250,13 +259,55 @@ class MovieRepositoryTest {
     }
 
     @Test
-    fun trendingForTheDeckIsFilteredOnThePhoneByTheMood() = runBlocking {
-        // TMDB's trending list cannot be filtered by the server, so a comedy mood keeps only the comedy
+    fun trendingForTheDeckIsTmdbsOwnListPassedOnAsItCame() = runBlocking {
+        // TMDB's trending list cannot be filtered by the server: the deck (DiscoveryFeed) checks the mood itself, and an
+        // empty page must mean "the last page", so nothing is taken out here
         body = listJson
         val comedyOnly = DiscoveryRequest(DiscoverySource.TRENDING, genreIds = listOf(35))
         val movies = repository().moviesFor(comedyOnly).getOrThrow()
-        assertEquals(listOf(1), movies.map { it.id })
+        assertEquals(listOf(1, 2), movies.map { it.id })
         assertEquals("/3/trending/movie/week", requests.single().path)
+    }
+
+    @Test
+    fun trendingWithALanguageOrALengthIsAskedOfDiscover() = runBlocking {
+        body = listJson
+        repository().moviesFor(DiscoveryRequest(DiscoverySource.TRENDING, language = "ko"), page = 2).getOrThrow()
+        repository().moviesFor(DiscoveryRequest(DiscoverySource.POPULAR, maxMinutes = 89)).getOrThrow()
+        assertEquals(listOf("/3/discover/movie", "/3/discover/movie"), requests.map { it.path })
+        assertEquals("ko", requests[0].params["with_original_language"])
+        assertEquals("2", requests[0].params["page"])
+        assertEquals("89", requests[1].params["with_runtime.lte"])
+    }
+
+    // ---------- Runtimes (a chosen length is checked on the real runtime) ----------
+
+    private fun detailsJson(id: Int, runtime: Int?) =
+        """{ "id": $id, "title": "Movie $id", "poster_path": "/p$id.jpg", "runtime": ${runtime ?: "null"} }"""
+
+    @Test
+    fun runtimesAreLookedUpOnceAndAMovieWithoutOneIsLeftOut() = runBlocking {
+        val real = mapOf(1 to 85, 2 to 0, 3 to null) // TMDB writes an unknown runtime as 0 or leaves it out
+        server.respond = { request -> detailsJson(request.path.substringAfterLast("/").toInt(), real[request.path.substringAfterLast("/").toInt()]) }
+        val repo = repository()
+        val known = movie(4).copy(runtimeMinutes = 140)
+
+        val movies = repo.withRuntimes(listOf(movie(1), movie(2), movie(3), known)).getOrThrow()
+
+        assertEquals(listOf(1, 4), movies.map { it.id })
+        assertEquals(listOf(85, 140), movies.map { it.runtimeMinutes })
+        assertEquals(setOf("/3/movie/1", "/3/movie/2", "/3/movie/3"), requests.map { it.path }.toSet()) // the known one costs nothing
+        assertTrue(requests.all { it.params["append_to_response"] == null }) // the movie alone: no credits or videos
+
+        repo.withRuntimes(listOf(movie(1), movie(2))).getOrThrow()
+        assertEquals(3, requests.size) // remembered: not asked again
+    }
+
+    @Test
+    fun runtimesFailOnlyWhenEveryLookUpFailed() = runBlocking {
+        status = 503
+        val error = repository().withRuntimes(listOf(movie(1), movie(2))).exceptionOrNull()
+        assertEquals(ApiError.SERVER, friendlyError(error!!))
     }
 
     @Test
@@ -273,11 +324,14 @@ class MovieRepositoryTest {
 
     // ---------- Your picks: the candidates ----------
 
-    /** One movie of a TMDB list answer (genre comedy). */
-    private fun movieJson(id: Int, rating: Double = 7.0, votes: Int = 500, language: String = "en", poster: Boolean = true): String {
+    /** One movie of a TMDB list answer (genre comedy unless [genre] says otherwise). */
+    private fun movieJson(
+        id: Int, rating: Double = 7.0, votes: Int = 500, language: String = "en", poster: Boolean = true,
+        genre: Int = 35, year: Int = 2016
+    ): String {
         val posterPath = if (poster) "\"/p$id.jpg\"" else "null"
-        return """{ "id": $id, "title": "Movie $id", "poster_path": $posterPath, "genre_ids": [35],
-               "release_date": "2016-05-01", "vote_average": $rating, "vote_count": $votes, "original_language": "$language" }"""
+        return """{ "id": $id, "title": "Movie $id", "poster_path": $posterPath, "genre_ids": [$genre],
+               "release_date": "$year-05-01", "vote_average": $rating, "vote_count": $votes, "original_language": "$language" }"""
     }
 
     private fun resultsJson(vararg movies: String, totalPages: Int = 1) =
@@ -368,6 +422,30 @@ class MovieRepositoryTest {
     }
 
     @Test
+    fun similarMoviesAreNeverTakenUnchecked() = runBlocking {
+        // TMDB's "similar" list knows nothing of the mood or the preferences: every limit is checked on each of its movies
+        server.respond = { request ->
+            if (isSimilar(request)) {
+                resultsJson(
+                    movieJson(201, rating = 8.5, votes = 900, language = "ko", year = 2019),              // fits everything
+                    movieJson(202, rating = 8.5, votes = 900, language = "ko", year = 2019, genre = 27),  // horror: not a Happy genre
+                    movieJson(203, rating = 6.8, votes = 900, language = "ko", year = 2019),              // under the 8+ asked for
+                    movieJson(204, rating = 8.5, votes = 900, language = "ko", year = 2009),              // before 2015
+                    movieJson(205, rating = 8.5, votes = 900, language = "en", year = 2019)               // English
+                )
+            } else {
+                resultsJson()
+            }
+        }
+        val preferences = Preferences(ReleasePeriod.FROM_2015, MinRating.EIGHT_PLUS, language = "ko")
+
+        val pool = repository().picksCandidates(listOf(35), preferences, seeds = listOf(movie(101))).getOrThrow()
+
+        assertEquals(listOf(201), pool.movies.map { it.id })
+        assertEquals(101, pool.similarTo[201])
+    }
+
+    @Test
     fun aMovieFoundByBothWaysIsOneCandidateAndStillSaysWhatItIsSimilarTo() = runBlocking {
         server.respond = { request ->
             if (isSimilar(request)) resultsJson(movieJson(5, votes = 800)) else moviesJson(1..12)
@@ -447,11 +525,12 @@ class MovieRepositoryTest {
 
         val pool = repository().picksCandidates(listOf(35, 18), Preferences(language = "ko")).getOrThrow()
 
-        // Two steps of four questions each (preferences are NEVER dropped)
+        // Three steps of four questions each: only the vote floor goes down (preferences are NEVER dropped)
         val steps = requests.chunked(4)
-        assertEquals(2, steps.size)
+        assertEquals(3, steps.size)
         assertTrue(steps[0].all { it.params["vote_average.gte"] == "6.5" && it.params["vote_count.gte"] == "500" })
         assertTrue(steps[1].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "200" })
+        assertTrue(steps[2].all { it.params["vote_average.gte"] == "6.0" && it.params["vote_count.gte"] == "30" })
         assertTrue(requests.all { it.params["with_original_language"] == "ko" }) // preferences stay
         assertTrue(requests.all { it.params["with_genres"] == "35|18" })        // genres stay
         assertEquals(3, pool.movies.size) // only the 3 matching Korean movies
@@ -473,7 +552,7 @@ class MovieRepositoryTest {
         val pool = repository().picksCandidates(listOf(35), Preferences(), seeds = listOf(movie(101))).getOrThrow()
 
         assertEquals(1, requests.count(::isSimilar))
-        assertEquals(8, discoverRequests.size) // two steps of four
+        assertEquals(12, discoverRequests.size) // three steps of four
         assertTrue(201 in pool.movies.map { it.id }) // a candidate from the similar list is kept at every step
     }
 
@@ -493,7 +572,7 @@ class MovieRepositoryTest {
         val result = repository().picksCandidates(listOf(35), Preferences(language = "ko"))
 
         assertTrue(result.getOrThrow().movies.isEmpty())
-        assertEquals(8, requests.size) // two steps of four questions: preferences are never dropped
+        assertEquals(12, requests.size) // three steps of four questions: preferences are never dropped
     }
 
     @Test
@@ -720,7 +799,7 @@ class MovieRepositoryTest {
         val repo = repository(token = "", hasToken = false)
         val error = repo.trending().exceptionOrNull()
         assertEquals(ApiError.TOKEN_MISSING, friendlyError(error!!))
-        assertEquals(ApiError.TOKEN_MISSING, friendlyError(repo.discover(DiscoveryRequest(DiscoverySource.EXPLORE)).exceptionOrNull()!!))
+        assertEquals(ApiError.TOKEN_MISSING, friendlyError(repo.discover(DiscoveryRequest(DiscoverySource.MOOD_MATCH)).exceptionOrNull()!!))
         assertEquals(ApiError.TOKEN_MISSING, friendlyError(repo.movieDetails(1).exceptionOrNull()!!))
         assertTrue(requests.isEmpty())
     }

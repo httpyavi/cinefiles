@@ -17,6 +17,7 @@ import com.example.cinefiles.logic.canWriteDiary
 import com.example.cinefiles.logic.trendingSince
 import com.example.cinefiles.logic.withoutWatched
 import com.example.cinefiles.util.currentYear
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 import kotlinx.coroutines.async
@@ -93,6 +94,7 @@ class MovieRepository(
             remember(
                 api.discover(
                     withGenres = query.withGenres,
+                    withoutGenres = query.withoutGenres,
                     releasedFrom = query.releasedFrom,
                     releasedTo = query.releasedTo,
                     minRating = query.minRating,
@@ -109,16 +111,40 @@ class MovieRepository(
     }
 
     /**
-     * The answer to ONE question of the swipe deck (logic/Discovery.kt), whatever its kind.
-     * "Trending" and "popular" are TMDB lists that cannot be filtered by the server, so they are filtered
-     * here with [DiscoveryRequest.matches]. Every other kind is a /discover call that TMDB filters itself.
+     * One page of the answer to ONE question of the swipe deck (logic/Discovery.kt), whatever its kind.
+     * "Trending" and "popular" use TMDB's own lists when they can ([DiscoveryRequest.usesOwnList]); every other question
+     * is a /discover call that TMDB filters itself. The page comes back AS TMDB SENT IT (an empty page = the last one):
+     * the deck (DiscoveryFeed) checks every movie against the mood and the preferences itself.
      */
-    suspend fun moviesFor(request: DiscoveryRequest, page: Int = 1): Result<List<Movie>> {
-        val needsServerFilter = request.language != null || request.minMinutes != null || request.maxMinutes != null
-        return when (request.source) {
-            DiscoverySource.TRENDING -> if (needsServerFilter) discover(request, page) else trending(page).map { movies -> movies.filter(request::matches) }
-            DiscoverySource.POPULAR -> if (needsServerFilter) discover(request, page) else popular(page).map { movies -> movies.filter(request::matches) }
-            else -> discover(request, page)
+    suspend fun moviesFor(request: DiscoveryRequest, page: Int = 1): Result<List<Movie>> = when {
+        request.usesOwnList && request.source == DiscoverySource.TRENDING -> trending(page)
+        request.usesOwnList && request.source == DiscoverySource.POPULAR -> popular(page)
+        else -> discover(request, page)
+    }
+
+    // Runtimes looked up by [withRuntimes] during this run of the app (0 = TMDB does not know it). They never change.
+    private val runtimes = ConcurrentHashMap<Int, Int>()
+
+    /**
+     * The [movies] with their runtime filled in from TMDB's details (its list answers have none), in the same order.
+     * A movie whose runtime TMDB does not know, or whose lookup failed, is LEFT OUT: a length the user chose can never be
+     * checked on it. A runtime that is already known costs nothing. Fails only when every lookup failed (no internet...).
+     */
+    suspend fun withRuntimes(movies: List<Movie>): Result<List<Movie>> = call {
+        val missing = movies.filter { it.runtimeMinutes == null && !runtimes.containsKey(it.id) }.distinctBy { it.id }
+        val failures = coroutineScope {
+            missing.map { movie ->
+                async {
+                    call { api.movieDetails(movie.id, append = null).runtime ?: 0 }
+                        .onSuccess { runtimes[movie.id] = max(0, it) }
+                        .exceptionOrNull()
+                }
+            }.awaitAll().filterNotNull()
+        }
+        if (missing.isNotEmpty() && failures.size == missing.size) throw failures.first()
+        movies.mapNotNull { movie ->
+            if (movie.runtimeMinutes != null) movie
+            else runtimes[movie.id]?.takeIf { it > 0 }?.let { movie.copy(runtimeMinutes = it) }
         }
     }
 
@@ -127,14 +153,17 @@ class MovieRepository(
     // ====================================================================================
 
     /**
-     * The movies the engine may choose from, in three kinds of answers that are merged:
-     *  - /discover for the user's best [genreIds] (joined with | = OR) and the [preferences], asked twice: best rated
-     *    first (`vote_average.desc`) and most popular first (`popularity.desc`), two pages each;
-     *  - /movie/{id}/similar for each of the [seeds] (the swiped-right movies, the engine chooses up to 3), kept when
-     *    they pass the quality floor and the preferences.
+     * The movies the engine may choose from, in two kinds of answers that are merged:
+     *  - /discover for [genreIds] (joined with | = OR: the moods' genres) and ALL the [preferences], asked twice: best
+     *    rated first (`vote_average.desc`) and most popular first (`popularity.desc`), two pages each;
+     *  - /movie/{id}/similar for each of the [seeds] (the swiped-right movies, the engine chooses up to 3). TMDB cannot
+     *    filter that list, so its movies must pass EXACTLY the same limits as the /discover ones: one of [genreIds], the
+     *    language, the release period, the minimum rating and the quality floor. Nothing from it is taken unchecked.
+     * Every candidate passes [DiscoveryRequest.matches] of those limits. A list answer has no runtime: the engine looks
+     * it up for the picks it chooses (RecommendationEngine.recommendStrictly), so a wrong length never reaches the screen.
      * The QUALITY FLOOR is a rating of 6.5 and 500 votes (300 for the "similar" movies). Only when that leaves fewer
-     * than 10 valid candidates does the floor drop to 6.0 and 200 votes, and if there are still too few, the
-     * preferences are forgotten too (the genres stay).
+     * than 10 candidates is it lowered: 6.0 and 200 votes, then 6.0 and 30 votes. The floor never lowers what the user
+     * asked for (a minimum rating of 8 stays 8), and the preferences and the genres are NEVER dropped.
      * Movies that already have a state in the database (liked, passed, watchlist, watched), the ids in [exclude]
      * (this sitting's swipes) and movies without a poster never come back.
      * A failed "similar" call is no problem (it is a bonus); a failed /discover call fails the whole answer.
@@ -144,15 +173,25 @@ class MovieRepository(
         preferences: Preferences,
         seeds: List<Movie> = emptyList(),
         exclude: Set<Int> = emptySet()
+    ): Result<PicksPool> = picksCandidatesWithin(Discovery.userLimits(genreIds, preferences), seeds, exclude)
+
+    /**
+     * [picksCandidates] for any [limits]: the user's own (Discovery.userLimits), or the looser ones of a close-match step
+     * (Discovery.closeLevels). Every candidate fits [limits] apart from the runtime, which a list answer does not have.
+     */
+    suspend fun picksCandidatesWithin(
+        limits: DiscoveryRequest,
+        seeds: List<Movie> = emptyList(),
+        exclude: Set<Int> = emptySet()
     ): Result<PicksPool> = call {
         val hidden = dao.idsWithState().toSet() + exclude
         val found = LinkedHashMap<Int, Movie>()
         val similarTo = HashMap<Int, Int>()
         var similarAnswers: Map<Int, List<Movie>>? = null // asked once: the floor is applied to it again at every step
 
-        for (step in PICKS_STEPS) {
-            val pref = if (step.dropPreferences) Preferences() else preferences
-            val (discoverRequests, similarFilter) = picksRequests(genreIds, pref, step.floor)
+        for (floor in PICKS_FLOORS) {
+            val (discoverRequests, similarFilter) = picksRequests(limits, floor)
+            val discoverFilter = discoverRequests.last()
 
             val askSimilar = similarAnswers == null
             val (discovered, similarAsked) = coroutineScope {
@@ -170,15 +209,13 @@ class MovieRepository(
             val answers = similarAnswers ?: similarAsked.toMap().also { similarAnswers = it }
 
             for (movie in discovered) {
-                if (movie.id in hidden) continue
-                if (preferences.language != null && (movie.originalLanguage == null || !com.example.cinefiles.logic.Languages.matches(preferences.language, movie.originalLanguage))) continue
+                // TMDB already filtered these; checking again on the phone costs nothing and keeps the rule in one place
+                if (movie.id in hidden || !discoverFilter.matches(movie)) continue
                 found.putIfAbsent(movie.id, movie)
             }
             for ((seedId, movies) in answers) {
                 for (movie in movies) {
                     if (movie.id in hidden || !similarFilter.matches(movie)) continue
-                    if ((similarFilter.minMinutes != null || similarFilter.maxMinutes != null) && movie.runtimeMinutes == null) continue
-                    if (similarFilter.language != null && movie.originalLanguage == null) continue
                     found.putIfAbsent(movie.id, movie)
                     similarTo.putIfAbsent(movie.id, seedId)
                 }
@@ -189,19 +226,21 @@ class MovieRepository(
     }
 
     /**
-     * The questions of one step of [picksCandidates]: the two /discover requests (best rated first, most popular first)
-     * and the filter that "similar" movies must pass. The floor never lowers what the user's own preferences ask
-     * (a minimum rating of 8 stays 8). Filipino movies have few votes on TMDB, so their vote limits stay tiny.
+     * The questions of one step of [picksCandidates]: the two /discover requests (best rated first, then most popular
+     * first, which is also the filter its movies pass) and the filter that "similar" movies must pass. Both carry every
+     * limit of [Discovery.userLimits] (the genres too); they only differ in the votes. The floor never lowers what the
+     * user's own preferences ask (a minimum rating of 8 stays 8). Filipino movies have few votes on TMDB, so their vote
+     * limits stay tiny.
      */
-    private fun picksRequests(genreIds: List<Int>, preferences: Preferences, floor: QualityFloor): Pair<List<DiscoveryRequest>, DiscoveryRequest> {
-        val base = Discovery.plan(genreIds, preferences, NO_RELAXING).first()
+    private fun picksRequests(limits: DiscoveryRequest, floor: QualityFloor): Pair<List<DiscoveryRequest>, DiscoveryRequest> {
+        val base = limits.copy(source = DiscoverySource.MOOD_MATCH, maxVotes = null)
         val rating = max(base.minRating ?: 0.0, floor.minRating)
-        val few = preferences.language == Languages.FILIPINO
+        val few = base.language == Languages.FILIPINO
         val discoverBase = base.copy(minRating = rating, minVotes = if (few) FILIPINO_MIN_VOTES else floor.minVotes)
         return listOf(
             discoverBase.copy(source = DiscoverySource.TOP_RATED),  // /discover sorted by vote_average.desc
             discoverBase                                            // /discover sorted by popularity.desc
-        ) to discoverBase.copy(genreIds = emptyList(), minVotes = if (few) FILIPINO_MIN_VOTES else floor.minSimilarVotes)
+        ) to discoverBase.copy(minVotes = if (few) FILIPINO_MIN_VOTES else floor.minSimilarVotes)
     }
 
     /** The TMDB person with their movies, for the Person screen. */
@@ -540,20 +579,18 @@ class MovieRepository(
         // Your picks
         const val PICKS_PAGES = 2            // two pages of 20 for each way of sorting
         const val FILIPINO_MIN_VOTES = 3     // few people vote on Filipino movies on TMDB
-        const val NO_RELAXING = 0            // Discovery.plan: keep every preference
 
         /** The quality a candidate must have: a rating, the votes of a /discover movie and the votes of a "similar" movie. */
         class QualityFloor(val minRating: Double, val minVotes: Int, val minSimilarVotes: Int)
 
-        val STRICT_FLOOR = QualityFloor(minRating = 6.5, minVotes = 500, minSimilarVotes = 300)
-        val RELAXED_FLOOR = QualityFloor(minRating = 6.0, minVotes = 200, minSimilarVotes = 200)
-
-        /** What [picksCandidates] tries, in this order, until it has 10 candidates. */
-        class PicksStep(val floor: QualityFloor, val dropPreferences: Boolean)
-
-        val PICKS_STEPS = listOf(
-            PicksStep(STRICT_FLOOR, dropPreferences = false),
-            PicksStep(RELAXED_FLOOR, dropPreferences = false)
+        /**
+         * What [picksCandidates] tries, in this order, until it has 10 candidates. Only the quality floor goes down:
+         * the user's preferences and the moods' genres are part of every step.
+         */
+        val PICKS_FLOORS = listOf(
+            QualityFloor(minRating = 6.5, minVotes = 500, minSimilarVotes = 300),
+            QualityFloor(minRating = 6.0, minVotes = 200, minSimilarVotes = 200),
+            QualityFloor(minRating = 6.0, minVotes = 30, minSimilarVotes = 30)
         )
     }
 }

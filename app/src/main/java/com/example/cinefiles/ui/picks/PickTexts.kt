@@ -21,6 +21,7 @@ fun Context.reasonText(reason: PickReason): String = when (reason) {
         if (mood != null) getString(R.string.picks_reason_mood, getString(mood.shortLabel)) else getString(R.string.picks_reason_generic)
     }
     PickReason.Generic -> getString(R.string.picks_reason_generic)
+    PickReason.CloseMatch -> getString(R.string.picks_reason_close)
 }
 
 /** "7.8 · 2026 · Romance": the line under a pick's title (the rating, the year and up to two genres). */

@@ -1,6 +1,7 @@
 package com.example.cinefiles.logic
 
 import com.example.cinefiles.data.Movie
+import com.example.cinefiles.data.PicksPool
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.max
@@ -33,6 +34,11 @@ import kotlin.math.sqrt
  * kind. The match percent is the score x 100. Equal scores are settled by rating, then movie id, so the order never
  * changes by chance. Each pick says why ([PickReason]).
  *
+ * THE USER'S CHOICES ARE LIMITS, not part of the score: an exact pick has one of the chosen moods' genres, none of the
+ * genres those moods avoid, and fits every preference (release period, minimum rating, length, language). When fewer than
+ * 10 movies fit, the list is completed with the CLOSEST movies, labelled "Close to what you asked for"
+ * (see [RecommendationEngine.recommendOrClosest]), so Your Picks is never empty while TMDB has movies for the moods.
+ *
  * This file is plain Kotlin and knows nothing about TMDB, the database or screens.
  * Where the candidates come from is MovieRepository.picksCandidates.
  */
@@ -50,6 +56,9 @@ sealed class PickReason {
 
     /** No mood was chosen and nothing was swiped right. */
     object Generic : PickReason()
+
+    /** Too few movies fit every choice, so this is one of the closest (see [RecommendationEngine.recommendOrClosest]). */
+    object CloseMatch : PickReason()
 }
 
 /** One pick: the movie, its score (0 to 1) and why it is there. */
@@ -212,9 +221,19 @@ class RecommendationEngine(
     // =================================================================================================================
 
     /**
+     * What every pick must fit when the user's [preferences] are given: one of the [moods]' genres (none = any genre), none
+     * of the genres those moods avoid, and every preference (release period, minimum rating, length, language).
+     * See [Discovery.userLimits].
+     */
+    fun limitsFor(moods: List<Mood>, preferences: Preferences): DiscoveryRequest =
+        Discovery.userLimits(moods.flatMap { it.genreIds }.distinct(), preferences, Moods.avoidedGenreIds(moods))
+
+    /**
      * Scores the [candidates] and returns the picks, best first.
      * A movie is never picked when its id is in [excludeIds], when it was liked or passed in this sitting,
      * when it has no poster, or when it is in the list twice. The order is the same every time for the same input.
+     * With [preferences] (or [limits] made some other way), a movie is also never picked when it misses one of the moods'
+     * genres or any preference ([limitsFor]); only an UNKNOWN runtime passes here, and [recommendWithin] looks that one up.
      *
      * [similarTo] says which candidates TMDB listed as similar to one of the swiped-right movies:
      * candidate id -> that movie's id. It only decides the wording of the reason.
@@ -225,13 +244,15 @@ class RecommendationEngine(
         liked: List<Movie>,
         passed: List<Movie>,
         excludeIds: Set<Int> = emptySet(),
-        similarTo: Map<Int, Int> = emptyMap()
+        similarTo: Map<Int, Int> = emptyMap(),
+        preferences: Preferences? = null,
+        limits: DiscoveryRequest? = preferences?.let { limitsFor(moods, it) }
     ): List<Recommendation> {
         val taste = tasteOf(moods, liked, passed)
         val skip = excludeIds + liked.map { it.id } + passed.map { it.id }
 
         val ranked = candidates
-            .filter { it.id !in skip && it.posterPath != null }
+            .filter { it.id !in skip && it.posterPath != null && (limits == null || limits.matches(it)) }
             .distinctBy { it.id }
             .map { Recommendation(it, score(it, taste), reasonFor(it, moods, liked, similarTo[it.id])) }
             .sortedWith(
@@ -252,6 +273,80 @@ class RecommendationEngine(
             picks.add(pick)
         }
         return picks
+    }
+
+    /**
+     * Your Picks as the screen gets them: [recommend] with the user's [preferences] enforced, and when a length was
+     * chosen, every pick's runtime CHECKED. TMDB's list answers have no runtime, so the runtimes of the chosen picks are
+     * looked up with [lookUpRuntimes] (a movie it leaves out has an unknown runtime and is dropped). A pick of the wrong
+     * length is dropped too, and the next best candidate takes its place, until every pick is known to fit.
+     * If [lookUpRuntimes] throws, this throws.
+     */
+    suspend fun recommendStrictly(
+        candidates: List<Movie>,
+        moods: List<Mood>,
+        liked: List<Movie>,
+        passed: List<Movie>,
+        preferences: Preferences,
+        excludeIds: Set<Int> = emptySet(),
+        similarTo: Map<Int, Int> = emptyMap(),
+        lookUpRuntimes: suspend (List<Movie>) -> List<Movie>
+    ): List<Recommendation> =
+        recommendWithin(candidates, moods, liked, passed, limitsFor(moods, preferences), excludeIds, similarTo, lookUpRuntimes)
+
+    /** [recommendStrictly] for any [limits] (the exact ones, or the looser ones of a close-match step). */
+    suspend fun recommendWithin(
+        candidates: List<Movie>,
+        moods: List<Mood>,
+        liked: List<Movie>,
+        passed: List<Movie>,
+        limits: DiscoveryRequest,
+        excludeIds: Set<Int> = emptySet(),
+        similarTo: Map<Int, Int> = emptyMap(),
+        lookUpRuntimes: suspend (List<Movie>) -> List<Movie>
+    ): List<Recommendation> {
+        var pool = candidates.filter { limits.matches(it) }
+        while (true) {
+            val picks = recommend(pool, moods, liked, passed, excludeIds, similarTo, limits = limits)
+            if (!limits.hasRuntimeLimit) return picks
+            val unknown = picks.map { it.movie }.filter { it.runtimeMinutes == null }
+            if (unknown.isEmpty()) return picks
+
+            // Every movie looked up becomes known or leaves the pool, so this ends
+            val found = lookUpRuntimes(unknown).filter { it.runtimeMinutes != null }.associateBy { it.id }
+            val lookedUp = unknown.map { it.id }.toSet()
+            pool = pool.mapNotNull { movie -> if (movie.id in lookedUp) found[movie.id] else movie }
+        }
+    }
+
+    /**
+     * Your Picks, never empty while TMDB has movies for the moods: the picks that fit [exact] (every choice) come first. When
+     * there are fewer than [MAX_PICKS], the rest are the CLOSEST movies, from the steps of [Discovery.closeLevels] (nearest
+     * first), and their reason says so ([PickReason.CloseMatch]). [candidatesWithin] gets the candidates for some limits,
+     * leaving out the ids it is given (the picks already made). If it or [lookUpRuntimes] throws, this throws.
+     */
+    suspend fun recommendOrClosest(
+        exact: DiscoveryRequest,
+        moods: List<Mood>,
+        liked: List<Movie>,
+        passed: List<Movie>,
+        candidatesWithin: suspend (limits: DiscoveryRequest, exclude: Set<Int>) -> PicksPool,
+        lookUpRuntimes: suspend (List<Movie>) -> List<Movie>
+    ): List<Recommendation> {
+        val exactPool = candidatesWithin(exact, emptySet())
+        val picks = recommendWithin(exactPool.movies, moods, liked, passed, exact, similarTo = exactPool.similarTo, lookUpRuntimes = lookUpRuntimes)
+        // The nearest steps choose WHICH close movies are shown; on the screen they come after the exact ones, best match first
+        val close = ArrayList<Recommendation>()
+        for (step in Discovery.closeLevels(exact)) {
+            if (picks.size + close.size >= maxPicks) break
+            val taken = (picks + close).map { it.movie.id }.toSet()
+            val pool = candidatesWithin(step, taken)
+            val more = recommendWithin(pool.movies, moods, liked, passed, step, taken, pool.similarTo, lookUpRuntimes)
+            close += more.take(maxPicks - picks.size - close.size)
+        }
+        val ranked = close.sortedWith(compareByDescending<Recommendation> { it.score }.thenBy { it.movie.id })
+        // A movie that does fit every choice (the "three of a kind" limit held it back before) keeps its own reason
+        return picks + ranked.map { if (exact.matchesStrictly(it.movie)) it else it.copy(reason = PickReason.CloseMatch) }
     }
 
     /**

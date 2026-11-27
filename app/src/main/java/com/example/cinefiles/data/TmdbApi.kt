@@ -46,6 +46,7 @@ interface TmdbApi {
     @GET("discover/movie")
     suspend fun discover(
         @Query("with_genres") withGenres: String? = null,                    // "35|28" means comedy OR action
+        @Query("without_genres") withoutGenres: String? = null,              // "27,53": no horror, no thriller
         @Query("primary_release_date.gte") releasedFrom: String? = null,     // "2015-01-01"
         @Query("primary_release_date.lte") releasedTo: String? = null,
         @Query("vote_average.gte") minRating: Double? = null,
@@ -66,7 +67,7 @@ interface TmdbApi {
     @GET("movie/{id}")
     suspend fun movieDetails(
         @Path("id") id: Int,
-        @Query("append_to_response") append: String = "credits,videos",
+        @Query("append_to_response") append: String? = "credits,videos", // null: the movie alone (for its runtime)
         @Query("language") language: String = LANGUAGE
     ): MovieDto
 

@@ -82,6 +82,10 @@ class SwipeFragment : Fragment() {
             // Network failure: say why, the buttons stay as they were
             event.getIfNotHandled()?.let { showMessage(it.message) }
         }
+        viewModel.notice.observe(viewLifecycleOwner) { event ->
+            // Some cards are close matches: say so once
+            event.getIfNotHandled()?.let { showMessage(it) }
+        }
     }
 
     override fun onDestroyView() {
@@ -264,7 +268,10 @@ class SwipeFragment : Fragment() {
         }
     }
 
-    /** End-of-round screen after 10 movies. */
+    /**
+     * The end-of-batch screen, right after the 10th swipe: "See recommendations" and "Discover 10 more movies" (the next 10
+     * unseen movies for the same moods and preferences). When nothing new is left, the second becomes "Change preferences".
+     */
     private fun showEndOfDeck(ready: SwipeScreenState.Ready) {
         val end = binding.swipeEnd
         end.root.isVisible = ready.isFinished
@@ -285,6 +292,21 @@ class SwipeFragment : Fragment() {
 
         val liked = ready.likedCount > 0
         when {
+            !ready.hasMore -> {
+                end.swipeEndIcon.setImageResource(R.drawable.ic_search)
+                end.swipeEndTitle.setText(R.string.swipe_end_exhausted_title)
+                end.swipeEndMessage.text = if (liked) {
+                    resources.getQuantityString(R.plurals.swipe_end_exhausted_liked, ready.likedCount, ready.likedCount)
+                } else {
+                    getString(R.string.swipe_end_exhausted_none)
+                }
+                setEndButtons(
+                    R.string.swipe_end_see_recommendations,
+                    ::openPicks,
+                    R.string.swipe_end_change_preferences,
+                    ::changePreferences
+                )
+            }
             liked -> {
                 end.swipeEndIcon.setImageResource(R.drawable.ic_check)
                 end.swipeEndTitle.setText(R.string.swipe_end_liked_title)
@@ -297,14 +319,15 @@ class SwipeFragment : Fragment() {
                 )
             }
             else -> {
+                // Nothing liked yet: the picks still come from the moods and preferences alone
                 end.swipeEndIcon.setImageResource(R.drawable.ic_search)
                 end.swipeEndTitle.setText(R.string.swipe_end_zero_title)
                 end.swipeEndMessage.setText(R.string.swipe_end_zero_message)
                 setEndButtons(
+                    R.string.swipe_end_see_recommendations,
+                    ::openPicks,
                     R.string.swipe_end_discover_more,
-                    viewModel::discoverMore,
-                    R.string.swipe_end_change_mood,
-                    ::changeMood
+                    viewModel::discoverMore
                 )
             }
         }
